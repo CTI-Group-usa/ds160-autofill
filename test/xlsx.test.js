@@ -41,6 +41,25 @@ eq('grid', X.sheetToGrid(sheet, strings), [
   ['a & b', ''],
 ]);
 
+// -- hyperlinks -------------------------------------------------------
+// The Supporting Letter cell shows no text; the URL is the whole point.
+// Exporters write it either as a rels-backed <hyperlink> or as a
+// HYPERLINK() formula, so both have to be read.
+const linkSheet =
+  '<worksheet><sheetData>' +
+  '<row r="2"><c r="U2" t="s"><v>0</v></c></row>' +
+  '<row r="3"><c r="U3" t="s"><f>HYPERLINK("https://drive/two","letter")</f><v>0</v></c></row>' +
+  '</sheetData><hyperlinks><hyperlink ref="U2" r:id="rIdL1"/></hyperlinks></worksheet>';
+const linkRels =
+  '<Relationships><Relationship Id="rIdL1" Target="https://drive/one" TargetMode="External"/></Relationships>';
+eq('hyperlinks', X.hyperlinks(linkSheet, linkRels),
+   { U2: 'https://drive/one', U3: 'https://drive/two' });
+eq('no hyperlinks at all', X.hyperlinks('<worksheet></worksheet>', ''), {});
+eq('hyperlink with an escaped target',
+   X.hyperlinks('<hyperlinks><hyperlink ref="A1" r:id="r1"/></hyperlinks>',
+                '<Relationship Id="r1" Target="https://d/a&amp;b"/>'),
+   { A1: 'https://d/a&b' });
+
 // -- workbook sheet list ----------------------------------------------
 const wb = '<workbook><sheets>' +
   '<sheet name="Notes" sheetId="1" r:id="rId1"/>' +

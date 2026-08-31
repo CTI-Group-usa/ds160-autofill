@@ -205,6 +205,11 @@
 
     // C1/D crew are employed by the cruise line, not the manning agent.
     if (!rec.employerName && rec.cruiseLine) rec.employerName = upper(rec.cruiseLine);
+
+    // The vessel name and IMO number live in the supporting letter, not
+    // in any column - carry the link through so the agent can open it.
+    const links = row._links || {};
+    rec.supportingLetterUrl = links['Supporting Letter'] || '';
     for (const [k] of MISSING_FROM_INTAKE) if (!(k in rec)) rec[k] = '';
     rec._raw = row;
     return rec;

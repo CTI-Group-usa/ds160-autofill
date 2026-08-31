@@ -37,16 +37,29 @@
     return out.filter(r => r.some(v => v.trim() !== ''));
   }
 
-  function gridToObjects(grid) {
+  /* 0,80 -> "CA2" : hyperlinks are keyed by cell reference. */
+  function cellRef(row, col) {
+    let s = '', n = col + 1;
+    while (n) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = (n - 1 - r) / 26; }
+    return s + (row + 1);
+  }
+
+  function gridToObjects(grid, links) {
     if (grid.length < 2) throw new Error('Need a header row plus at least one data row.');
     const head = grid[0].map(h => String(h == null ? '' : h).trim());
     if (!head.some(h => /^name$/i.test(h)))
       throw new Error('No "Name" column found - is this the VISA APPLICATIONS sheet?');
-    return grid.slice(1).map(r => {
-      const o = {};
-      head.forEach((h, i) => { if (h) o[h] = String(r[i] == null ? '' : r[i]).trim(); });
+    return grid.slice(1).map((r, ri) => {
+      const o = {}, urls = {};
+      head.forEach((h, i) => {
+        if (!h) return;
+        o[h] = String(r[i] == null ? '' : r[i]).trim();
+        const u = links && links[cellRef(ri + 1, i)];
+        if (u) urls[h] = u;
+      });
+      if (Object.keys(urls).length) o._links = urls;
       return o;
-    }).filter(o => Object.values(o).some(v => v !== ''));
+    }).filter(o => Object.keys(o).some(k => k !== '_links' && o[k] !== ''));
   }
 
   const toObjects = text => gridToObjects(parseDelimited(text, detectDelim(text)));
@@ -91,9 +104,12 @@
       if (!isZip) { loadText(await file.text()); return; }
 
       const res = await XLSXLite.read(await file.arrayBuffer(), 'VISA APPLICATIONS');
-      accept(gridToObjects(res.grid),
+      const rows = gridToObjects(res.grid, res.links);
+      const linked = rows.filter(r => r._links && r._links['Supporting Letter']).length;
+      accept(rows,
              'Loaded worksheet "' + res.name + '"' +
-             (res.sheets.length > 1 ? ' of ' + res.sheets.length : '') + '.');
+             (res.sheets.length > 1 ? ' of ' + res.sheets.length : '') +
+             (linked ? ' - ' + linked + ' supporting letter link(s) found.' : ''));
     } catch (e) {
       $('loadMsg').textContent = e.message;
     }
@@ -188,7 +204,12 @@
     let page = '';
     h += '<div class="sec"><h3>Trip details &mdash; this applicant</h3>' +
          '<p class="secnote">Not collected by the intake form. Stored against passport ' +
-         esc(rec.passportNumber || '(none)') + '.</p><table>';
+         esc(rec.passportNumber || '(none)') + '.' +
+         (rec.supportingLetterUrl
+           ? ' Vessel name and IMO are in the <a href="' + esc(rec.supportingLetterUrl) +
+             '" target="_blank" rel="noopener">supporting letter</a>.'
+           : ' No supporting letter link in this row.') +
+         '</p><table>';
     for (const f of DS160Trip.FIELDS) {
       if (f.page !== page) { page = f.page; h += '<tr><td class="grp" colspan="3">' + esc(page) + '</td></tr>'; }
       const v = tv[f.key] || '';

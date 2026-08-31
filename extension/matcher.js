@@ -99,7 +99,10 @@
     { key: 'departureFlight', kind: 'text', ids: [/DEPARTURE_FLIGHT/i], labels: [/departure flight/i] },
     { key: 'departureCity',  kind: 'text',  ids: [/DepartCity/i, /DEPARTURE_CITY/i], labels: [/^departure city/i] },
     { key: 'stayAddress',    kind: 'text',  ids: [/STAY_ADDR_LN1/i], labels: [/address where you will stay/i] },
-    { key: 'vesselName',     kind: 'text',  ids: [/VESSEL/i, /tbxSHIP/i], labels: [/vessel|ship name/i] },
+    { key: 'vesselName',     kind: 'text',  ids: [/SEAGOING.*NAME/i, /tbxSHIP/i],
+      labels: [/seagoing ship.*vessel name|^vessel name/i], not: /IDENT|IMO|NUMBER/i },
+    { key: 'vesselImo',      kind: 'text',  ids: [/SEAGOING.*(IDENT|NUM)/i, /VESSEL_ID/i],
+      labels: [/vessel identification number/i] },
     { key: 'tripPayer',      kind: 'text',  ids: [/WHO_IS_PAYING/i], labels: [/paying for your trip/i] },
 
     { key: 'usPocName',    kind: 'text', ids: [/POC_(SURNAME|GIVEN)/i, /USPOC/i], labels: [/contact person/i] },

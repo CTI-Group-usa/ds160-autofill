@@ -41,7 +41,10 @@
       hint: 'Usually the vessel at its berth, or the crew hotel.' },
     { key: 'tripPayer', page: 'Travel', label: 'Person or entity paying for the trip', def: '',
       hint: 'Normally the cruise line.' },
-    { key: 'vesselName', page: 'Travel', label: 'Vessel / ship name', def: '' },
+    { key: 'vesselName', page: 'Crew Visa', label: 'Seagoing Ship / Vessel Name', def: '',
+      hint: 'From the supporting letter - differs per applicant.' },
+    { key: 'vesselImo', page: 'Crew Visa', label: 'Vessel Identification Number (IMO)', def: '',
+      hint: 'From the supporting letter - differs per applicant.' },
 
     { key: 'usPocName', page: 'U.S. Contact', label: 'Contact person in the U.S.', def: '' },
     { key: 'usPocOrg', page: 'U.S. Contact', label: 'Organization name', def: '',

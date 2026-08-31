@@ -134,6 +134,43 @@
     return grid;
   }
 
+  /* Cell -> URL. Excel stores a link two ways, and the Supporting Letter
+     column uses one of them, so both are read:
+       <hyperlinks><hyperlink ref="CC5" r:id="rId1"/></hyperlinks>
+         with the target in the sheet's own .rels file, and
+       =HYPERLINK("https://...","label") as a formula in the cell.
+     Without this the cell reads as empty and the link is lost. */
+  function hyperlinks(sheetXml, relsXml) {
+    const out = {};
+    const rels = {};
+    const relRe = /<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g;
+    let m;
+    while ((m = relRe.exec(relsXml || ''))) rels[m[1]] = unesc(m[2]);
+
+    const hRe = /<hyperlink\b([^>]*)\/?>/g;
+    while ((m = hRe.exec(sheetXml || ''))) {
+      const a = m[1];
+      const ref = (a.match(/\bref="([^"]+)"/) || [])[1];
+      const rid = (a.match(/r:id="([^"]+)"/) || [])[1];
+      if (!ref) continue;
+      const target = rid ? rels[rid] : unesc((a.match(/\blocation="([^"]*)"/) || [])[1] || '');
+      if (target) out[ref.split(':')[0]] = target;
+    }
+
+    /* Walk cell by cell. A lazy gap between <c> and <f> would happily
+       cross into the next cell and pin the formula to the wrong ref. */
+    const cellRe = /<c\b([^>]*)(?:\/>|>([\s\S]*?)<\/c>)/g;
+    while ((m = cellRe.exec(sheetXml || ''))) {
+      const ref = (m[1].match(/\br="([A-Z]+\d+)"/) || [])[1];
+      if (!ref || out[ref]) continue;
+      const f = (m[2] || '').match(/<f\b[^>]*>([\s\S]*?)<\/f>/);
+      if (!f) continue;
+      const url = unesc(f[1]).match(/HYPERLINK\s*\(\s*"([^"]+)"/i);
+      if (url) out[ref] = url[1];
+    }
+    return out;
+  }
+
   /* Sheet name -> the worksheet part it lives in. */
   function sheetTargets(workbookXml, relsXml) {
     const rels = {};
@@ -167,12 +204,20 @@
     if (!pick) pick = sheets.find(s => files[s.target]) || sheets[0];
     if (!pick) throw new Error('No worksheet found inside the .xlsx file.');
 
-    const xml = files[pick.target] || files['xl/worksheets/sheet1.xml'];
+    const part = files[pick.target] ? pick.target : 'xl/worksheets/sheet1.xml';
+    const xml = files[part];
     if (!xml) throw new Error('Could not read worksheet "' + pick.name + '".');
-    return { name: pick.name, grid: sheetToGrid(xml, strings), sheets: sheets.map(s => s.name) };
+
+    const relPart = part.replace(/([^/]+)$/, '_rels/$1.rels');
+    return {
+      name: pick.name,
+      grid: sheetToGrid(xml, strings),
+      links: hyperlinks(xml, files[relPart]),
+      sheets: sheets.map(s => s.name),
+    };
   }
 
-  const api = { read, unzip, sharedStrings, sheetToGrid, sheetTargets, colIndex, unesc };
+  const api = { read, unzip, sharedStrings, sheetToGrid, sheetTargets, hyperlinks, colIndex, unesc };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.XLSXLite = api;
 })(typeof self !== 'undefined' ? self : this);

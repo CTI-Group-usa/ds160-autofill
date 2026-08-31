@@ -93,11 +93,18 @@ Trip details and constants are merged in `build()` **before** validation, so
 the worksheet's error list reflects what will actually be filled. Any edit
 calls `rebuild()`, not `renderDetail()`.
 
-**Still not collected anywhere:** the Cruise Line Deployment Report sheet
-(`begbjf0b04d7026534b328e36baa0a9d82df7`, read by the Indonesia monitoring
-dashboard) already holds *Joining Ship*, *Sign On Date* and *Sign On Port* per
-seafarer — the obvious source for `vesselName` / `arrivalDate` / `arrivalCity`
-instead of typing. Not wired up yet.
+### Where the vessel details actually come from
+**Not** the Cruise Line Deployment Report — the user corrected that. The vessel
+name and IMO number are in each seafarer's **supporting letter**, held in Zoho
+Drive and linked from the **Supporting Letter** column of the uploaded workbook.
+
+The cell renders empty in Zoho Sheet because it holds a *hyperlink*, not text —
+`xlsx.js → hyperlinks()` reads both storage forms (a rels-backed
+`<hyperlink ref=…>` and an `=HYPERLINK("…")` formula), `gridToObjects` attaches
+them to the row as `_links`, and `normalize.js` exposes
+`rec.supportingLetterUrl`, which the worksheet shows as a link in the Trip
+details block. Vessel name and IMO stay per-applicant fields, typed from that
+letter. Parsing the letter itself is the obvious next step and is not done.
 
 ## Rules are type-aware
 `matchKey()` only applies a rule to the kind of control it describes
@@ -173,7 +180,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 40 + xlsx 9 + constants 25 + trip 26 assertions
+npm test   # normalize 36 + matcher 40 + xlsx 12 + constants 25 + trip 26 assertions
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

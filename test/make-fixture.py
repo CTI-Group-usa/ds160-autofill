@@ -18,7 +18,7 @@ HEADERS = [
     "Address", "Phone Number", "Email Address", "Passport Number",
     "Passport Issued Date", "Passport Expired Date", "Father's Name",
     "Mother's Name", "Current Workplace's Name", "Current Employment Position",
-    "Appointment Date",
+    "Appointment Date", "Supporting Letter",
 ]
 
 # Dates go in as Excel serials, exactly as Zoho exports them.
@@ -26,11 +26,11 @@ ROWS = [
     ["46000", "Budi Santoso", "Royal Caribbean", "Male", "Single",
      "34783", "Denpasar", "Indonesia", "5103021234567890",
      "Jl. Raya Kuta 12, Badung", "081234567890", "budi@example.com", "C1234567",
-     "45332", "47058", "Santoso", "Wayan Sari", "PT Bahari", "Waiter", "46296"],
+     "45332", "47058", "Santoso", "Wayan Sari", "PT Bahari", "Waiter", "46296", "letter"],
     ["46001", "Sukarno", "Carnival", "Male", "Married",
      "32937", "Surabaya", "Indonesia", "12345",
      "Jl. Melati 3 <blok A> & B", "12", "not-an-email", "X 12",
-     "43831", "46327", "Fauzi", "", "", "", "46296"],
+     "43831", "46327", "Fauzi", "", "", "", "46296", "letter"],
 ]
 
 
@@ -66,10 +66,24 @@ def sheet_xml(grid, strings):
             "<sheetData>%s</sheetData></worksheet>" % "".join(rows))
 
 
+# Row 2 gets a rels-style hyperlink, row 3 a HYPERLINK() formula, because
+# exporters use both and the reader has to cope with either.
+HYPERLINK_REF = "U2"
+FORMULA_REF = "U3"
+LETTER_1 = "https://workdrive.zoho.com/file/letter-budi"
+LETTER_2 = "https://workdrive.zoho.com/file/letter-sukarno"
+
+
 def main():
     strings = {}
     body = sheet_xml([["Nothing here"]], strings)
     visa = sheet_xml([HEADERS] + ROWS, strings)
+    visa = visa.replace(
+        '<c r="%s" t="s">' % FORMULA_REF,
+        '<c r="%s" t="s"><f>HYPERLINK("%s","letter")</f>' % (FORMULA_REF, LETTER_2), 1)
+    visa = visa.replace(
+        "</sheetData>",
+        '</sheetData><hyperlinks><hyperlink ref="%s" r:id="rIdL1"/></hyperlinks>' % HYPERLINK_REF)
 
     sst = ('<?xml version="1.0" encoding="UTF-8"?>'
            '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="%d" uniqueCount="%d">%s</sst>'
@@ -111,6 +125,12 @@ def main():
         z.writestr("xl/sharedStrings.xml", sst)
         z.writestr("xl/worksheets/sheet1.xml", body)
         z.writestr("xl/worksheets/sheet2.xml", visa)
+        z.writestr(
+            "xl/worksheets/_rels/sheet2.xml.rels",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rIdL1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" '
+            'Target="%s" TargetMode="External"/></Relationships>' % LETTER_1)
     print("wrote", OUT, os.path.getsize(OUT), "bytes")
 
 
