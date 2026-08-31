@@ -176,7 +176,10 @@
       for (const c of consts) {
         h += '<tr class="flag"><td class="k">' + esc(c.label) +
              '<br><small>' + esc(c.page) + ' &middot; ' + esc(c.why) + '</small></td>' +
-             '<td class="v">' + esc(c.kind === 'checkbox' ? (c.value === 'YES' ? 'ticked' : 'left blank') : c.value) +
+             '<td class="v">' + esc(
+               c.kind === 'checkbox' ? (c.value === 'YES' ? 'ticked' : 'left blank') :
+               c.kind === 'toggle'   ? (c.value === 'YES' ? 'No to every question' : 'left to the agent') :
+               c.value) +
              '</td><td class="a"></td></tr>';
       }
       h += '</table></div>';
@@ -254,6 +257,8 @@
       const cur = v[c.key];
       const opts = c.kind === 'checkbox'
         ? [['YES', 'Tick "Does Not Apply"'], ['', 'Leave to the agent']]
+        : c.kind === 'toggle'
+        ? [['YES', 'Answer "No" to all'], ['', 'Leave to the agent']]
         : [['NO', 'No'], ['YES', 'Yes'], ['', 'Leave to the agent']];
       return '<div class="const"><div><b>' + esc(c.label) + '</b>' +
         '<small>' + esc(c.page) + ' &middot; ' + esc(c.why) + '</small></div>' +

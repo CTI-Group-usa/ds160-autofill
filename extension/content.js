@@ -36,7 +36,7 @@
       let prev = cell.previousElementSibling;
       while (prev) {
         const t = prev.textContent.replace(/\s+/g, ' ').trim();
-        if (t) return t;
+        if (t && !/^[QA]:?$/.test(t)) return t;   // "Q:" / "A:" are not labels
         prev = prev.previousElementSibling;
       }
       const row = cell.closest('tr');
@@ -49,9 +49,17 @@
     return (el.title || el.placeholder || '').trim();
   }
 
-  /* Yes/No questions live in a Q:/A: block, so the adjacent cell is
-     often just "A:". Climb until an ancestor holds the real sentence. */
+  /* Yes/No questions sit in a two-row Q:/A: block, so the neighbouring
+     cell is usually just "A:" and the enclosing table holds every
+     question on the page. The sentence we want is in one of the rows
+     just above; only fall back to climbing ancestors. */
   function questionText(el) {
+    const row = el.closest('tr');
+    let prev = row && row.previousElementSibling;
+    for (let i = 0; i < 4 && prev; i++, prev = prev.previousElementSibling) {
+      const t = prev.textContent.replace(/\s+/g, ' ').replace(/^Q:\s*/, '').trim();
+      if (t.length >= 15 && t.length <= 600) return t;
+    }
     let n = el.parentElement;
     for (let i = 0; i < 7 && n; i++, n = n.parentElement) {
       const t = n.textContent.replace(/\s+/g, ' ').trim();
@@ -132,6 +140,43 @@
     return true;
   }
 
+  /* --- Security and Background sweep -------------------------------
+     Five pages of sworn Yes/No questions. The agent asked for every one
+     to be answered No; the answers are outlined in amber and listed in
+     the report so they get read before Next is clicked.
+
+     Answering No is set WITHOUT firing events on purpose. Those radios
+     carry __doPostBack so that answering Yes can reveal an explanation
+     box - No reveals nothing, and the value is carried by the form post
+     anyway. Firing the handler would reload the page once per question. */
+  function isSecurityPage() {
+    // CEAC uses complete_securityandbackground.aspx?node=SecurityandBackground1..5
+    if (/securityandbackground/i.test(location.href)) return true;
+    const h = document.querySelector('h1, h2, .h1, #ctl00_SiteContentPlaceHolder_FormView1_lblTitle');
+    return !!h && /security\s+and\s+background/i.test(h.textContent || '');
+  }
+
+  function sweepSecurityNo(all, radioGroups, report) {
+    report.security = [];
+    for (const name in radioGroups) {
+      const group = radioGroups[name];
+      if (group.length !== 2) continue;                       // not a Yes/No pair
+      if (M.isForbidden(name) || group.some(c => M.isForbidden(c.id))) continue;
+      if (group.some(c => c.el.checked)) continue;            // already answered
+
+      const no = group.find(c => {
+        const t = (c.el.value + ' ' + c.id + ' ' + deriveLabel(c.el)).toUpperCase();
+        return /\bNO?\b/.test(t) || /_1$/.test(c.id);
+      });
+      if (!no) continue;
+
+      no.el.checked = true;                                    // quiet on purpose
+      mark(no.el, false);
+      const q = questionText(no.el).replace(/\s*A:\s*Yes\s*No\s*$/i, '').replace(/^Q:\s*/, '');
+      report.security.push({ name, question: q.slice(0, 220) });
+    }
+  }
+
   function mark(el, ok) {
     el.setAttribute(MARK, ok ? '1' : '0');
     el.style.outline = ok ? '2px solid #16a34a' : '2px solid #f59e0b';
@@ -191,6 +236,8 @@
       else { mark(c.el, false); report.skipped.push({ id: c.id, key: m.key, why: 'no matching option / unchanged' }); }
     }
 
+    if (rec.securityAllNo === 'YES' && isSecurityPage()) sweepSecurityNo(all, radioGroups, report);
+
     // One postback control per pass; the page reloads after it.
     if (deferred.length) {
       const d = deferred[0];
@@ -212,7 +259,14 @@
     }));
   }
 
+  // Content scripts run in an isolated world, so this is not reachable
+  // from ceac.state.gov itself - it exists so test/fake-security.html
+  // can drive the filler against a stand-in DS-160 page.
+  window.DS160Filler = { fillPage, pageMap, isSecurityPage, controls, questionText };
+
   // -- messaging ------------------------------------------------------
+  if (typeof chrome === 'undefined' || !chrome.runtime) return;
+
   chrome.runtime.onMessage.addListener((msg, _sender, send) => {
     if (msg.type === 'ds160:fill') {
       chrome.storage.local.get(['record', 'overrides', 'autoContinue'], st => {

@@ -39,6 +39,17 @@
     { key: 'otherRelativesUS', kind: 'yesno', page: 'Family',
       label: 'Do you have any other relatives in the U.S.?',
       def: 'NO', why: 'Check this per applicant.' },
+
+    /* Not a single control - a sweep across five pages. It has no matcher
+       rule; content.js reads it straight off the record. It lives here so
+       it sits alongside every other answer the agent is making on the
+       applicant's behalf, and can be switched off in one click. */
+    { key: 'securityAllNo', kind: 'toggle', page: 'Security and Background', field: false,
+      label: 'Security and Background - answer "No" to every question',
+      def: 'YES',
+      why: 'These are sworn answers. Every question answered this way is outlined on the ' +
+           'page and listed in the extension report - read them before clicking Next, and ' +
+           'change any that are not true for this applicant.' },
   ];
 
   const BY_KEY = CONSTANTS.reduce((m, c) => (m[c.key] = c, m), {});

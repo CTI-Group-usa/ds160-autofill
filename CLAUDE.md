@@ -80,9 +80,26 @@ persist in `localStorage`, and each applicant's detail view repeats them under
 *Constant answers — not from the seafarer*. `apply()` never overwrites a value
 that came from the seafarer.
 
-Decided with the user 2026-08-31 after the first live CEAC run. **Not built:**
-a blanket "answer No to everything" sweep over the Security & Background
-pages — those are sworn answers and were never asked for.
+Decided with the user 2026-08-31 after the first live CEAC run.
+
+### The Security and Background sweep
+`securityAllNo` (default on, **explicitly requested by the user** after the
+concern was raised) answers **No** to every unanswered two-option Yes/No group
+on the five Security and Background pages. Guards:
+- only fires when `isSecurityPage()` matches `complete_securityandbackground.aspx`
+  or a "Security and Background" heading;
+- skips any group already answered, any group that is not exactly two options,
+  and anything `FORBIDDEN` catches;
+- sets `.checked` **without dispatching events** — those radios carry
+  `__doPostBack` so a Yes can reveal an explanation box, but No reveals nothing
+  and the value rides the form post anyway. Firing it would reload the page once
+  per question;
+- outlines every answer in amber and lists the question text in the popup report,
+  so the agent reads them before clicking Next.
+
+`test/fake-security.html` is a stand-in DS-160 page for driving this in a normal
+browser; `content.js` exposes `window.DS160Filler` for it (isolated world, so it
+is not reachable from ceac.state.gov).
 
 ## Known Gaps
 - Intake form does not collect: vessel name, US point of contact, intended
@@ -95,7 +112,7 @@ pages — those are sworn answers and were never asked for.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 33 + xlsx 9 + constants 23 assertions
+npm test   # normalize 36 + matcher 33 + xlsx 9 + constants 25 assertions
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

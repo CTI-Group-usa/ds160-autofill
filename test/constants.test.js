@@ -25,6 +25,8 @@ eq('native alphabet default', v.nativeAlphabetNA, 'YES');
 eq('telecode default',        v.telecode, 'NO');
 eq('mailing default',         v.mailingSameAsHome, 'YES');
 eq('every constant answered', Object.values(v).every(Boolean), true);
+eq('security sweep on by default', v.securityAllNo, 'YES');
+eq('security sweep has no control', C.BY_KEY.securityAllNo.field, false);
 
 // -- merging ----------------------------------------------------------
 const merged = C.apply({ surname: 'DHARMAWAN', otherNamesUsed: '' });
@@ -60,7 +62,8 @@ eq('unknown key ignored', 'notAThing' in C.values(), false);
 // -- every constant has a matcher rule --------------------------------
 const M = require('../extension/matcher.js');
 const ruleKeys = new Set(M.RULES.map(r => r.key));
-const missing = C.CONSTANTS.filter(c => !ruleKeys.has(c.key)).map(c => c.key);
+const missing = C.CONSTANTS.filter(c => c.field !== false && !ruleKeys.has(c.key))
+                           .map(c => c.key);
 eq('all constants are fillable', missing, []);
 
 // -- and each one resolves from its real question text ----------------

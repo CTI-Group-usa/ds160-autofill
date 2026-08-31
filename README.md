@@ -15,6 +15,9 @@ Two pieces:
 - It never solves the security check (CAPTCHA) — the agent does.
 - It never clicks **Next**, **Sign**, or **Submit**.
 - It never touches the Application ID, security question, or answer.
+- On the Security and Background pages it answers No to every unanswered
+  question **only while that switch is on**, outlines each one on the page, and
+  lists them in the report for you to read before clicking Next.
 - It does not create, retrieve, or submit applications on its own.
 
 The agent stays in the loop for every page. The DS-160 preparer block must be
@@ -28,8 +31,9 @@ filled in honestly, and the applicant signs their own application.
    An `.xlsx` with several sheets is opened at **VISA APPLICATIONS**.
 3. Check the **Constant answers** panel once. These are DS-160 questions the
    intake form never asks (native alphabet, telecode, other names, relatives in
-   the U.S. …). They are answers on a visa application — read them, and change
-   any that are wrong for the applicant in front of you.
+   the U.S. …), plus the **Security and Background** sweep. They are answers on a
+   visa application — read them, and change any that are wrong for the applicant
+   in front of you.
 4. Work the list: fix every red **error** before booking an appointment — those
    are the ones that waste a slot.
 5. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension

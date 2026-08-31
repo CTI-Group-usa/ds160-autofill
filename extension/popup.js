@@ -27,6 +27,12 @@
   function showReport(rep) {
     if (rep.error) { $('report').innerHTML = '<div class="err">' + esc(rep.error) + '</div>'; return; }
     let h = '';
+    if (rep.security && rep.security.length) {
+      h += '<div class="sweep"><b>Answered &ldquo;No&rdquo; to ' + rep.security.length +
+           ' Security and Background question(s).</b> These are sworn answers &mdash; ' +
+           'read each one on the page before you click Next.<ul>' +
+           rep.security.map(s => '<li>' + esc(s.question) + '</li>').join('') + '</ul></div>';
+    }
     h += list('Filled', rep.filled, 'ok', x => esc(x.key) + ' &rarr; <code>' + esc(x.value) + '</code>');
     if (rep.postbackPending) {
       const p = rep.postbackPending;

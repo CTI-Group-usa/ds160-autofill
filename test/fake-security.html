@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Security and Background page</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top} h2{font-family:Georgia,serif}</style>
+</head>
+<body>
+<!-- Mimics the CEAC layout closely enough to exercise the sweep: Q:/A:
+     rows, radios named per question with _0/_1 ids, and the __doPostBack
+     onclick that makes answering Yes reveal an explanation box. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Security and Background: Part 1</h2>
+
+<table id="qs"></table>
+
+<hr>
+<!-- A question the agent already answered, plus one that must never be
+     touched, plus a non-binary radio group. -->
+<table>
+  <tr><td>Q:</td><td>Do you have a communicable disease of public health significance?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="pre_0" name="pre" value="Y"><label for="pre_0">Yes</label>
+    <input type="radio" id="pre_1" name="pre" value="N" checked><label for="pre_1">No</label>
+  </td></tr>
+  <tr><td>Q:</td><td>Security question answer (must never be filled)</td></tr>
+  <tr><td>A:</td><td><input type="text" id="ctl00_txtAnswer" name="txtAnswer"></td></tr>
+  <tr><td>Q:</td><td>Preferred contact method</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="pref_0" name="pref" value="EMAIL"><label for="pref_0">Email</label>
+    <input type="radio" id="pref_1" name="pref" value="PHONE"><label for="pref_1">Phone</label>
+    <input type="radio" id="pref_2" name="pref" value="POST"><label for="pref_2">Post</label>
+  </td></tr>
+</table>
+
+<script>
+const P = 'ctl00_SiteContentPlaceHolder_FormView1_';
+const QUESTIONS = [
+  'Do you seek to engage in espionage, sabotage, export control violations, or any other illegal activity while in the United States?',
+  'Do you seek to engage in terrorist activities while in the United States or have you ever engaged in terrorist activities?',
+  'Have you ever or do you intend to provide financial assistance or other support to terrorists or terrorist organizations?',
+  'Are you a member or representative of a terrorist organization?',
+  'Have you ever committed, ordered, incited, assisted, or otherwise participated in genocide?',
+  'Have you ever committed, ordered, incited, assisted, or otherwise participated in torture?',
+  'Have you ever been directly involved in the coercive transplantation of human organs or bodily tissue?',
+];
+document.getElementById('qs').innerHTML = QUESTIONS.map((q, i) => {
+  const n = P + 'rblSecurity' + i;
+  return '<tr><td>Q:</td><td>' + q + '</td></tr>' +
+    '<tr><td>A:</td><td>' +
+    '<input type="radio" id="' + n + '_0" name="' + n + '" value="Y" ' +
+      'onclick="javascript:setTimeout(\'__doPostBack(\\\'' + n + '\\\',\\\'\\\')\', 0)">' +
+    '<label for="' + n + '_0">Yes</label> ' +
+    '<input type="radio" id="' + n + '_1" name="' + n + '" value="N" ' +
+      'onclick="javascript:setTimeout(\'__doPostBack(\\\'' + n + '\\\',\\\'\\\')\', 0)">' +
+    '<label for="' + n + '_1">No</label>' +
+    '</td></tr>';
+}).join('');
+
+// Fail loudly if the sweep ever triggers a postback.
+window.__postbacks = [];
+window.__doPostBack = (t) => { window.__postbacks.push(t); };
+</script>
+<script src="../extension/matcher.js"></script>
+<script src="../extension/content.js"></script>
+</body>
+</html>
