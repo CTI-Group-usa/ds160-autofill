@@ -77,7 +77,8 @@
 window.__postbacks = [];
 window.__doPostBack = (t) => { window.__postbacks.push(t); };
 </script>
-<script src="../extension/matcher.js"></script>
-<script src="../extension/content.js"></script>
+<!-- cache-busted so an edit to the filler is picked up on reload -->
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
 </body>
 </html>

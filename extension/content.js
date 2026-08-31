@@ -55,6 +55,20 @@
      just above; only fall back to climbing ancestors. */
   function questionText(el) {
     const row = el.closest('tr');
+    const own = el.closest('td, th');
+
+    /* A "Does Not Apply" box is named by the first cell of its OWN row
+       ("U.S. Taxpayer ID Number"), not by the row above - which would be
+       the previous field and would tick the wrong box. */
+    if (row) {
+      for (const cell of row.children) {
+        if (cell === own) continue;
+        const t = cell.textContent.replace(/\s+/g, ' ').trim();
+        if (/^[QA]:?$/.test(t)) continue;
+        if (t.length >= 15 && t.length <= 600) return t;
+      }
+    }
+
     let prev = row && row.previousElementSibling;
     for (let i = 0; i < 4 && prev; i++, prev = prev.previousElementSibling) {
       const t = prev.textContent.replace(/\s+/g, ' ').replace(/^Q:\s*/, '').trim();

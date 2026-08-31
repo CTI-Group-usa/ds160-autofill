@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Personal Information 2</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top} h2{font-family:Georgia,serif}</style>
+</head>
+<body>
+<!-- The page that exposed the type-blind matcher: the permanent-resident
+     question mentions "country/region of origin (nationality)", which
+     read as the nationality field. The permanent-resident radio here is
+     deliberately given an id the rules do NOT know, so the match has to
+     come from the question text alone. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Personal Information 2</h2>
+
+<table>
+  <tr><td>Country/Region of Origin (Nationality)</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlAPP_POB_CNTRY">
+            <option value="">- SELECT ONE -</option><option value="IDN">INDONESIA</option>
+          </select></td></tr>
+
+  <tr><td>Q:</td><td>Do you hold or have you held any nationality other than the one indicated above on nationality?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAPP_OTH_NATL_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblAPP_OTH_NATL_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'a\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAPP_OTH_NATL_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAPP_OTH_NATL_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblAPP_OTH_NATL_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'a\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAPP_OTH_NATL_IND_1">No</label>
+  </td></tr>
+
+  <tr><td>Q:</td><td>Are you a permanent resident of a country/region other than your country/region of origin (nationality) indicated above?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPermRes_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblUnknownPermRes" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'b\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPermRes_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPermRes_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblUnknownPermRes" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'b\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPermRes_1">No</label>
+  </td></tr>
+
+  <tr><td>National Identification Number</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_NATIONAL_ID"></td></tr>
+
+  <tr><td>U.S. Social Security Number</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_SSN1" size="3">
+          <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_SSN2" size="2">
+          <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_SSN3" size="4"><br>
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_SSN_NA"
+                 onclick="javascript:setTimeout('__doPostBack(\'c\',\'\')', 0)">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_SSN_NA">Does Not Apply</label>
+      </td></tr>
+
+  <tr><td>U.S. Taxpayer ID Number</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_TAX_ID"><br>
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_TAX_ID_NA"
+                 onclick="javascript:setTimeout('__doPostBack(\'d\',\'\')', 0)">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_TAX_ID_NA">Does Not Apply</label>
+      </td></tr>
+</table>
+
+<script>
+window.__postbacks = [];
+window.__doPostBack = (t) => { window.__postbacks.push(t); };
+</script>
+<!-- cache-busted so an edit to the filler is picked up on reload -->
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body>
+</html>

@@ -53,8 +53,15 @@
       labels: [/telecode that represents your name/i] },
     { key: 'otherNationality',    kind: 'yesno', ids: [/APP_OTH_NATL_IND/i],
       labels: [/nationality other than the one/i] },
-    { key: 'otherCountryPermRes', kind: 'yesno', ids: [/APP_OTH_PERM_RESIDENT_IND/i],
+    { key: 'otherCountryPermRes', kind: 'yesno',
+      ids: [/APP_OTH_PERM_RESIDENT_IND/i, /PERM_RESIDENT/i, /PermResOther/i],
       labels: [/permanent resident of a country/i] },
+    // Both boxes just say "Does Not Apply", so they are told apart by the
+    // field name that questionText() picks up from the row above.
+    { key: 'ssnNA',   kind: 'checkbox', ids: [/APP_SSN_NA/i, /SSN.*_NA/i],
+      labels: [/social security number/i] },
+    { key: 'taxIdNA', kind: 'checkbox', ids: [/APP_TAX_ID_NA/i, /TAX_ID.*_NA/i],
+      labels: [/taxpayer id/i] },
     { key: 'mailingSameAsHome',   kind: 'yesno', ids: [/MAILING_ADDR_SAME/i],
       labels: [/mailing address.*same as.*home address/i] },
     { key: 'immediateRelativesUS', kind: 'yesno', ids: [/US_IMMED_RELATIVE_IND/i, /US_IMMEDIATE_RELATIVE/i],
@@ -131,6 +138,21 @@
     return FORBIDDEN.some(re => re.test(s));
   }
 
+  /* A rule only applies to the kind of control it describes.
+     Without this a Yes/No radio can match a text rule on wording alone -
+     "Are you a permanent resident of a country/region other than your
+     country/region of origin (nationality)..." reads as the nationality
+     field - and the filler then quietly writes nothing. */
+  function kindAllows(rule, ctl) {
+    const type = String(ctl.type || '').toLowerCase();
+    const tag = String(ctl.tag || '').toLowerCase();
+    const isRadio = type === 'radio', isCheck = type === 'checkbox';
+    if (!tag && !type) return true;                   // caller gave us no shape
+    if (rule.kind === 'yesno') return isRadio;
+    if (rule.kind === 'checkbox') return isCheck;
+    return !isRadio && !isCheck;                      // text / date
+  }
+
   /* Returns {key, via, part} or null.
      `part` is 'day' | 'month' | 'year' for the split date controls. */
   function matchKey(ctl, overrides) {
@@ -142,6 +164,7 @@
 
     for (const r of RULES) {
       if (r.not && (r.not.test(id) || r.not.test(name))) continue;
+      if (!kindAllows(r, ctl)) continue;
       for (const re of r.ids) {
         if (re.test(id) || re.test(name)) return { key: r.key, via: 'id', part: datePart(id) };
       }
@@ -149,6 +172,7 @@
     if (label) {
       for (const r of RULES) {
         if (r.not && (r.not.test(id) || r.not.test(name) || r.not.test(label))) continue;
+        if (!kindAllows(r, ctl)) continue;
         for (const re of r.labels || []) {
           if (re.test(label)) return { key: r.key, via: 'label', part: datePart(id) };
         }

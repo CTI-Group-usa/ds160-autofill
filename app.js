@@ -6,7 +6,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const STORE = 'ds160.rows';
-  const RECORD_V = 2;          // 2 = carries constant answers
+  const RECORD_V = 3;          // 3 = adds the Personal 2 'Does Not Apply' answers
 
   let rows = [];      // raw sheet rows (header -> value)
   let people = [];    // { rec, val }

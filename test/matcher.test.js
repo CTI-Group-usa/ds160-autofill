@@ -36,6 +36,45 @@ eq('sign blocked',     key('btnSignAndSubmit'), null);
 eq('appid blocked',    key('lblBarcode_ApplicationID'), null);
 eq('forbidden flag',   M.isForbidden('ctl00_captchaImage'), true);
 
+// -- a rule only applies to the kind of control it describes ---------
+// Regression: on Personal 2 the "Are you a permanent resident of a
+// country/region other than your country/region of origin (nationality)
+// indicated above?" radio matched the nationality TEXT rule on wording,
+// so the filler wrote "INDONESIA" into a Yes/No group and did nothing.
+const PERM_Q = 'Q: Are you a permanent resident of a country/region other than your ' +
+               'country/region of origin (nationality) indicated above? A: Yes No';
+eq('permanent-resident radio',
+   (M.matchKey({ id: 'ctl00_x_rblPermResOther_1', name: '', label: PERM_Q,
+                 type: 'radio', tag: 'input' }, {}) || {}).key,
+   'otherCountryPermRes');
+eq('nationality select still matches',
+   (M.matchKey({ id: P + 'ddlAPP_POB_CNTRY', name: '',
+                 label: 'Country/Region of Origin (Nationality)', tag: 'select' }, {}) || {}).key,
+   'nationality');
+eq('text rule never claims a radio',
+   M.matchKey({ id: 'ctl00_x_rbl', name: '', label: 'Marital Status',
+                type: 'radio', tag: 'input' }, {}),
+   null);
+eq('yesno rule never claims a text box',
+   M.matchKey({ id: P + 'tbxOTHER_NAMES_IND', name: '', label: 'Have you ever used other names?',
+                type: 'text', tag: 'input' }, {}),
+   null);
+eq('checkbox rule never claims a text box',
+   M.matchKey({ id: P + 'tbxAPP_SSN_NA', name: '', label: 'U.S. Social Security Number',
+                type: 'text', tag: 'input' }, {}),
+   null);
+
+// The two Personal 2 boxes both read "Does Not Apply"; only the field
+// name from the row above tells them apart.
+eq('ssn does-not-apply',
+   (M.matchKey({ id: P + 'cbexAPP_SSN_NA', name: '',
+                 label: 'Does Not Apply U.S. Social Security Number',
+                 type: 'checkbox', tag: 'input' }, {}) || {}).key, 'ssnNA');
+eq('taxpayer does-not-apply',
+   (M.matchKey({ id: P + 'cbexAPP_TAX_ID_NA', name: '',
+                 label: 'Does Not Apply U.S. Taxpayer ID Number',
+                 type: 'checkbox', tag: 'input' }, {}) || {}).key, 'taxIdNA');
+
 // -- overrides beat everything --------------------------------------
 eq('override wins',
   (M.matchKey({ id: 'weird_control_7', name: '', label: '' }, { weird_control_7: 'vesselName' }) || {}).key,

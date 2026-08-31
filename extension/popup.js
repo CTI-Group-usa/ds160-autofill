@@ -10,10 +10,10 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
-  const RECORD_V = 2;
+  const RECORD_V = 3;
   const CONST_KEYS = ['nativeAlphabetNA', 'otherNamesUsed', 'telecode', 'otherNationality',
-                      'otherCountryPermRes', 'mailingSameAsHome', 'immediateRelativesUS',
-                      'otherRelativesUS', 'securityAllNo'];
+                      'otherCountryPermRes', 'ssnNA', 'taxIdNA', 'mailingSameAsHome',
+                      'immediateRelativesUS', 'otherRelativesUS', 'securityAllNo'];
 
   function showWho(rec) {
     if (!rec) { $('who').innerHTML = 'No applicant loaded.'; return; }

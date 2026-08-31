@@ -74,6 +74,19 @@ postbacks. Before this, Personal 1 needed three page reloads for the native
 alphabet checkbox and the two Yes/No questions, which is what made it look
 like nothing was happening.
 
+## Rules are type-aware
+`matchKey()` only applies a rule to the kind of control it describes
+(`yesno` -> radio, `checkbox` -> checkbox, `text`/`date` -> everything else).
+Without that, Personal 2's "Are you a permanent resident of a country/region
+other than your country/region of origin **(nationality)** indicated above?"
+matched the `nationality` TEXT rule on wording, so the filler handed
+"INDONESIA" to a Yes/No group and silently did nothing. Keep `kind` accurate on
+every rule — it is load-bearing, not documentation.
+
+`questionText()` reads the control's **own** row before the rows above it: a
+"Does Not Apply" box is named by the first cell beside it ("U.S. Taxpayer ID
+Number"), and looking upward first ticked the previous field's box.
+
 ## Record versioning
 Records handed to the extension carry `_v` (`RECORD_V`, currently 2 = includes
 constant answers) and `_sentAt`. The popup shows a red banner when `_v` is
@@ -116,9 +129,12 @@ on the five Security and Background pages. Guards:
 - outlines every answer in amber and lists the question text in the popup report,
   so the agent reads them before clicking Next.
 
-`test/fake-security.html` is a stand-in DS-160 page for driving this in a normal
-browser; `content.js` exposes `window.DS160Filler` for it (isolated world, so it
-is not reachable from ceac.state.gov).
+`test/fake-personal1.html`, `fake-personal2.html` and `fake-security.html` are
+stand-in DS-160 pages using the real control ids, for driving the filler in a
+normal browser; `content.js` exposes `window.DS160Filler` for them (isolated
+world, so it is not reachable from ceac.state.gov). They cache-bust the filler
+scripts — without that the browser serves a stale `content.js` and a fix looks
+like it did not work.
 
 ## Known Gaps
 - Intake form does not collect: vessel name, US point of contact, intended
@@ -131,7 +147,7 @@ is not reachable from ceac.state.gov).
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 33 + xlsx 9 + constants 25 assertions
+npm test   # normalize 36 + matcher 40 + xlsx 9 + constants 25 assertions
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in
