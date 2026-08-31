@@ -54,7 +54,10 @@
            '. Auto-continue picks up where it left off; otherwise press Fill again.</div>';
     }
     h += list('Skipped', rep.skipped, 'warn', x => esc(x.key) + ' &ndash; ' + esc(x.why));
-    h += list('Not recognised', rep.unmatched.slice(0, 25), 'warn', x => '<code>' + esc(x.label || x.id) + '</code>');
+    // Both the label and the id: the id is what a new matcher rule needs.
+    h += list('Not recognised', rep.unmatched.slice(0, 25), 'warn',
+              x => esc((x.label || '').slice(0, 60)) +
+                   (x.id ? ' <code>' + esc(x.id.replace(/^ctl00_SiteContentPlaceHolder_FormView1_/, '')) + '</code>' : ''));
     $('report').innerHTML = h || '<div class="warn">Nothing on this page matched.</div>';
   }
 
