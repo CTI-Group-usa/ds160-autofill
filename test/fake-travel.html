@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Travel Information</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top} h2{font-family:Georgia,serif}</style>
+</head>
+<body>
+<!-- The Travel page. Ids here are deliberately NOT the ones the rules
+     guess, so every match has to come from the visible label - which is
+     the realistic case for a page nobody has captured yet. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Travel Information</h2>
+
+<table>
+  <tr><td>Purpose of Trip to the U.S.</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownPurpose">
+            <option value="">- SELECT ONE -</option>
+            <option>ALIEN IN TRANSIT (C)</option>
+            <option>BUSINESS OR TOURISM (TEMPORARY VISITOR) (B)</option>
+          </select></td></tr>
+  <tr><td>Specify</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownSpecify">
+            <option value="">- SELECT ONE -</option>
+            <option>CREWMEMBER IN TRANSIT (C1/D)</option>
+            <option>TRANSIT (C1)</option>
+          </select></td></tr>
+
+  <tr><td>Q:</td><td>Have you made specific travel plans?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPlans_0"
+           name="ctl00$x$rblUnknownPlans" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'p\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPlans_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPlans_1"
+           name="ctl00$x$rblUnknownPlans" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'p\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblUnknownPlans_1">No</label>
+  </td></tr>
+
+  <tr><td>Date of Arrival in U.S.</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownArriveDay">
+      <option value="">-</option><option>15</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownArriveMonth">
+      <option value="">-</option><option value="OCT">OCT</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownArriveYear" size="4">
+  </td></tr>
+  <tr><td>Arrival Flight (if known)</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownArriveFlight"></td></tr>
+  <tr><td>Arrival City</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownArriveCity"></td></tr>
+
+  <tr><td>Date of Departure from U.S.</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownDepartDay">
+      <option value="">-</option><option>20</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownDepartMonth">
+      <option value="">-</option><option value="APR">APR</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownDepartYear" size="4">
+  </td></tr>
+  <tr><td>Departure Flight (if known)</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownDepartFlight"></td></tr>
+  <tr><td>Departure City</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownDepartCity"></td></tr>
+
+  <tr><td>Address where you will stay in the U.S.</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownStay"></td></tr>
+  <tr><td>Person/Entity Paying for Your Trip</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownPayer"></td></tr>
+</table>
+
+<script>
+window.__postbacks = [];
+window.__doPostBack = (t) => { window.__postbacks.push(t); };
+</script>
+<!-- cache-busted so an edit to the filler is picked up on reload -->
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body>
+</html>

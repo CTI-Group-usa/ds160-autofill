@@ -34,11 +34,15 @@ filled in honestly, and the applicant signs their own application.
    the U.S. …), plus the **Security and Background** sweep. They are answers on a
    visa application — read them, and change any that are wrong for the applicant
    in front of you.
-4. Work the list: fix every red **error** before booking an appointment — those
+4. Fill in **Trip details** for the applicant: arrival date, city, flight,
+   vessel, who is paying, U.S. contact. The intake form does not collect these,
+   and they belong to that one person — `copy from...` saves retyping the
+   cruise-line details for the next applicant.
+5. Work the list: fix every red **error** before booking an appointment — those
    are the ones that waste a slot.
-5. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension
+6. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension
    is not installed).
-6. On each DS-160 page press **Fill this page**, review, then click Next yourself.
+7. On each DS-160 page press **Fill this page**, review, then click Next yourself.
 
 ### Faster still, with no software at all
 

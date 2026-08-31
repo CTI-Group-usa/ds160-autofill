@@ -19,6 +19,7 @@ index.html    — worksheet SPA shell
 app.js        — CSV parsing, applicant list, detail rendering, extension bridge
 normalize.js  — sheet row -> canonical DS-160 record + validation  (SHARED, tested)
 constants.js  — constant answers the intake form never collects  (SHARED, tested)
+trip.js       — per-applicant travel / U.S. contact details       (SHARED, tested)
 xlsx.js       — dependency-free .xlsx reader (ZIP + XML)  (SHARED, tested)
 style.css     — all styles, light/dark via CSS variables
 server.js     — local static preview on :7773
@@ -73,6 +74,30 @@ Measured on `test/fake-personal1.html`: 12 fields filled in one pass, zero
 postbacks. Before this, Personal 1 needed three page reloads for the native
 alphabet checkbox and the two Yes/No questions, which is what made it look
 like nothing was happening.
+
+## Trip details (`trip.js`)
+The Travel and U.S. Contact pages need an arrival date, city, flight, vessel,
+who is paying and a U.S. point of contact — none of which the intake form asks
+for. **Each DS-160 is a personal application**, so these are stored *per
+applicant*, keyed on passport number (email, then name, as fallbacks), and
+edited inline in that applicant's own detail view. An early draft scoped them
+to the whole file as "batch" values; the user corrected that — do not
+reintroduce it. `copy from...` exists so the cruise-line details need not be
+retyped, but it is an explicit per-applicant action.
+
+`purposeOfTrip` / `specifyPurpose` default to `ALIEN IN TRANSIT (C)` /
+`CREWMEMBER IN TRANSIT (C1/D)` because every C1/D application uses them; both
+are editable.
+
+Trip details and constants are merged in `build()` **before** validation, so
+the worksheet's error list reflects what will actually be filled. Any edit
+calls `rebuild()`, not `renderDetail()`.
+
+**Still not collected anywhere:** the Cruise Line Deployment Report sheet
+(`begbjf0b04d7026534b328e36baa0a9d82df7`, read by the Indonesia monitoring
+dashboard) already holds *Joining Ship*, *Sign On Date* and *Sign On Port* per
+seafarer — the obvious source for `vesselName` / `arrivalDate` / `arrivalCity`
+instead of typing. Not wired up yet.
 
 ## Rules are type-aware
 `matchKey()` only applies a rule to the kind of control it describes
@@ -129,9 +154,10 @@ on the five Security and Background pages. Guards:
 - outlines every answer in amber and lists the question text in the popup report,
   so the agent reads them before clicking Next.
 
-`test/fake-personal1.html`, `fake-personal2.html` and `fake-security.html` are
-stand-in DS-160 pages using the real control ids, for driving the filler in a
-normal browser; `content.js` exposes `window.DS160Filler` for them (isolated
+`test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html` and
+`fake-security.html` are stand-in DS-160 pages for driving the filler in a
+normal browser (the Travel one uses deliberately unknown ids, so it proves the
+label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated
 world, so it is not reachable from ceac.state.gov). They cache-bust the filler
 scripts — without that the browser serves a stale `content.js` and a fix looks
 like it did not work.
@@ -147,7 +173,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 40 + xlsx 9 + constants 25 assertions
+npm test   # normalize 36 + matcher 40 + xlsx 9 + constants 25 + trip 26 assertions
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

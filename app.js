@@ -6,7 +6,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const STORE = 'ds160.rows';
-  const RECORD_V = 3;          // 3 = adds the Personal 2 'Does Not Apply' answers
+  const RECORD_V = 4;          // 4 = adds per-applicant trip details
 
   let rows = [];      // raw sheet rows (header -> value)
   let people = [];    // { rec, val }
@@ -55,7 +55,10 @@
   function build() {
     people = rows
       .filter(r => (r['Name'] || '').trim())
-      .map(r => { const rec = DS160.toRecord(r); return { rec, val: DS160.validate(rec) }; });
+      .map(r => {
+        const rec = DS160Const.apply(DS160Trip.apply(DS160.toRecord(r)));
+        return { rec, val: DS160.validate(rec) };
+      });
     $('loader').hidden = true;
     $('main').hidden = false;
     $('constPanel').hidden = false;
@@ -120,6 +123,16 @@
 
   function select(i) { selected = i; renderList(); renderDetail(); }
 
+  /* Trip details and constants feed validation, so an edit has to run
+     the records through again rather than just repaint. */
+  function rebuild() {
+    const keep = selected;
+    build();
+    selected = Math.min(keep, people.length - 1);
+    renderList();
+    renderDetail();
+  }
+
   // -- detail ----------------------------------------------------------
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, c =>
@@ -130,7 +143,7 @@
     const p = people[selected];
     if (!p) { $('detail').innerHTML = '<div class="empty">Pick an applicant.</div>'; return; }
     const val = p.val;
-    const rec = DS160Const.apply(p.rec);   // seafarer data always wins
+    const rec = p.rec;   // constants and trip details are already merged in
     const flagged = {};
     val.errors.forEach(e => flagged[e.field] = 'bad');
     val.warnings.forEach(w => { if (!flagged[w.field]) flagged[w.field] = 'flag'; });
@@ -171,6 +184,29 @@
       h += '</table></div>';
     }
 
+    const tv = DS160Trip.values(rec);
+    let page = '';
+    h += '<div class="sec"><h3>Trip details &mdash; this applicant</h3>' +
+         '<p class="secnote">Not collected by the intake form. Stored against passport ' +
+         esc(rec.passportNumber || '(none)') + '.</p><table>';
+    for (const f of DS160Trip.FIELDS) {
+      if (f.page !== page) { page = f.page; h += '<tr><td class="grp" colspan="3">' + esc(page) + '</td></tr>'; }
+      const v = tv[f.key] || '';
+      const input = f.kind === 'yesno'
+        ? '<select class="tf" data-k="' + esc(f.key) + '">' +
+          ['YES', 'NO', ''].map(o => '<option value="' + o + '"' + (v === o ? ' selected' : '') + '>' +
+            (o || 'leave blank') + '</option>').join('') + '</select>'
+        : '<input class="tf" data-k="' + esc(f.key) + '" value="' + esc(v) + '"' +
+          (f.hint ? ' title="' + esc(f.hint) + '"' : '') + '>';
+      h += '<tr><td class="k">' + esc(f.label) +
+           (f.hint ? '<br><small>' + esc(f.hint) + '</small>' : '') +
+           '</td><td class="v" colspan="2">' + input + '</td></tr>';
+    }
+    h += '</table><div class="row"><select id="tripFrom"><option value="">copy from...</option>' +
+         people.map((q, i) => i === selected ? '' :
+           '<option value="' + i + '">' + esc(q.rec.surname + ', ' + q.rec.givenNames) + '</option>').join('') +
+         '</select><button id="tripClear" class="tiny">Clear</button></div></div>';
+
     const consts = DS160Const.active();
     if (consts.length) {
       h += '<div class="sec"><h3>Constant answers &mdash; not from the seafarer</h3><table>';
@@ -198,6 +234,20 @@
   }
 
   function wireDetail(rec) {
+    $('detail').querySelectorAll('.tf').forEach(el => {
+      el.addEventListener('change', () => {
+        DS160Trip.set(rec, el.dataset.k, el.value);
+        rebuild();
+      });
+    });
+    $('tripFrom').addEventListener('change', ev => {
+      const i = +ev.target.value;
+      if (ev.target.value === '' || !people[i]) return;
+      DS160Trip.copy(people[i].rec, rec);
+      rebuild();
+    });
+    $('tripClear').addEventListener('click', () => { DS160Trip.clear(rec); rebuild(); });
+
     $('detail').querySelectorAll('.cp').forEach(b => b.addEventListener('click', () => {
       navigator.clipboard.writeText(b.dataset.v);
       b.textContent = 'copied';
@@ -283,13 +333,13 @@
       sel.addEventListener('change', () => {
         DS160Const.set(sel.dataset.key, sel.value);
         renderConstants();
-        renderDetail();
+        rebuild();
       });
     });
   }
 
   // -- wiring ----------------------------------------------------------
-  $('constReset').addEventListener('click', () => { DS160Const.reset(); renderConstants(); renderDetail(); });
+  $('constReset').addEventListener('click', () => { DS160Const.reset(); renderConstants(); rebuild(); });
   $('btnParse').addEventListener('click', () => loadText($('paste').value));
   $('btnLoad').addEventListener('click', () => { $('loader').hidden = false; $('main').hidden = true; });
   $('search').addEventListener('input', renderList);

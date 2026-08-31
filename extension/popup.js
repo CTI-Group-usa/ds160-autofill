@@ -10,7 +10,7 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
-  const RECORD_V = 3;
+  const RECORD_V = 4;
   const CONST_KEYS = ['nativeAlphabetNA', 'otherNamesUsed', 'telecode', 'otherNationality',
                       'otherCountryPermRes', 'ssnNA', 'taxIdNA', 'mailingSameAsHome',
                       'immediateRelativesUS', 'otherRelativesUS', 'securityAllNo'];

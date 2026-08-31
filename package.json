@@ -4,7 +4,7 @@
   "private": true,
   "description": "CTI DS-160 worksheet + CEAC autofill extension",
   "scripts": {
-    "test": "node test/normalize.test.js && node test/matcher.test.js && node test/xlsx.test.js && node test/constants.test.js",
+    "test": "node test/normalize.test.js && node test/matcher.test.js && node test/xlsx.test.js && node test/constants.test.js && node test/trip.test.js",
     "serve": "node server.js"
   }
 }
