@@ -10,10 +10,15 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
-  const RECORD_V = 5;
-  const CONST_KEYS = ['otherNamesUsed', 'telecode', 'otherNationality',
-                      'otherCountryPermRes', 'ssnNA', 'taxIdNA', 'mailingSameAsHome',
-                      'immediateRelativesUS', 'otherRelativesUS', 'securityAllNo'];
+  const RECORD_V = 6;
+  // Kept in step with constants.js; used only to show a count.
+  const CONST_KEYS = ['otherNamesUsed', 'telecode', 'otherNationality', 'otherCountryPermRes',
+                      'ssnNA', 'taxIdNA', 'travelCompanions', 'lengthOfStay', 'lengthOfStayUnit',
+                      'stayAddress', 'tripPayer', 'payerCompany', 'payerPhone', 'payerRelationship',
+                      'payerAddr1', 'payerCity', 'payerState', 'payerZip', 'payerCountry',
+                      'usPocSurname', 'usPocGiven', 'usPocOrg', 'usPocRelationship', 'usPocAddr1',
+                      'usPocAddr2', 'usPocCity', 'usPocState', 'usPocZip', 'usPocPhone', 'usPocEmail',
+                      'mailingSameAsHome', 'immediateRelativesUS', 'otherRelativesUS', 'securityAllNo'];
 
   function showWho(rec) {
     if (!rec) { $('who').innerHTML = 'No applicant loaded.'; return; }

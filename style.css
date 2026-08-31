@@ -121,3 +121,8 @@ input.tf,select.tf{width:100%;padding:4px 6px;border:1px solid var(--line);borde
 #letterMsg{font-size:12px}
 #letterMsg.ok{color:var(--ok)}
 #letterMsg.err{color:var(--err)}
+
+.constgrp{margin:10px 0 2px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;
+          color:var(--muted);font-weight:600}
+input.cf{font:inherit;font-size:12px;padding:4px 6px;border:1px solid var(--line);
+         border-radius:6px;background:var(--bg);color:var(--ink);flex:0 0 240px;max-width:240px}

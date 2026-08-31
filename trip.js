@@ -31,11 +31,6 @@
     { key: 'arrivalDate', page: 'Travel', kind: 'date',
       label: 'Intended Date of Arrival in U.S.', def: '',
       hint: 'The sign-on date. Any format - it is converted to DD-MMM-YYYY.' },
-    { key: 'lengthOfStay', page: 'Travel', label: 'Intended Length of Stay', def: '',
-      hint: 'A number - the contract length. The filed sample says 8.',
-      showWhen: { key: 'specificTravelPlans', is: 'NO' } },
-    { key: 'lengthOfStayUnit', page: 'Travel', label: 'Length of Stay - unit', def: 'MONTH(S)',
-      showWhen: { key: 'specificTravelPlans', is: 'NO' } },
     { key: 'arrivalFlight', page: 'Travel', label: 'Arrival Flight (if known)', def: '',
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'arrivalCity', page: 'Travel', label: 'Arrival City', def: '',
@@ -48,10 +43,6 @@
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'departureCity', page: 'Travel', label: 'Departure City', def: '',
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
-    { key: 'stayAddress', page: 'Travel', label: 'Address where you will stay in the U.S.', def: '',
-      hint: 'Usually the vessel at its berth, or the crew hotel.' },
-    { key: 'tripPayer', page: 'Travel', label: 'Person or entity paying for the trip', def: '',
-      hint: 'Normally the cruise line.' },
     { key: 'jobTitleAboard', page: 'Crew Visa', label: 'Specific job title aboard the vessel', def: '',
       hint: 'The "Working in the Capacity of" line in the supporting letter.' },
     { key: 'vesselName', page: 'Crew Visa', label: 'Seagoing Ship / Vessel Name', def: '',
@@ -59,12 +50,6 @@
     { key: 'vesselImo', page: 'Crew Visa', label: 'Vessel Identification Number (IMO)', def: '',
       hint: 'From the supporting letter - differs per applicant.' },
 
-    { key: 'usPocName', page: 'U.S. Contact', label: 'Contact person in the U.S.', def: '' },
-    { key: 'usPocOrg', page: 'U.S. Contact', label: 'Organization name', def: '',
-      hint: 'The cruise line or its U.S. agent.' },
-    { key: 'usPocAddress', page: 'U.S. Contact', label: 'U.S. contact address', def: '' },
-    { key: 'usPocPhone', page: 'U.S. Contact', label: 'U.S. contact phone', def: '' },
-    { key: 'usPocEmail', page: 'U.S. Contact', label: 'U.S. contact email', def: '' },
   ];
 
   const BY_KEY = FIELDS.reduce((m, f) => (m[f.key] = f, m), {});

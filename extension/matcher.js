@@ -118,11 +118,35 @@
       labels: [/specific job title aboard/i] },
     { key: 'tripPayer',      kind: 'text',  ids: [/WHO_IS_PAYING/i], labels: [/paying for your trip/i] },
 
-    { key: 'usPocName',    kind: 'text', ids: [/POC_(SURNAME|GIVEN)/i, /USPOC/i], labels: [/contact person/i] },
-    { key: 'usPocOrg',     kind: 'text', ids: [/POC_ORGANIZATION/i], labels: [/organization name/i] },
-    { key: 'usPocAddress', kind: 'text', ids: [/POC_ADDR_LN1/i], labels: [/u\.?s\.? contact.*address|street address.*contact/i] },
-    { key: 'usPocPhone',   kind: 'text', ids: [/POC_HOME_TEL/i], labels: [/phone number.*contact/i] },
-    { key: 'usPocEmail',   kind: 'text', ids: [/POC_EMAIL_ADDR/i], labels: [/e-?mail address.*contact/i] },
+    // Person/entity paying for the trip - a whole block appears once the
+    // answer is COMPANY/ORGANIZATION.
+    { key: 'payerCompany',      kind: 'text', ids: [/PAYER_NAME/i, /PayerCompany/i],
+      labels: [/company.*organization paying/i] },
+    { key: 'payerPhone',        kind: 'text', ids: [/PAYER_TEL/i, /PAYER_PHONE/i] },
+    { key: 'payerRelationship', kind: 'text', ids: [/PAYER_REL/i] },
+    { key: 'payerAddr1',        kind: 'text', ids: [/PAYER_ADDR_LN1/i],
+      labels: [/address of company.*paying/i] },
+    { key: 'payerCity',         kind: 'text', ids: [/PAYER_ADDR_CITY/i] },
+    { key: 'payerState',        kind: 'text', ids: [/PAYER_ADDR_STATE/i] },
+    { key: 'payerZip',          kind: 'text', ids: [/PAYER_ADDR_POSTAL/i] },
+    { key: 'payerCountry',      kind: 'text', ids: [/PAYER_ADDR_CNTRY/i] },
+    { key: 'travelCompanions',  kind: 'yesno', ids: [/OTHER_PERS_TRAVELING/i, /TravelingWith/i],
+      labels: [/other persons traveling with you/i] },
+
+    // U.S. point of contact. Surname and given name are separate boxes,
+    // so they are separate answers: "XAVIER, MARCOS" must not be split
+    // by guessing where the surname ends.
+    { key: 'usPocSurname',      kind: 'text', ids: [/POC_SURNAME/i], labels: [/surnames of contact/i] },
+    { key: 'usPocGiven',        kind: 'text', ids: [/POC_GIVEN_NAME/i], labels: [/given names of contact/i] },
+    { key: 'usPocOrg',          kind: 'text', ids: [/POC_ORGANIZATION/i], labels: [/organization name/i] },
+    { key: 'usPocRelationship', kind: 'text', ids: [/POC_REL_TO_APP/i] },
+    { key: 'usPocAddr1',        kind: 'text', ids: [/POC_ADDR_LN1/i], labels: [/u\.?s\.? contact.*address/i] },
+    { key: 'usPocAddr2',        kind: 'text', ids: [/POC_ADDR_LN2/i] },
+    { key: 'usPocCity',         kind: 'text', ids: [/POC_ADDR_CITY/i] },
+    { key: 'usPocState',        kind: 'text', ids: [/POC_ADDR_STATE/i] },
+    { key: 'usPocZip',          kind: 'text', ids: [/POC_ADDR_POSTAL/i] },
+    { key: 'usPocPhone',        kind: 'text', ids: [/POC_HOME_TEL/i], labels: [/phone number.*contact/i] },
+    { key: 'usPocEmail',        kind: 'text', ids: [/POC_EMAIL_ADDR/i], labels: [/e-?mail address.*contact/i] },
 
     { key: 'fatherName',   kind: 'text', ids: [/FATHER_(SURNAME|GIVEN_NAME)/i], labels: [/father.*(surname|given name)/i] },
     { key: 'fatherDob',    kind: 'date', ids: [/FATHER_DOB(Day|Month|Year)/i], labels: [/father.*date of birth/i] },
@@ -231,7 +255,7 @@
 
   /* Record fields that hold ONE full name but land in two CEAC boxes
      (Surnames + Given Names). Same mononym convention as normalize.js. */
-  const FULLNAME_KEYS = ['fatherName', 'motherName', 'spouseName', 'usPocName', 'prevSupervisor'];
+  const FULLNAME_KEYS = ['fatherName', 'motherName', 'spouseName', 'prevSupervisor'];
 
   function nameHalf(id, value) {
     const isSur = /SURNAME/i.test(id), isGiven = /GIVEN/i.test(id);

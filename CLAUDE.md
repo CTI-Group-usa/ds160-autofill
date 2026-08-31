@@ -77,6 +77,28 @@ postbacks. Before this, Personal 1 needed three page reloads for the native
 alphabet checkbox and the two Yes/No questions, which is what made it look
 like nothing was happening.
 
+## What is constant vs. per applicant
+The split matters and the user has corrected it twice, so keep it straight.
+
+**`constants.js` - the same on every application CTI files.** The yes/no answers
+the intake form never asks, plus (added 2026-08-31 from the filed sample, at the
+user's instruction) two whole blocks that describe the **cruise line, not the
+seafarer**: the *Person/Entity Paying for Your Trip* block (COMPANY/ORGANIZATION,
+CARNIVAL UK, its phone, EMPLOYER, and its Southampton address) and the *U.S.
+Contact* block (XAVIER / MARCOS, DO NOT KNOW, BUSINESS ASSOCIATE, the Plantation
+FL address, phone and email). Also `travelCompanions` = NO and the intended
+length of stay. These are Carnival UK values - a different principal means
+editing them in the panel, which is why they are text fields rather than
+hardcoded.
+
+**`trip.js` - genuinely different per seafarer:** the vessel, its IMO number,
+the shipboard rank and the sign-on date, all of which come from that seafarer's
+own supporting letter.
+
+`usPocName` was one field holding "XAVIER, MARCOS"; it is now `usPocSurname` and
+`usPocGiven`, because CEAC has separate boxes and guessing where the surname
+ends would be wrong. `usPocName` is gone from `FULLNAME_KEYS`.
+
 ## Trip details (`trip.js`)
 The Travel and U.S. Contact pages need an arrival date, city, flight, vessel,
 who is paying and a U.S. point of contact — none of which the intake form asks

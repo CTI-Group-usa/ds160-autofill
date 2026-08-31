@@ -6,7 +6,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const STORE = 'ds160.rows';
-  const RECORD_V = 5;          // 5 = native name filled, travel plans No + length of stay
+  const RECORD_V = 6;          // 6 = US contact + paying company as constants
 
   let rows = [];      // raw sheet rows (header -> value)
   let people = [];    // { rec, val }
@@ -424,20 +424,25 @@
   function renderConstants() {
     const v = DS160Const.values();
     const on = Object.values(v).filter(Boolean).length;
-    $('constCount').textContent = on + ' of ' + DS160Const.CONSTANTS.length + ' answered automatically';
+    $('constCount').textContent = on + ' of ' + DS160Const.CONSTANTS.length + ' filled automatically';
+    let page = '';
     $('constList').innerHTML = DS160Const.CONSTANTS.map(c => {
       const cur = v[c.key];
-      const opts = c.kind === 'checkbox'
-        ? [['YES', 'Tick "Does Not Apply"'], ['', 'Leave to the agent']]
-        : c.kind === 'toggle'
-        ? [['YES', 'Answer "No" to all'], ['', 'Leave to the agent']]
-        : [['NO', 'No'], ['YES', 'Yes'], ['', 'Leave to the agent']];
-      return '<div class="const"><div><b>' + esc(c.label) + '</b>' +
-        '<small>' + esc(c.page) + ' &middot; ' + esc(c.why) + '</small></div>' +
-        '<select data-key="' + esc(c.key) + '">' +
-        opts.map(([val, txt]) =>
-          '<option value="' + esc(val) + '"' + (cur === val ? ' selected' : '') + '>' + esc(txt) + '</option>'
-        ).join('') + '</select></div>';
+      const control = c.kind === 'text'
+        ? '<input class="cf" data-key="' + esc(c.key) + '" value="' + esc(cur || '') + '">'
+        : '<select data-key="' + esc(c.key) + '">' +
+          (c.kind === 'checkbox'
+            ? [['YES', 'Tick "Does Not Apply"'], ['', 'Leave to the agent']]
+            : c.kind === 'toggle'
+            ? [['YES', 'Answer "No" to all'], ['', 'Leave to the agent']]
+            : [['NO', 'No'], ['YES', 'Yes'], ['', 'Leave to the agent']]
+          ).map(([val, txt]) =>
+            '<option value="' + esc(val) + '"' + (cur === val ? ' selected' : '') + '>' + esc(txt) + '</option>'
+          ).join('') + '</select>';
+      let head = '';
+      if (c.page !== page) { page = c.page; head = '<div class="constgrp">' + esc(c.page) + '</div>'; }
+      return head + '<div class="const"><div><b>' + esc(c.label) + '</b>' +
+        (c.why ? '<small>' + esc(c.why) + '</small>' : '') + '</div>' + control + '</div>';
     }).join('');
 
     $('constList').querySelectorAll('select').forEach(sel => {
@@ -446,6 +451,9 @@
         renderConstants();
         rebuild();
       });
+    });
+    $('constList').querySelectorAll('input.cf').forEach(el => {
+      el.addEventListener('change', () => { DS160Const.set(el.dataset.key, el.value); rebuild(); });
     });
   }
 
