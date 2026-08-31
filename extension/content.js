@@ -15,7 +15,8 @@
 
   // -- reading the page ----------------------------------------------
   const FILLABLE =
-    'input[type=text], input[type=tel], input[type=email], input:not([type]), textarea, select, input[type=radio]';
+    'input[type=text], input[type=tel], input[type=email], input:not([type]), textarea, select, ' +
+    'input[type=radio], input[type=checkbox]';
 
   function visible(el) {
     if (el.disabled || el.readOnly) return false;
@@ -48,6 +49,17 @@
     return (el.title || el.placeholder || '').trim();
   }
 
+  /* Yes/No questions live in a Q:/A: block, so the adjacent cell is
+     often just "A:". Climb until an ancestor holds the real sentence. */
+  function questionText(el) {
+    let n = el.parentElement;
+    for (let i = 0; i < 7 && n; i++, n = n.parentElement) {
+      const t = n.textContent.replace(/\s+/g, ' ').trim();
+      if (t.length >= 15 && t.length <= 600) return t;
+    }
+    return '';
+  }
+
   function controls() {
     return Array.from(document.querySelectorAll(FILLABLE))
       .filter(visible)
@@ -57,7 +69,9 @@
         name: el.name || '',
         tag: el.tagName.toLowerCase(),
         type: (el.type || '').toLowerCase(),
-        label: deriveLabel(el),
+        label: (el.type === 'radio' || el.type === 'checkbox')
+          ? (deriveLabel(el) + ' ' + questionText(el)).trim()
+          : deriveLabel(el),
       }));
   }
 
@@ -110,6 +124,14 @@
     return true;
   }
 
+  function setCheckbox(el, value) {
+    const want = String(value).trim().toUpperCase() === 'YES';
+    if (el.checked === want) return false;
+    el.checked = want;
+    fire(el, ['click', 'change']);
+    return true;
+  }
+
   function mark(el, ok) {
     el.setAttribute(MARK, ok ? '1' : '0');
     el.style.outline = ok ? '2px solid #16a34a' : '2px solid #f59e0b';
@@ -152,7 +174,8 @@
       }
       const value = valueFor(rec, m.key, c);
       if (!value) { report.skipped.push({ id: c.id, key: m.key, why: 'no value in record' }); continue; }
-      if (!opts.overwrite && c.type !== 'radio' && c.el.value && c.el.value.trim() && !c.el.hasAttribute(MARK)) {
+      if (!opts.overwrite && c.type !== 'radio' && c.type !== 'checkbox' &&
+          c.el.value && c.el.value.trim() && !c.el.hasAttribute(MARK)) {
         report.skipped.push({ id: c.id, key: m.key, why: 'already has a value' });
         continue;
       }
@@ -160,6 +183,7 @@
 
       let ok = false;
       if (c.type === 'radio') { ok = setRadio(radioGroups[c.name], value); done.add(c.name); }
+      else if (c.type === 'checkbox') ok = setCheckbox(c.el, value);
       else if (c.tag === 'select') ok = setSelect(c.el, value);
       else ok = setText(c.el, value);
 
@@ -172,6 +196,7 @@
       const d = deferred[0];
       let ok = false;
       if (d.c.type === 'radio') ok = setRadio(radioGroups[d.c.name], d.value);
+      else if (d.c.type === 'checkbox') ok = setCheckbox(d.c.el, d.value);
       else if (d.c.tag === 'select') ok = setSelect(d.c.el, d.value);
       else ok = setText(d.c.el, d.value);
       report.postbackPending = { id: d.c.id, key: d.m.key, value: String(d.value), applied: ok, remaining: deferred.length - 1 };

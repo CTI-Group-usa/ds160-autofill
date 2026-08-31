@@ -42,6 +42,26 @@
     { key: 'nationality',    kind: 'text',  ids: [/APP_POB_CNTRY/i, /APP_NATL/i], labels: [/country.*region of (birth|origin)|nationality/i] },
     { key: 'nationalId',     kind: 'text',  ids: [/APP_NATIONAL_ID/i], labels: [/national identification/i] },
 
+    // Constant answers (see constants.js) - questions the intake form
+    // never asks. The NA checkbox must not swallow the native-name text
+    // box next to it, hence the explicit _NA anchoring.
+    { key: 'nativeAlphabetNA',    kind: 'checkbox', ids: [/FULL_NAME_NATIVE.*_NA\b/i, /_NATIVE_NA\b/i],
+      labels: [/does not apply.*technology not available/i] },
+    { key: 'otherNamesUsed',      kind: 'yesno', ids: [/OTHER_NAMES_IND/i, /rblOtherNames/i],
+      labels: [/ever used other names/i] },
+    { key: 'telecode',            kind: 'yesno', ids: [/TELECODE_QUESTION_IND/i, /rblTelecodeQuestion/i],
+      labels: [/telecode that represents your name/i] },
+    { key: 'otherNationality',    kind: 'yesno', ids: [/APP_OTH_NATL_IND/i],
+      labels: [/nationality other than the one/i] },
+    { key: 'otherCountryPermRes', kind: 'yesno', ids: [/APP_OTH_PERM_RESIDENT_IND/i],
+      labels: [/permanent resident of a country/i] },
+    { key: 'mailingSameAsHome',   kind: 'yesno', ids: [/MAILING_ADDR_SAME/i],
+      labels: [/mailing address.*same as.*home address/i] },
+    { key: 'immediateRelativesUS', kind: 'yesno', ids: [/US_IMMED_RELATIVE_IND/i, /US_IMMEDIATE_RELATIVE/i],
+      labels: [/immediate relatives.*united states/i] },
+    { key: 'otherRelativesUS',    kind: 'yesno', ids: [/US_OTHER_RELATIVE_IND/i],
+      labels: [/other relatives in the united states/i] },
+
     { key: 'homeAddress',    kind: 'text',  ids: [/APP_ADDR_LN1/i], labels: [/street address/i] },
     { key: 'phone',          kind: 'text',  ids: [/APP_HOME_TEL/i, /PRIMARY.*PHONE/i], labels: [/primary phone/i] },
     { key: 'email',          kind: 'text',  ids: [/APP_EMAIL_ADDR/i], labels: [/^e-?mail address/i] },

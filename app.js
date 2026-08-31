@@ -57,6 +57,8 @@
       .map(r => { const rec = DS160.toRecord(r); return { rec, val: DS160.validate(rec) }; });
     $('loader').hidden = true;
     $('main').hidden = false;
+    $('constPanel').hidden = false;
+    renderConstants();
     renderList();
     if (people.length) select(0);
   }
@@ -126,7 +128,8 @@
   function renderDetail() {
     const p = people[selected];
     if (!p) { $('detail').innerHTML = '<div class="empty">Pick an applicant.</div>'; return; }
-    const { rec, val } = p;
+    const val = p.val;
+    const rec = DS160Const.apply(p.rec);   // seafarer data always wins
     const flagged = {};
     val.errors.forEach(e => flagged[e.field] = 'bad');
     val.warnings.forEach(w => { if (!flagged[w.field]) flagged[w.field] = 'flag'; });
@@ -166,6 +169,19 @@
       }
       h += '</table></div>';
     }
+
+    const consts = DS160Const.active();
+    if (consts.length) {
+      h += '<div class="sec"><h3>Constant answers &mdash; not from the seafarer</h3><table>';
+      for (const c of consts) {
+        h += '<tr class="flag"><td class="k">' + esc(c.label) +
+             '<br><small>' + esc(c.page) + ' &middot; ' + esc(c.why) + '</small></td>' +
+             '<td class="v">' + esc(c.kind === 'checkbox' ? (c.value === 'YES' ? 'ticked' : 'left blank') : c.value) +
+             '</td><td class="a"></td></tr>';
+      }
+      h += '</table></div>';
+    }
+
     $('detail').innerHTML = h;
     wireDetail(rec);
   }
@@ -229,7 +245,35 @@
 
   const hasExtension = () => document.documentElement.getAttribute('data-ds160-extension') === '1';
 
+  // -- constant answers -------------------------------------------------
+  function renderConstants() {
+    const v = DS160Const.values();
+    const on = Object.values(v).filter(Boolean).length;
+    $('constCount').textContent = on + ' of ' + DS160Const.CONSTANTS.length + ' answered automatically';
+    $('constList').innerHTML = DS160Const.CONSTANTS.map(c => {
+      const cur = v[c.key];
+      const opts = c.kind === 'checkbox'
+        ? [['YES', 'Tick "Does Not Apply"'], ['', 'Leave to the agent']]
+        : [['NO', 'No'], ['YES', 'Yes'], ['', 'Leave to the agent']];
+      return '<div class="const"><div><b>' + esc(c.label) + '</b>' +
+        '<small>' + esc(c.page) + ' &middot; ' + esc(c.why) + '</small></div>' +
+        '<select data-key="' + esc(c.key) + '">' +
+        opts.map(([val, txt]) =>
+          '<option value="' + esc(val) + '"' + (cur === val ? ' selected' : '') + '>' + esc(txt) + '</option>'
+        ).join('') + '</select></div>';
+    }).join('');
+
+    $('constList').querySelectorAll('select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        DS160Const.set(sel.dataset.key, sel.value);
+        renderConstants();
+        renderDetail();
+      });
+    });
+  }
+
   // -- wiring ----------------------------------------------------------
+  $('constReset').addEventListener('click', () => { DS160Const.reset(); renderConstants(); renderDetail(); });
   $('btnParse').addEventListener('click', () => loadText($('paste').value));
   $('btnLoad').addEventListener('click', () => { $('loader').hidden = false; $('main').hidden = true; });
   $('search').addEventListener('input', renderList);

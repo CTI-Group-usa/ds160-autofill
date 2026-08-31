@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DS-160 Worksheet &middot; CTI Group</title>
-<link rel="stylesheet" href="style.css?v=20260831c">
+<link rel="stylesheet" href="style.css?v=20260831d">
 </head>
 <body>
 <header>
@@ -33,6 +33,14 @@
   </div>
 </div>
 
+<details id="constPanel" class="constants" hidden>
+  <summary>Constant answers &mdash; <span id="constCount"></span></summary>
+  <p>DS-160 questions the intake form never asks. These are answers on a visa
+     application: check them, and change any that are wrong for an applicant.</p>
+  <div id="constList"></div>
+  <button id="constReset" class="tiny">Restore defaults</button>
+</details>
+
 <main id="main" hidden>
   <aside>
     <input id="search" type="search" placeholder="Search name, passport, email">
@@ -44,8 +52,9 @@
   <section id="detail"></section>
 </main>
 
-<script src="xlsx.js?v=20260831c"></script>
-<script src="normalize.js?v=20260831c"></script>
-<script src="app.js?v=20260831c"></script>
+<script src="constants.js?v=20260831d"></script>
+<script src="xlsx.js?v=20260831d"></script>
+<script src="normalize.js?v=20260831d"></script>
+<script src="app.js?v=20260831d"></script>
 </body>
 </html>

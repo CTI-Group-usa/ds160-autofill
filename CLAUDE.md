@@ -18,6 +18,7 @@ Dashboard and the Indonesia Monitoring Dashboard.
 index.html    — worksheet SPA shell
 app.js        — CSV parsing, applicant list, detail rendering, extension bridge
 normalize.js  — sheet row -> canonical DS-160 record + validation  (SHARED, tested)
+constants.js  — constant answers the intake form never collects  (SHARED, tested)
 xlsx.js       — dependency-free .xlsx reader (ZIP + XML)  (SHARED, tested)
 style.css     — all styles, light/dark via CSS variables
 server.js     — local static preview on :7773
@@ -69,6 +70,20 @@ should use the popup's *Copy page map* and fold the real ids back into `RULES`.
 Per-field overrides learned in the popup already win over the seed rules, so a
 wrong seed degrades to "not filled", never to "filled wrong".
 
+## Constant answers (`constants.js`)
+DS-160 asks questions the intake form does not. For Indonesian seafarers most
+have the same answer every time, but they are still **answers on a visa
+application**, so they are held in the open: every one is listed in the
+worksheet's *Constant answers* panel with its DS-160 page and the reason,
+each is individually switchable (Yes / No / leave to the agent), the choices
+persist in `localStorage`, and each applicant's detail view repeats them under
+*Constant answers — not from the seafarer*. `apply()` never overwrites a value
+that came from the seafarer.
+
+Decided with the user 2026-08-31 after the first live CEAC run. **Not built:**
+a blanket "answer No to everything" sweep over the Security & Background
+pages — those are sworn answers and were never asked for.
+
 ## Known Gaps
 - Intake form does not collect: vessel name, US point of contact, intended
   arrival date, US address, who pays for the trip, other emails/phones in the
@@ -80,7 +95,7 @@ wrong seed degrades to "not filled", never to "filled wrong".
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 33 + xlsx 9 assertions
+npm test   # normalize 36 + matcher 33 + xlsx 9 + constants 23 assertions
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

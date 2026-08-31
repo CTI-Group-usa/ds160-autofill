@@ -26,11 +26,15 @@ filled in honestly, and the applicant signs their own application.
    *File → Download As* — **XLSX** or **CSV**, either works.
 2. Open the worksheet app, drop the file in (or click the box to browse).
    An `.xlsx` with several sheets is opened at **VISA APPLICATIONS**.
-3. Work the list: fix every red **error** before booking an appointment — those
+3. Check the **Constant answers** panel once. These are DS-160 questions the
+   intake form never asks (native alphabet, telecode, other names, relatives in
+   the U.S. …). They are answers on a visa application — read them, and change
+   any that are wrong for the applicant in front of you.
+4. Work the list: fix every red **error** before booking an appointment — those
    are the ones that waste a slot.
-4. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension
+5. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension
    is not installed).
-5. On each DS-160 page press **Fill this page**, review, then click Next yourself.
+6. On each DS-160 page press **Fill this page**, review, then click Next yourself.
 
 ### Faster still, with no software at all
 
@@ -59,7 +63,7 @@ the page for adding new rules to `extension/matcher.js`.
 ## Development
 
 ```bash
-npm test                     # normalize + matcher + xlsx
+npm test                     # normalize + matcher + xlsx + constants
 node server.js               # http://localhost:7773
 python test/make-fixture.py  # rebuild test/fixtures/sample.xlsx
 ```
