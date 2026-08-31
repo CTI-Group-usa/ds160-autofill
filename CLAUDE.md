@@ -9,9 +9,9 @@ No build tools, no framework — plain HTML/CSS/JS, same house style as the J1
 Dashboard and the Indonesia Monitoring Dashboard.
 
 ## Repository
-- **GitHub:** `https://github.com/PutuAstra/ds160-autofill` (to be created)
+- **GitHub:** `https://github.com/CTI-Group-usa/ds160-autofill` (to be created)
 - **Local:** `C:\Users\putua\ds160-autofill\`
-- **Pages:** `https://putuastra.github.io/ds160-autofill/` once Pages is enabled
+- **Pages:** `https://cti-group-usa.github.io/ds160-autofill/` once Pages is enabled
 
 ## File Structure
 ```
