@@ -21,7 +21,7 @@ function eq(label, got, want) {
 
 // -- defaults ---------------------------------------------------------
 const v = C.values();
-eq('native alphabet default', v.nativeAlphabetNA, 'YES');
+eq('ssn default', v.ssnNA, 'YES');
 eq('telecode default',        v.telecode, 'NO');
 eq('mailing default',         v.mailingSameAsHome, 'YES');
 eq('every constant answered', Object.values(v).every(Boolean), true);
@@ -32,7 +32,11 @@ eq('security sweep has no control', C.BY_KEY.securityAllNo.field, false);
 const merged = C.apply({ surname: 'DHARMAWAN', otherNamesUsed: '' });
 eq('fills a blank',            merged.otherNamesUsed, 'NO');
 eq('leaves seafarer data',     merged.surname, 'DHARMAWAN');
-eq('adds the checkbox answer', merged.nativeAlphabetNA, 'YES');
+eq('adds the checkbox answer', merged.taxIdNA, 'YES');
+
+// The native-alphabet box is FILLED with the Latin name, per the filed
+// sample - it is no longer a "Does Not Apply" tick.
+eq('no native-alphabet constant', 'nativeAlphabetNA' in v, false);
 
 const kept = C.apply({ otherNamesUsed: 'YES', immediateRelativesUS: 'YES' });
 eq('never overwrites a set value',   kept.otherNamesUsed, 'YES');
@@ -69,15 +73,18 @@ eq('all constants are fillable', missing, []);
 // -- and each one resolves from its real question text ----------------
 const P = 'ctl00_SiteContentPlaceHolder_FormView1_';
 const byLabel = (label, id) => (M.matchKey({ id: P + (id || 'unknownControl'), name: '', label }, {}) || {}).key;
-eq('native alphabet by label',
-   byLabel('Does Not Apply/Technology Not Available'), 'nativeAlphabetNA');
 eq('other names by label',
    byLabel('Q: Have you ever used other names (i.e., maiden, religious, professional, alias, etc.)? A: Yes No'),
    'otherNamesUsed');
 eq('telecode by label',
    byLabel('Q: Do you have a telecode that represents your name? A: Yes No'), 'telecode');
-eq('native name box is NOT the checkbox',
-   byLabel('Full Name in Native Alphabet', 'tbxAPP_FULL_NAME_NATIVE'), undefined);
+
+// The native-alphabet name is written into the text box; its adjacent
+// "Does Not Apply" tick is deliberately left to nobody.
+eq('native name box takes the name',
+   byLabel('Full Name in Native Alphabet', 'tbxAPP_FULL_NAME_NATIVE'), 'nativeName');
+eq('its Does Not Apply box matches nothing',
+   byLabel('Does Not Apply/Technology Not Available', 'cbexAPP_FULL_NAME_NATIVE_NA'), undefined);
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -45,8 +45,10 @@
     // Constant answers (see constants.js) - questions the intake form
     // never asks. The NA checkbox must not swallow the native-name text
     // box next to it, hence the explicit _NA anchoring.
-    { key: 'nativeAlphabetNA',    kind: 'checkbox', ids: [/FULL_NAME_NATIVE.*_NA\b/i, /_NATIVE_NA\b/i],
-      labels: [/does not apply.*technology not available/i] },
+    // The filed sample writes the Latin full name in this box and leaves
+    // the "Does Not Apply" checkbox alone, so nothing matches that box.
+    { key: 'nativeName',          kind: 'text', ids: [/FULL_NAME_NATIVE/i],
+      labels: [/full name in native alphabet/i], not: /_NA\b/ },
     { key: 'otherNamesUsed',      kind: 'yesno', ids: [/OTHER_NAMES_IND/i, /rblOtherNames/i],
       labels: [/ever used other names/i] },
     { key: 'telecode',            kind: 'yesno', ids: [/TELECODE_QUESTION_IND/i, /rblTelecodeQuestion/i],
@@ -91,6 +93,15 @@
     { key: 'arrivalDate',    kind: 'date',
       ids: [/ARRIVAL_US_DTE(Day|Month|Year)/i, /ARRIVE_(Day|Month|Year)/i, /DTEIntendedDate/i],
       labels: [/date of arrival in u\.?s|intended date of arrival/i] },
+    // With travel plans answered No, CEAC replaces the itinerary with an
+    // intended date plus a length of stay: a number and a unit dropdown
+    // that share one label, told apart by the control being a <select>.
+    { key: 'lengthOfStay',     kind: 'text', tag: 'input',
+      ids: [/TRAVEL_LOS\b/i, /STAY_LENGTH\b/i],
+      labels: [/intended length of stay/i], not: /_CD\b|UNIT/i },
+    { key: 'lengthOfStayUnit', kind: 'text', tag: 'select',
+      ids: [/TRAVEL_LOS_CD/i, /LOS_CD/i, /STAY_LENGTH_UNIT/i],
+      labels: [/intended length of stay/i] },
     { key: 'arrivalFlight',  kind: 'text',  ids: [/ARRIVAL_FLIGHT/i], labels: [/arrival flight/i] },
     { key: 'arrivalCity',    kind: 'text',  ids: [/ArriveCity/i, /ARRIVAL_CITY/i], labels: [/^arrival city/i] },
     { key: 'departureDate',  kind: 'date',
@@ -172,6 +183,8 @@
     if (!tag && !type) return true;                   // caller gave us no shape
     if (rule.kind === 'yesno') return isRadio;
     if (rule.kind === 'checkbox') return isCheck;
+    // A number and its unit dropdown can share one label; `tag` splits them.
+    if (rule.tag && tag !== rule.tag) return false;
     return !isRadio && !isCheck;                      // text / date
   }
 

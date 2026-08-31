@@ -6,7 +6,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const STORE = 'ds160.rows';
-  const RECORD_V = 4;          // 4 = adds per-applicant trip details
+  const RECORD_V = 5;          // 5 = native name filled, travel plans No + length of stay
 
   let rows = [];      // raw sheet rows (header -> value)
   let people = [];    // { rec, val }
@@ -213,6 +213,7 @@
            : ' No supporting letter link in this row.') +
          '</p><table>';
     for (const f of DS160Trip.FIELDS) {
+      if (!DS160Trip.visible(f, tv)) continue;
       if (f.page !== page) { page = f.page; h += '<tr><td class="grp" colspan="3">' + esc(page) + '</td></tr>'; }
       const v = tv[f.key] || '';
       const input = f.kind === 'yesno'

@@ -46,9 +46,9 @@ eq('already formatted', T.set(budi, 'arrivalDate', '15-OCT-2026'), '15-OCT-2026'
 eq('unparseable kept as typed', T.set(budi, 'departureFlight', 'GA880'), 'GA880');
 
 // -- merging never clobbers the seafarer's own data -------------------
-const merged = T.apply(Object.assign({ arrivalCity: 'TAMPA' }, budi));
-eq('existing value wins', merged.arrivalCity, 'TAMPA');
-eq('blank gets filled', T.apply(budi).arrivalCity, 'MIAMI');
+const merged = T.apply(Object.assign({ vesselName: 'OASIS OF THE SEAS' }, budi));
+eq('existing value wins', merged.vesselName, 'OASIS OF THE SEAS');
+eq('blank gets filled', T.apply(budi).vesselName, 'SYMPHONY OF THE SEAS');
 eq('default merged too', T.apply(budi).purposeOfTrip, 'ALIEN IN TRANSIT (C)');
 
 // -- copy is explicit and one-way -------------------------------------

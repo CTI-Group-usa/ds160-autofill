@@ -15,9 +15,6 @@
   const STORE = 'ds160.constants';
 
   const CONSTANTS = [
-    { key: 'nativeAlphabetNA', kind: 'checkbox', page: 'Personal 1',
-      label: 'Full Name in Native Alphabet — tick "Does Not Apply"',
-      def: 'YES', why: 'Indonesia writes names in the Latin alphabet, so there is no native-alphabet form.' },
     { key: 'otherNamesUsed', kind: 'yesno', page: 'Personal 1',
       label: 'Have you ever used other names?',
       def: 'NO', why: 'Set to Yes for anyone with a maiden, religious or alias name in their file.' },

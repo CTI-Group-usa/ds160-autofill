@@ -75,6 +75,16 @@ eq('taxpayer does-not-apply',
                  label: 'Does Not Apply U.S. Taxpayer ID Number',
                  type: 'checkbox', tag: 'input' }, {}) || {}).key, 'taxIdNA');
 
+// Length of stay is a number plus a unit dropdown sharing one label;
+// only the control's tag tells them apart.
+const LOS = 'Intended Length of Stay in U.S.';
+eq('length of stay number',
+   (M.matchKey({ id: P + 'tbxTRAVEL_LOS', name: '', label: LOS, type: 'text', tag: 'input' }, {}) || {}).key,
+   'lengthOfStay');
+eq('length of stay unit',
+   (M.matchKey({ id: P + 'ddlTRAVEL_LOS_CD', name: '', label: LOS, tag: 'select' }, {}) || {}).key,
+   'lengthOfStayUnit');
+
 // -- overrides beat everything --------------------------------------
 eq('override wins',
   (M.matchKey({ id: 'weird_control_7', name: '', label: '' }, { weird_control_7: 'vesselName' }) || {}).key,

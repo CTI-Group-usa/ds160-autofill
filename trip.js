@@ -25,18 +25,29 @@
       label: 'Specify', def: 'CREWMEMBER IN TRANSIT (C1/D)',
       hint: 'The second dropdown under Purpose of Trip.' },
     { key: 'specificTravelPlans', page: 'Travel', kind: 'yesno',
-      label: 'Have you made specific travel plans?', def: 'YES',
-      hint: 'Yes reveals the full itinerary; No asks only for an intended date and length of stay.' },
+      label: 'Have you made specific travel plans?', def: 'NO',
+      hint: 'No is what the filed sample uses. CEAC then asks only for an intended date ' +
+            'and a length of stay, and drops the flight and city questions entirely.' },
     { key: 'arrivalDate', page: 'Travel', kind: 'date',
-      label: 'Date of Arrival in U.S.', def: '',
+      label: 'Intended Date of Arrival in U.S.', def: '',
       hint: 'The sign-on date. Any format - it is converted to DD-MMM-YYYY.' },
-    { key: 'arrivalFlight', page: 'Travel', label: 'Arrival Flight (if known)', def: '' },
+    { key: 'lengthOfStay', page: 'Travel', label: 'Intended Length of Stay', def: '',
+      hint: 'A number - the contract length. The filed sample says 8.',
+      showWhen: { key: 'specificTravelPlans', is: 'NO' } },
+    { key: 'lengthOfStayUnit', page: 'Travel', label: 'Length of Stay - unit', def: 'MONTH(S)',
+      showWhen: { key: 'specificTravelPlans', is: 'NO' } },
+    { key: 'arrivalFlight', page: 'Travel', label: 'Arrival Flight (if known)', def: '',
+      showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'arrivalCity', page: 'Travel', label: 'Arrival City', def: '',
-      hint: 'The sign-on port city.' },
+      hint: 'The sign-on port city.',
+      showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'departureDate', page: 'Travel', kind: 'date',
-      label: 'Date of Departure from U.S.', def: '' },
-    { key: 'departureFlight', page: 'Travel', label: 'Departure Flight (if known)', def: '' },
-    { key: 'departureCity', page: 'Travel', label: 'Departure City', def: '' },
+      label: 'Date of Departure from U.S.', def: '',
+      showWhen: { key: 'specificTravelPlans', is: 'YES' } },
+    { key: 'departureFlight', page: 'Travel', label: 'Departure Flight (if known)', def: '',
+      showWhen: { key: 'specificTravelPlans', is: 'YES' } },
+    { key: 'departureCity', page: 'Travel', label: 'Departure City', def: '',
+      showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'stayAddress', page: 'Travel', label: 'Address where you will stay in the U.S.', def: '',
       hint: 'Usually the vessel at its berth, or the crew hotel.' },
     { key: 'tripPayer', page: 'Travel', label: 'Person or entity paying for the trip', def: '',
@@ -111,10 +122,15 @@
     return true;
   }
 
+  /* A question CEAC will not ask must not be sent as an answer. */
+  function visible(f, v) {
+    return !f.showWhen || v[f.showWhen.key] === f.showWhen.is;
+  }
+
   function apply(rec) {
     const v = values(rec), out = Object.assign({}, rec);
     for (const f of FIELDS) {
-      if (!v[f.key]) continue;
+      if (!v[f.key] || !visible(f, v)) continue;
       if (out[f.key] === undefined || out[f.key] === '') out[f.key] = v[f.key];
     }
     return out;
@@ -125,7 +141,7 @@
     return FIELDS.filter(f => v[f.key]).length;
   }
 
-  const api = { FIELDS, BY_KEY, idOf, values, set, clear, copy, apply, filledCount, STORE };
+  const api = { FIELDS, BY_KEY, idOf, values, set, clear, copy, apply, visible, filledCount, STORE };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160Trip = api;
 })(typeof self !== 'undefined' ? self : this);

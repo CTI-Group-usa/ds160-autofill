@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fake DS-160 Travel Information (no specific plans)</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}</style></head>
+<body>
+<!-- What CEAC shows once "Have you made specific travel plans?" is No:
+     no flight or city, just an intended date and a length of stay whose
+     number and unit share a single label. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Travel Information</h2>
+<table>
+  <tr><td>Purpose of Trip to the U.S.</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPurposeOfTrip">
+          <option value="">- SELECT ONE -</option><option>ALIEN IN TRANSIT (C)</option></select></td></tr>
+  <tr><td>Specify</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlOtherPurpose">
+          <option value="">- SELECT ONE -</option><option>CREWMEMBER IN TRANSIT (C1/D)</option></select></td></tr>
+  <tr><td>Q:</td><td>Have you made specific travel plans?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_0"
+           name="ctl00$x$rblSpecificTravel" value="Y"
+           onclick="javascript:setTimeout('__doPostBack('p','')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_1"
+           name="ctl00$x$rblSpecificTravel" value="N"
+           onclick="javascript:setTimeout('__doPostBack('p','')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_1">No</label>
+  </td></tr>
+  <tr><td>Intended Date of Arrival</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlTRAVEL_DTEDay"><option value="">-</option><option>15</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlTRAVEL_DTEMonth"><option value="">-</option><option value="OCT">OCT</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxTRAVEL_DTEYear" size="4">
+  </td></tr>
+  <tr><td>Intended Length of Stay in U.S.</td><td>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxTRAVEL_LOS" size="3">
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlTRAVEL_LOS_CD">
+      <option value="">-</option><option>DAY(S)</option><option>MONTH(S)</option><option>YEAR(S)</option></select>
+  </td></tr>
+  <tr><td>Address where you will stay in the U.S.</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_LN1"></td></tr>
+</table>
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

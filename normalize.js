@@ -216,6 +216,10 @@
 
     // The vessel name and IMO number live in the supporting letter, not
     // in any column - carry the link through so the agent can open it.
+    /* A filed application shows the Latin full name here, not a ticked
+       "Does Not Apply" - see the ALDI MAULANA RIZKY sample. */
+    rec.nativeName = rec.fullName;
+
     const links = row._links || {};
     rec.supportingLetterUrl = links['Supporting Letter'] || '';
     for (const [k] of MISSING_FROM_INTAKE) if (!(k in rec)) rec[k] = '';

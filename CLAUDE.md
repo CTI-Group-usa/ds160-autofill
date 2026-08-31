@@ -125,6 +125,34 @@ Input is pasted text, not the PDF: extracting text from a PDF in the browser
 means shipping a PDF parser, and paste is one Ctrl+A Ctrl+C away from the link
 the worksheet already shows. Reading the PDF directly is still open.
 
+## Two answers taken from the filed sample
+`Consular Electronic Application Center - Print Application_ALDI MAULANA
+RIZKY_2.pdf` is a real, submitted C1/D application. Two of the defaults chosen
+before it was seen were wrong, and the user confirmed both changes:
+
+1. **Full Name in Native Alphabet is FILLED** with the Latin full name
+   (`ALDI MAULANA RIZKY`) — not ticked as "Does Not Apply". `rec.nativeName`
+   carries it; the adjacent NA checkbox now matches no rule at all and is left
+   alone. Do not reintroduce a `nativeAlphabetNA` constant.
+2. **Have you made specific travel plans? = NO.** CEAC then drops the flight,
+   arrival-city and departure questions and asks only for an *Intended Date of
+   Arrival* and an *Intended Length of Stay* (the sample: 8 MONTH(S)). Trip
+   fields carry `showWhen`, so the itinerary fields are hidden — and, more
+   importantly, `apply()` will not send a value for a question CEAC never asks.
+
+The length-of-stay number and its unit dropdown share one label, so the rules
+carry `tag: 'input'` / `tag: 'select'` to tell them apart; `kindAllows()`
+enforces it.
+
+**Still not implemented from that sample:** the Crew Visa manning-agency block
+(constant: CTI INDONESIA / OKTAVIANIA, DORKAS / JL. HANG TUAH NO.14B RENON,
+DENPASAR, BALI 80239 / 085333735407) and roughly 25 further constants
+(Passport Type REGULAR, Passport Book Number NA, secondary/work phone NA,
+ever-in-US / issued / refused NO, parents in US NO, monthly salary NA,
+clan/tribe NO, languages ENGLISH, military NO, Primary Occupation OTHER +
+SAILOR OS, US contact relationship BUSINESS ASSOCIATE, …). The user has not
+asked for these yet.
+
 ## Rules are type-aware
 `matchKey()` only applies a rule to the kind of control it describes
 (`yesno` -> radio, `checkbox` -> checkbox, `text`/`date` -> everything else).
@@ -199,7 +227,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 40 + xlsx 12 + constants 25 + trip 26 + letter 28
+npm test   # normalize 36 + matcher 42 + xlsx 12 + constants 26 + trip 26 + letter 28
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in
