@@ -89,3 +89,7 @@ tr.bad td{background:var(--err-bg)}
 
 details.missing{margin-top:6px}
 details.missing summary{cursor:pointer;color:var(--muted);font-size:12px;padding:4px 2px}
+
+#sendMsg{font-size:12px}
+#sendMsg.ok{color:var(--ok)}
+#sendMsg.err{color:var(--err)}

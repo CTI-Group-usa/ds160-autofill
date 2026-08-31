@@ -192,11 +192,39 @@
       navigator.clipboard.writeText(worksheetText(rec));
       $('sendMsg').textContent = 'Worksheet copied.';
     });
+    /* The bridge content script answers with record-ack once it has the
+       record in chrome.storage. No answer means the extension is not
+       actually listening on this page, whatever the badge says. */
     $('send').addEventListener('click', () => {
       const clone = Object.assign({}, rec); delete clone._raw;
+      let acked = false;
+
+      function onAck(ev) {
+        if (ev.source !== window) return;
+        const d = ev.data;
+        if (!d || d.channel !== 'cti-ds160' || d.type !== 'record-ack') return;
+        acked = true;
+        window.removeEventListener('message', onAck);
+        say('ok', 'Loaded: ' + (d.name || rec.fullName) +
+                  '. Now open the DS-160 tab, click the extension icon, then Fill this page.');
+      }
+      window.addEventListener('message', onAck);
+      say('', 'Sending...');
       window.postMessage({ channel: 'cti-ds160', type: 'record', record: clone }, '*');
-      $('sendMsg').textContent = hasExtension() ? 'Sent.' : 'Extension not detected - use Copy JSON instead.';
+
+      setTimeout(() => {
+        if (acked) return;
+        window.removeEventListener('message', onAck);
+        say('err', 'The extension did not answer. Reload it at chrome://extensions, ' +
+                   'refresh this page, then try again - or use Copy JSON.');
+      }, 1200);
     });
+
+    function say(kind, text) {
+      const el = $('sendMsg');
+      el.className = kind;
+      el.textContent = text;
+    }
   }
 
   const hasExtension = () => document.documentElement.getAttribute('data-ds160-extension') === '1';
@@ -238,11 +266,6 @@
       'Royal Caribbean,2026-10-01\n' +
       'Sukarno,Male,Married,05/03/1990,Surabaya,Indonesia,12345,Jl. Melati 3,12,not-an-email,X 12,' +
       '2020-01-01,2026-11-01,Fauzi,,,,Carnival,2026-10-01\n';
-  });
-
-  window.addEventListener('message', ev => {
-    if (ev.data && ev.data.channel === 'cti-ds160' && ev.data.type === 'record-ack')
-      $('sendMsg').textContent = 'Loaded into the extension.';
   });
 
   // Restore whatever was loaded before a refresh.
