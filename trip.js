@@ -41,6 +41,8 @@
       hint: 'Usually the vessel at its berth, or the crew hotel.' },
     { key: 'tripPayer', page: 'Travel', label: 'Person or entity paying for the trip', def: '',
       hint: 'Normally the cruise line.' },
+    { key: 'jobTitleAboard', page: 'Crew Visa', label: 'Specific job title aboard the vessel', def: '',
+      hint: 'The "Working in the Capacity of" line in the supporting letter.' },
     { key: 'vesselName', page: 'Crew Visa', label: 'Seagoing Ship / Vessel Name', def: '',
       hint: 'From the supporting letter - differs per applicant.' },
     { key: 'vesselImo', page: 'Crew Visa', label: 'Vessel Identification Number (IMO)', def: '',

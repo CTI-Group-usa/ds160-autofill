@@ -11,6 +11,7 @@
   let rows = [];      // raw sheet rows (header -> value)
   let people = [];    // { rec, val }
   let selected = -1;
+  let pendingLetter = null;   // survives the rebuild() that follows a parse
 
   // -- CSV / TSV -------------------------------------------------------
   function detectDelim(text) {
@@ -147,6 +148,7 @@
     selected = Math.min(keep, people.length - 1);
     renderList();
     renderDetail();
+    pendingLetter = null;   // shown by the render above; do not repeat it
   }
 
   // -- detail ----------------------------------------------------------
@@ -223,7 +225,15 @@
            (f.hint ? '<br><small>' + esc(f.hint) + '</small>' : '') +
            '</td><td class="v" colspan="2">' + input + '</td></tr>';
     }
-    h += '</table><div class="row"><select id="tripFrom"><option value="">copy from...</option>' +
+    h += '</table>' +
+         '<div class="letter"><b>Paste the supporting letter</b>' +
+         '<p class="secnote">Open the letter, select all, copy, paste here. Vessel, IMO, ' +
+         'joining date, port and shipboard job title are read out of it &mdash; and the name, ' +
+         'passport and date of birth are checked against the intake row.</p>' +
+         '<textarea id="letterText" placeholder="Paste the whole letter"></textarea>' +
+         '<div class="row"><button id="letterParse" class="primary">Read letter</button>' +
+         '<span id="letterMsg"></span></div></div>' +
+         '<div class="row"><select id="tripFrom"><option value="">copy from...</option>' +
          people.map((q, i) => i === selected ? '' :
            '<option value="' + i + '">' + esc(q.rec.surname + ', ' + q.rec.givenNames) + '</option>').join('') +
          '</select><button id="tripClear" class="tiny">Clear</button></div></div>';
@@ -254,6 +264,13 @@
     ).join('\n\n');
   }
 
+  function letterMsg(kind, text) {
+    const el = $('letterMsg');
+    if (!el) return;
+    el.className = kind;
+    el.textContent = text;
+  }
+
   function wireDetail(rec) {
     $('detail').querySelectorAll('.tf').forEach(el => {
       el.addEventListener('change', () => {
@@ -268,6 +285,30 @@
       rebuild();
     });
     $('tripClear').addEventListener('click', () => { DS160Trip.clear(rec); rebuild(); });
+
+    $('letterParse').addEventListener('click', () => {
+      const text = $('letterText').value;
+      if (!text.trim()) { letterMsg('err', 'Paste the letter text first.'); return; }
+      const parsed = DS160Letter.parse(text);
+      if (!parsed.found) {
+        letterMsg('err', 'None of the expected lines were found - is this a C1/D supporting letter?');
+        return;
+      }
+      const answers = DS160Letter.answers(parsed);
+      for (const k in answers) DS160Trip.set(rec, k, answers[k]);
+
+      const issues = DS160Letter.crossCheck(parsed, rec);
+      const took = Object.keys(answers).length;
+      pendingLetter = {
+        kind: issues.length ? 'err' : 'ok',
+        text: took + ' field(s) read from the letter' +
+          (parsed.missing.length ? '; not in this letter: ' + parsed.missing.join(', ') : '') +
+          (issues.length ? ' — CHECK: ' + issues.map(i => i.msg).join(' | ') : ''),
+      };
+      rebuild();
+    });
+
+    if (pendingLetter) letterMsg(pendingLetter.kind, pendingLetter.text);
 
     $('detail').querySelectorAll('.cp').forEach(b => b.addEventListener('click', () => {
       navigator.clipboard.writeText(b.dataset.v);

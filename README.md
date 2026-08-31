@@ -34,10 +34,13 @@ filled in honestly, and the applicant signs their own application.
    the U.S. …), plus the **Security and Background** sweep. They are answers on a
    visa application — read them, and change any that are wrong for the applicant
    in front of you.
-4. Fill in **Trip details** for the applicant: arrival date, city, flight,
-   vessel, who is paying, U.S. contact. The intake form does not collect these,
-   and they belong to that one person — `copy from...` saves retyping the
-   cruise-line details for the next applicant.
+4. Fill in **Trip details** for the applicant. Open their **supporting letter**
+   (the worksheet links it, straight out of the workbook), copy the whole text,
+   and paste it into *Paste the supporting letter* — vessel, IMO, joining date,
+   US port and shipboard job title are read out of it, and the name, passport
+   and date of birth are checked against the intake row. Fill the rest by hand;
+   `copy from...` saves retyping the cruise-line details for the next
+   applicant.
 5. Work the list: fix every red **error** before booking an appointment — those
    are the ones that waste a slot.
 6. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension

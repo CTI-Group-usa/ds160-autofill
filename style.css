@@ -114,3 +114,10 @@ input.tf,select.tf{width:100%;padding:4px 6px;border:1px solid var(--line);borde
                    background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px}
 #tripFrom{font:inherit;font-size:12px;padding:4px 6px;border:1px solid var(--line);
           border-radius:6px;background:var(--bg);color:var(--ink)}
+
+.letter{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.letter b{font-size:13px}
+.letter textarea{height:80px;margin-top:4px}
+#letterMsg{font-size:12px}
+#letterMsg.ok{color:var(--ok)}
+#letterMsg.err{color:var(--err)}

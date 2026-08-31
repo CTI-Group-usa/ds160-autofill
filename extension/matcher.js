@@ -103,6 +103,8 @@
       labels: [/seagoing ship.*vessel name|^vessel name/i], not: /IDENT|IMO|NUMBER/i },
     { key: 'vesselImo',      kind: 'text',  ids: [/SEAGOING.*(IDENT|NUM)/i, /VESSEL_ID/i],
       labels: [/vessel identification number/i] },
+    { key: 'jobTitleAboard', kind: 'text',  ids: [/CREW_JOB_TITLE/i, /tbxJobTitleAboard/i],
+      labels: [/specific job title aboard/i] },
     { key: 'tripPayer',      kind: 'text',  ids: [/WHO_IS_PAYING/i], labels: [/paying for your trip/i] },
 
     { key: 'usPocName',    kind: 'text', ids: [/POC_(SURNAME|GIVEN)/i, /USPOC/i], labels: [/contact person/i] },

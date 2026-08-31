@@ -25,8 +25,9 @@
 
   /* Tolerant date parser. Returns {y,m,d,ambiguous} or null.
      Sheet rows arrive in whatever the form saved, so accept the lot. */
-  function parseDate(raw) {
-    const s = clean(raw);
+  function parseDate(raw, opts) {
+    // "17th December 2026" - supporting letters write ordinals.
+    const s = clean(raw).replace(/(\d{1,2})(st|nd|rd|th)\b/gi, '$1');
     if (!s) return null;
     if (/^\d+(\.\d+)?$/.test(s) && Number(s) > 20000 && Number(s) < 60000) return fromSerial(Number(s));
 
@@ -41,11 +42,18 @@
       const mi = MONTHS.indexOf(m[1].slice(0, 3).toUpperCase());
       if (mi >= 0) return { y: +m[3], m: mi + 1, d: +m[2] };
     }
-    // 05/01/1990 -- day-first is the Indonesian convention, but flag it
-    // whenever both halves are <= 12 because we genuinely cannot tell.
+    /* 05/01/1990 - day-first is the Indonesian convention, but flag it
+       whenever both halves are <= 12 because we genuinely cannot tell.
+       A second half over 12 settles it: that is month-first (9/16/1987),
+       which is how the Carnival supporting letters are written.
+       opts.monthFirst forces month-first for a source we know writes it
+       that way, and still flags the cases that stay ambiguous. */
     if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/))) {
-      const a = +m[1], b = +m[2];
-      return { y: +m[3], m: b, d: a, ambiguous: a <= 12 && b <= 12 && a !== b };
+      const a = +m[1], b = +m[2], y = +m[3];
+      if (a > 12) return { y, m: b, d: a };                       // day-first, certain
+      if (b > 12) return { y, m: a, d: b };                       // month-first, certain
+      if (opts && opts.monthFirst) return { y, m: a, d: b, ambiguous: a !== b };
+      return { y, m: b, d: a, ambiguous: a !== b };
     }
     const d = new Date(s);
     return isNaN(d) ? null : { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() };

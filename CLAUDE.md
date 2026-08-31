@@ -20,6 +20,7 @@ app.js        — CSV parsing, applicant list, detail rendering, extension bridg
 normalize.js  — sheet row -> canonical DS-160 record + validation  (SHARED, tested)
 constants.js  — constant answers the intake form never collects  (SHARED, tested)
 trip.js       — per-applicant travel / U.S. contact details       (SHARED, tested)
+letter.js     — C1/D supporting-letter parser + cross-check        (SHARED, tested)
 xlsx.js       — dependency-free .xlsx reader (ZIP + XML)  (SHARED, tested)
 style.css     — all styles, light/dark via CSS variables
 server.js     — local static preview on :7773
@@ -103,8 +104,26 @@ The cell renders empty in Zoho Sheet because it holds a *hyperlink*, not text �
 `<hyperlink ref=…>` and an `=HYPERLINK("…")` formula), `gridToObjects` attaches
 them to the row as `_links`, and `normalize.js` exposes
 `rec.supportingLetterUrl`, which the worksheet shows as a link in the Trip
-details block. Vessel name and IMO stay per-applicant fields, typed from that
-letter. Parsing the letter itself is the obvious next step and is not done.
+details block. `letter.js` parses the letter itself. Two things about the format matter:
+
+- **The extracted text has no line breaks.** Labels and values run together
+  (`...TODINGANDate of Birth 9/16/1987Nationality...`), so fields are cut out by
+  locating each known label and taking everything up to the next one. Splitting
+  on newlines finds nothing. The final value runs straight into the body
+  (`MiamiI can confirm that...`), so it is cut at the body's opening phrases — a
+  word boundary does not help when `i` meets `I`.
+- **Its dates are written differently from the intake form**: month-first
+  (`9/16/1987`) and with ordinals (`17th December 2026`). `parseDate` now strips
+  ordinals, resolves the order when either half exceeds 12, and takes an
+  `opts.monthFirst` hint for sources known to write that way.
+
+It yields vessel, IMO, joining date, US port and shipboard job title, and
+**cross-checks name / passport / date of birth against the intake row** — a
+disagreement there is the kind of thing that burns an appointment slot.
+
+Input is pasted text, not the PDF: extracting text from a PDF in the browser
+means shipping a PDF parser, and paste is one Ctrl+A Ctrl+C away from the link
+the worksheet already shows. Reading the PDF directly is still open.
 
 ## Rules are type-aware
 `matchKey()` only applies a rule to the kind of control it describes
@@ -180,7 +199,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 40 + xlsx 12 + constants 25 + trip 26 assertions
+npm test   # normalize 36 + matcher 40 + xlsx 12 + constants 25 + trip 26 + letter 28
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in
