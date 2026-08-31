@@ -21,6 +21,7 @@ normalize.js  — sheet row -> canonical DS-160 record + validation  (SHARED, te
 constants.js  — constant answers the intake form never collects  (SHARED, tested)
 trip.js       — per-applicant travel / U.S. contact details       (SHARED, tested)
 letter.js     — C1/D supporting-letter parser + cross-check        (SHARED, tested)
+pdftext.js    — minimal PDF text extraction (no library)           (SHARED, tested)
 xlsx.js       — dependency-free .xlsx reader (ZIP + XML)  (SHARED, tested)
 style.css     — all styles, light/dark via CSS variables
 server.js     — local static preview on :7773
@@ -121,9 +122,31 @@ It yields vessel, IMO, joining date, US port and shipboard job title, and
 **cross-checks name / passport / date of birth against the intake row** — a
 disagreement there is the kind of thing that burns an appointment slot.
 
-Input is pasted text, not the PDF: extracting text from a PDF in the browser
-means shipping a PDF parser, and paste is one Ctrl+A Ctrl+C away from the link
-the worksheet already shows. Reading the PDF directly is still open.
+**The letter is fetched and read automatically.** Pasting is only the fallback.
+
+The worksheet page cannot fetch a Zoho URL itself — cross-origin, and behind the
+user's login — so `extension/background.js` does it (host permissions cover the
+Zoho hosts, and the request carries the user's cookies) and hands the bytes back
+through `bridge.js`. The page then runs `pdftext.js` over them.
+
+`pdftext.js` is deliberately blunt: inflate every `stream…endstream` span, keep
+the ones that look like page content (mostly printable, containing `BT` and
+`Tf`), and take the strings that are operands of `Tj`/`TJ`. No xref table, no
+object streams, no page tree. Two things it has to get right:
+
+- **Chrome's `DecompressionStream` errors on trailing bytes** where node's zlib
+  ignores them, so the EOL before `endstream` is trimmed off the slice. Without
+  that, every stream fails in the browser while the node tests pass — which is
+  exactly how it first showed up.
+- **The letter body is set in a Type0 font addressed by glyph id.** Without that
+  font's ToUnicode map those bytes are meaningless, so unreadable runs are
+  dropped rather than emitted; otherwise they corrupt the value that precedes
+  them. What survives of the body can be a bare word like "Company", which
+  `letter.js` cuts on.
+
+`test/pdftext.test.js` runs end-to-end against a real letter if one is present
+at `~/Downloads/SL-*.pdf` (or `LETTER_PDF=`); the unit tests run either way. The
+PDFs are never committed — `.gitignore` covers `*.pdf`.
 
 ## Two answers taken from the filed sample
 `Consular Electronic Application Center - Print Application_ALDI MAULANA
@@ -227,7 +250,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 42 + xlsx 12 + constants 26 + trip 26 + letter 28
+npm test   # normalize 36 + matcher 42 + xlsx 12 + constants 26 + trip 26 + letter 28 + pdftext 17
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

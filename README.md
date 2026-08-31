@@ -34,13 +34,13 @@ filled in honestly, and the applicant signs their own application.
    the U.S. …), plus the **Security and Background** sweep. They are answers on a
    visa application — read them, and change any that are wrong for the applicant
    in front of you.
-4. Fill in **Trip details** for the applicant. Open their **supporting letter**
-   (the worksheet links it, straight out of the workbook), copy the whole text,
-   and paste it into *Paste the supporting letter* — vessel, IMO, joining date,
-   US port and shipboard job title are read out of it, and the name, passport
-   and date of birth are checked against the intake row. Fill the rest by hand;
-   `copy from...` saves retyping the cruise-line details for the next
-   applicant.
+4. In **Trip details** (the first block), press **Read supporting letter**. The
+   extension fetches it from Zoho and reads it: vessel, IMO, joining date, US
+   port and shipboard job title are filled in, and the name, passport and date
+   of birth in the letter are checked against the intake row. Fill the rest by
+   hand; `copy from...` saves retyping the cruise-line details for the next
+   applicant. If the link is a viewer page rather than the PDF, open it and
+   paste the text instead.
 5. Work the list: fix every red **error** before booking an appointment — those
    are the ones that waste a slot.
 6. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension

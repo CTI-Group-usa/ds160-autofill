@@ -12,6 +12,7 @@
   let people = [];    // { rec, val }
   let selected = -1;
   let pendingLetter = null;   // survives the rebuild() that follows a parse
+  let letterSeq = 0;
 
   // -- CSV / TSV -------------------------------------------------------
   function detectDelim(text) {
@@ -188,6 +189,7 @@
         '</details>';
     }
     h += '</div>';
+    h += tripBlock(rec);
 
     for (const sec of DS160.SECTIONS) {
       h += '<div class="sec"><h3>' + esc(sec.title) + '</h3><table>';
@@ -201,43 +203,6 @@
       }
       h += '</table></div>';
     }
-
-    const tv = DS160Trip.values(rec);
-    let page = '';
-    h += '<div class="sec"><h3>Trip details &mdash; this applicant</h3>' +
-         '<p class="secnote">Not collected by the intake form. Stored against passport ' +
-         esc(rec.passportNumber || '(none)') + '.' +
-         (rec.supportingLetterUrl
-           ? ' Vessel name and IMO are in the <a href="' + esc(rec.supportingLetterUrl) +
-             '" target="_blank" rel="noopener">supporting letter</a>.'
-           : ' No supporting letter link in this row.') +
-         '</p><table>';
-    for (const f of DS160Trip.FIELDS) {
-      if (!DS160Trip.visible(f, tv)) continue;
-      if (f.page !== page) { page = f.page; h += '<tr><td class="grp" colspan="3">' + esc(page) + '</td></tr>'; }
-      const v = tv[f.key] || '';
-      const input = f.kind === 'yesno'
-        ? '<select class="tf" data-k="' + esc(f.key) + '">' +
-          ['YES', 'NO', ''].map(o => '<option value="' + o + '"' + (v === o ? ' selected' : '') + '>' +
-            (o || 'leave blank') + '</option>').join('') + '</select>'
-        : '<input class="tf" data-k="' + esc(f.key) + '" value="' + esc(v) + '"' +
-          (f.hint ? ' title="' + esc(f.hint) + '"' : '') + '>';
-      h += '<tr><td class="k">' + esc(f.label) +
-           (f.hint ? '<br><small>' + esc(f.hint) + '</small>' : '') +
-           '</td><td class="v" colspan="2">' + input + '</td></tr>';
-    }
-    h += '</table>' +
-         '<div class="letter"><b>Paste the supporting letter</b>' +
-         '<p class="secnote">Open the letter, select all, copy, paste here. Vessel, IMO, ' +
-         'joining date, port and shipboard job title are read out of it &mdash; and the name, ' +
-         'passport and date of birth are checked against the intake row.</p>' +
-         '<textarea id="letterText" placeholder="Paste the whole letter"></textarea>' +
-         '<div class="row"><button id="letterParse" class="primary">Read letter</button>' +
-         '<span id="letterMsg"></span></div></div>' +
-         '<div class="row"><select id="tripFrom"><option value="">copy from...</option>' +
-         people.map((q, i) => i === selected ? '' :
-           '<option value="' + i + '">' + esc(q.rec.surname + ', ' + q.rec.givenNames) + '</option>').join('') +
-         '</select><button id="tripClear" class="tiny">Clear</button></div></div>';
 
     const consts = DS160Const.active();
     if (consts.length) {
@@ -265,6 +230,51 @@
     ).join('\n\n');
   }
 
+
+  /* Everything the intake form cannot supply, at the top of the view:
+     it is the first thing the agent has to deal with, and burying it
+     under fourteen DS-160 sections meant nobody found it. */
+  function tripBlock(rec) {
+    const tv = DS160Trip.values(rec);
+    let page = '', h = '<div class="sec"><h3>Trip details &mdash; this applicant</h3>' +
+      '<p class="secnote">Not collected by the intake form. Stored against passport ' +
+      esc(rec.passportNumber || '(none)') + '.</p>' + letterBox(rec) + '<table>';
+    for (const f of DS160Trip.FIELDS) {
+      if (!DS160Trip.visible(f, tv)) continue;
+      if (f.page !== page) { page = f.page; h += '<tr><td class="grp" colspan="3">' + esc(page) + '</td></tr>'; }
+      const v = tv[f.key] || '';
+      const input = f.kind === 'yesno'
+        ? '<select class="tf" data-k="' + esc(f.key) + '">' +
+          ['YES', 'NO', ''].map(o => '<option value="' + o + '"' + (v === o ? ' selected' : '') + '>' +
+            (o || 'leave blank') + '</option>').join('') + '</select>'
+        : '<input class="tf" data-k="' + esc(f.key) + '" value="' + esc(v) + '"' +
+          (f.hint ? ' title="' + esc(f.hint) + '"' : '') + '>';
+      h += '<tr><td class="k">' + esc(f.label) +
+           (f.hint ? '<br><small>' + esc(f.hint) + '</small>' : '') +
+           '</td><td class="v" colspan="2">' + input + '</td></tr>';
+    }
+    h += '</table><div class="row"><select id="tripFrom"><option value="">copy from...</option>' +
+         people.map((q, i) => i === selected ? '' :
+           '<option value="' + i + '">' + esc(q.rec.surname + ', ' + q.rec.givenNames) + '</option>').join('') +
+         '</select><button id="tripClear" class="tiny">Clear</button></div></div>';
+    return h;
+  }
+
+  /* Fetching is the normal path; pasting is the fallback for when the
+     link is a viewer page or the extension is not installed. */
+  function letterBox(rec) {
+    const url = rec.supportingLetterUrl;
+    return '<div class="letter">' +
+      (url
+        ? '<button id="letterFetch" class="primary">Read supporting letter</button> ' +
+          '<a href="' + esc(url) + '" target="_blank" rel="noopener">open it</a>'
+        : '<b>No supporting letter link in this row.</b>') +
+      '<span id="letterMsg"></span>' +
+      '<details><summary>paste it instead</summary>' +
+      '<textarea id="letterText" placeholder="Paste the whole letter"></textarea>' +
+      '<button id="letterParse" class="tiny">Read pasted text</button></details></div>';
+  }
+
   function letterMsg(kind, text) {
     const el = $('letterMsg');
     if (!el) return;
@@ -287,9 +297,7 @@
     });
     $('tripClear').addEventListener('click', () => { DS160Trip.clear(rec); rebuild(); });
 
-    $('letterParse').addEventListener('click', () => {
-      const text = $('letterText').value;
-      if (!text.trim()) { letterMsg('err', 'Paste the letter text first.'); return; }
+    function useLetterText(text) {
       const parsed = DS160Letter.parse(text);
       if (!parsed.found) {
         letterMsg('err', 'None of the expected lines were found - is this a C1/D supporting letter?');
@@ -297,16 +305,51 @@
       }
       const answers = DS160Letter.answers(parsed);
       for (const k in answers) DS160Trip.set(rec, k, answers[k]);
-
       const issues = DS160Letter.crossCheck(parsed, rec);
-      const took = Object.keys(answers).length;
       pendingLetter = {
         kind: issues.length ? 'err' : 'ok',
-        text: took + ' field(s) read from the letter' +
+        text: Object.keys(answers).length + ' field(s) read from the letter' +
           (parsed.missing.length ? '; not in this letter: ' + parsed.missing.join(', ') : '') +
           (issues.length ? ' — CHECK: ' + issues.map(i => i.msg).join(' | ') : ''),
       };
       rebuild();
+    }
+
+    /* The page cannot fetch a Zoho URL itself - cross-origin, and behind
+       the user's login - so the extension does it and hands back bytes. */
+    if ($('letterFetch')) $('letterFetch').addEventListener('click', () => {
+      if (!hasExtension()) {
+        letterMsg('err', 'The extension is not loaded on this page, so the letter cannot be fetched. Paste it instead.');
+        return;
+      }
+      letterMsg('', 'Fetching the letter...');
+      const id = 'f' + (letterSeq++);
+      const done = ev => {
+        const d = ev.data;
+        if (!d || d.channel !== 'cti-ds160' || d.type !== 'fetch-letter-result' || d.id !== id) return;
+        window.removeEventListener('message', done);
+        clearTimeout(timer);
+        if (!d.ok) { letterMsg('err', d.error || 'The letter could not be fetched.'); return; }
+        letterMsg('', 'Reading ' + Math.round(d.bytes / 1024) + ' KB...');
+        const bin = atob(d.b64);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        PDFText.extract(bytes.buffer)
+          .then(useLetterText)
+          .catch(e => letterMsg('err', 'Could not read the PDF: ' + e.message + '. Paste the text instead.'));
+      };
+      window.addEventListener('message', done);
+      const timer = setTimeout(() => {
+        window.removeEventListener('message', done);
+        letterMsg('err', 'The extension did not answer. Reload it, refresh this page, or paste the letter.');
+      }, 20000);
+      window.postMessage({ channel: 'cti-ds160', type: 'fetch-letter', url: rec.supportingLetterUrl, id }, '*');
+    });
+
+    $('letterParse').addEventListener('click', () => {
+      const text = $('letterText').value;
+      if (!text.trim()) { letterMsg('err', 'Paste the letter text first.'); return; }
+      useLetterText(text);
     });
 
     if (pendingLetter) letterMsg(pendingLetter.kind, pendingLetter.text);

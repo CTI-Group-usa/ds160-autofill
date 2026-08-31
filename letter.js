@@ -62,8 +62,12 @@
 
     /* The final value runs straight into the body with no separator at
        all - "MiamiI can confirm that..." - so a word boundary is no help.
-       Cut at the phrases the letter body always opens with. */
-    const BODY = /I can confirm|I further confirm|I thank you|We kindly|Company will|Yours (sincerely|faithfully)/i;
+       Cut at the phrases the letter body opens with.
+
+       When the text comes from pdftext.js the body is set in a font we
+       cannot decode and is dropped, so what survives of it can be a bare
+       word like "Company" - cut on that too. No port is called that. */
+    const BODY = /I can confirm|I further confirm|I thank you|We kindly|Yours (sincerely|faithfully)|\bCompany\b|\bDeportation\b/i;
 
     found.forEach((f, i) => {
       const next = found[i + 1];
