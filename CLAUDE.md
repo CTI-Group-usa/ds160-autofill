@@ -62,6 +62,25 @@ reload the page, so `content.js` fills every safe field first, then applies
 **one** postback control and stops. `autoStep` in `chrome.storage.local` makes
 it resume after the reload (max 12 passes).
 
+**`revealsNothing()` avoids nearly all of that.** CEAC hangs `__doPostBack` on
+the conditional questions so a *Yes* can reveal an explanation box. A *No*, or
+a "Does Not Apply" tick, reveals nothing, and the value rides the form post
+regardless — so those are set silently (`quiet` on `setRadio`/`setCheckbox`)
+and no reload happens. A *Yes* still goes through the real postback, because
+the explanation fields genuinely have to appear.
+
+Measured on `test/fake-personal1.html`: 12 fields filled in one pass, zero
+postbacks. Before this, Personal 1 needed three page reloads for the native
+alphabet checkbox and the two Yes/No questions, which is what made it look
+like nothing was happening.
+
+## Record versioning
+Records handed to the extension carry `_v` (`RECORD_V`, currently 2 = includes
+constant answers) and `_sentAt`. The popup shows a red banner when `_v` is
+behind, because a record sent before a feature existed silently lacks its
+fields. Bump `RECORD_V` in **both** `app.js` and `extension/popup.js` whenever
+the record shape grows.
+
 ## Matcher status
 `extension/matcher.js` seed rules are keyed on CEAC id fragments
 (`tbxAPP_SURNAME`, `ddlDOBDay`, `tbxPPT_NUM`, …) with visible-label fallback.

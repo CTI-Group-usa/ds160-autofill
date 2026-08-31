@@ -6,6 +6,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const STORE = 'ds160.rows';
+  const RECORD_V = 2;          // 2 = carries constant answers
 
   let rows = [];      // raw sheet rows (header -> value)
   let people = [];    // { rec, val }
@@ -203,7 +204,7 @@
       setTimeout(() => b.textContent = 'copy', 900);
     }));
     $('copyJson').addEventListener('click', () => {
-      const clone = Object.assign({}, rec); delete clone._raw;
+      const clone = stamp(rec);
       navigator.clipboard.writeText(JSON.stringify(clone, null, 2));
       $('sendMsg').textContent = 'JSON copied.';
     });
@@ -215,7 +216,7 @@
        record in chrome.storage. No answer means the extension is not
        actually listening on this page, whatever the badge says. */
     $('send').addEventListener('click', () => {
-      const clone = Object.assign({}, rec); delete clone._raw;
+      const clone = stamp(rec);
       let acked = false;
 
       function onAck(ev) {
@@ -238,6 +239,16 @@
                    'refresh this page, then try again - or use Copy JSON.');
       }, 1200);
     });
+
+    /* RECORD_V goes up whenever the shape the extension expects changes,
+       so a record sent by an older worksheet can be spotted and resent. */
+    function stamp(r) {
+      const c = Object.assign({}, r);
+      delete c._raw;
+      c._v = RECORD_V;
+      c._sentAt = new Date().toISOString();
+      return c;
+    }
 
     function say(kind, text) {
       const el = $('sendMsg');

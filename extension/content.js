@@ -119,7 +119,7 @@
     return true;
   }
 
-  function setRadio(group, value) {
+  function setRadio(group, value, quiet) {
     const want = String(value).trim().toUpperCase();
     if (want !== 'YES' && want !== 'NO') return false;
     const hit = group.find(c => {
@@ -128,16 +128,26 @@
     });
     if (!hit || hit.el.checked) return false;
     hit.el.checked = true;
-    fire(hit.el, ['click', 'change']);
+    if (!quiet) fire(hit.el, ['click', 'change']);
     return true;
   }
 
-  function setCheckbox(el, value) {
+  function setCheckbox(el, value, quiet) {
     const want = String(value).trim().toUpperCase() === 'YES';
     if (el.checked === want) return false;
     el.checked = want;
-    fire(el, ['click', 'change']);
+    if (!quiet) fire(el, ['click', 'change']);
     return true;
+  }
+
+  /* CEAC hangs __doPostBack on the conditional questions so that a Yes
+     can reveal an explanation box. A No, or a "Does Not Apply" tick,
+     reveals nothing - and the value rides the form post either way.
+     Setting those silently saves the agent a full page reload each. */
+  function revealsNothing(ctl, value) {
+    if (ctl.type === 'checkbox') return true;
+    if (ctl.type === 'radio') return String(value).trim().toUpperCase() === 'NO';
+    return false;
   }
 
   /* --- Security and Background sweep -------------------------------
@@ -224,7 +234,19 @@
         report.skipped.push({ id: c.id, key: m.key, why: 'already has a value' });
         continue;
       }
-      if (isPostback(c.el)) { deferred.push({ c, m, value }); continue; }
+      if (isPostback(c.el)) {
+        if (revealsNothing(c, value)) {
+          const ok = c.type === 'radio' ? setRadio(radioGroups[c.name], value, true)
+                                        : setCheckbox(c.el, value, true);
+          done.add(c.name);
+          if (ok) { mark(c.el, true); report.filled.push({ id: c.id, key: m.key, via: m.via, value: String(value) }); }
+          else report.skipped.push({ id: c.id, key: m.key, why: 'already set' });
+        } else {
+          deferred.push({ c, m, value });
+          done.add(c.name);
+        }
+        continue;
+      }
 
       let ok = false;
       if (c.type === 'radio') { ok = setRadio(radioGroups[c.name], value); done.add(c.name); }

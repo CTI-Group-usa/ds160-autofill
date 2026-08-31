@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Personal Information 1</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top} h2{font-family:Georgia,serif}</style>
+</head>
+<body>
+<!-- Mirrors the real Personal 1 page: same control ids, same Q:/A: rows,
+     and the __doPostBack handlers CEAC hangs off the conditional
+     questions. Any postback the filler triggers is recorded, because a
+     postback means a full page reload for the agent. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Personal Information 1</h2>
+
+<table>
+  <tr><td>Surnames</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_SURNAME"
+                 name="ctl00$SiteContentPlaceHolder$FormView1$tbxAPP_SURNAME"></td></tr>
+  <tr><td>Given Names</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_GIVEN_NAME"
+                 name="ctl00$SiteContentPlaceHolder$FormView1$tbxAPP_GIVEN_NAME"></td></tr>
+  <tr><td>Full Name in Native Alphabet</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_FULL_NAME_NATIVE"
+                 name="ctl00$SiteContentPlaceHolder$FormView1$tbxAPP_FULL_NAME_NATIVE"><br>
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_FULL_NAME_NATIVE_NA"
+                 name="ctl00$SiteContentPlaceHolder$FormView1$cbexAPP_FULL_NAME_NATIVE_NA"
+                 onclick="javascript:setTimeout('__doPostBack(\'ctl00$SiteContentPlaceHolder$FormView1$cbexAPP_FULL_NAME_NATIVE_NA\',\'\')', 0)">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_FULL_NAME_NATIVE_NA">Does Not Apply/Technology Not Available</label>
+      </td></tr>
+
+  <tr><td>Q:</td><td>Have you ever used other names (i.e., maiden, religious, professional, alias, etc.)?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblOtherNames_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblOtherNames" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'ctl00$SiteContentPlaceHolder$FormView1$rblOtherNames$0\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblOtherNames_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblOtherNames_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblOtherNames" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'ctl00$SiteContentPlaceHolder$FormView1$rblOtherNames$1\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblOtherNames_1">No</label>
+  </td></tr>
+
+  <tr><td>Q:</td><td>Do you have a telecode that represents your name?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblTelecodeQuestion_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblTelecodeQuestion" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'ctl00$SiteContentPlaceHolder$FormView1$rblTelecodeQuestion$0\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblTelecodeQuestion_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblTelecodeQuestion_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblTelecodeQuestion" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'ctl00$SiteContentPlaceHolder$FormView1$rblTelecodeQuestion$1\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblTelecodeQuestion_1">No</label>
+  </td></tr>
+
+  <tr><td>Sex</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlAPP_GENDER">
+      <option value="">- SELECT ONE -</option><option value="M">MALE</option><option value="F">FEMALE</option>
+    </select></td></tr>
+  <tr><td>Marital Status</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlAPP_MARITAL_STATUS">
+      <option value="">- SELECT ONE -</option><option value="S">SINGLE</option><option value="M">MARRIED</option>
+    </select></td></tr>
+  <tr><td>Date of Birth</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlDOBDay">
+      <option value="">-</option><option>25</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlDOBMonth">
+      <option value="">-</option><option value="MAR">MAR</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxDOBYear" size="4">
+  </td></tr>
+  <tr><td>City</td><td>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_POB_CITY"></td></tr>
+  <tr><td>State/Province</td><td>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_POB_ST_PROVINCE"></td></tr>
+</table>
+
+<script>
+window.__postbacks = [];
+window.__doPostBack = (t) => { window.__postbacks.push(t); };
+</script>
+<script src="../extension/matcher.js"></script>
+<script src="../extension/content.js"></script>
+</body>
+</html>

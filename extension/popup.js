@@ -10,12 +10,25 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
+  const RECORD_V = 2;
+  const CONST_KEYS = ['nativeAlphabetNA', 'otherNamesUsed', 'telecode', 'otherNationality',
+                      'otherCountryPermRes', 'mailingSameAsHome', 'immediateRelativesUS',
+                      'otherRelativesUS', 'securityAllNo'];
+
   function showWho(rec) {
-    $('who').innerHTML = rec
-      ? '<b>' + esc(rec.surname + ', ' + rec.givenNames) + '</b>' +
-        '<span>' + esc(rec.passportNumber || 'no passport no.') + ' &middot; ' +
-        esc(rec.dob || '') + ' &middot; ' + esc(rec.cruiseLine || '') + '</span>'
-      : 'No applicant loaded.';
+    if (!rec) { $('who').innerHTML = 'No applicant loaded.'; return; }
+    const answered = CONST_KEYS.filter(k => rec[k]).length;
+    let h = '<b>' + esc(rec.surname + ', ' + rec.givenNames) + '</b>' +
+      '<span>' + esc(rec.passportNumber || 'no passport no.') + ' &middot; ' +
+      esc(rec.dob || '') + ' &middot; ' + esc(rec.cruiseLine || '') + '</span>';
+    if ((rec._v || 0) < RECORD_V) {
+      h += '<div class="stale">This applicant was sent by an older version of the ' +
+           'worksheet, so it carries no constant answers. Open the worksheet and press ' +
+           '<b>Send to extension</b> again.</div>';
+    } else {
+      h += '<span>' + answered + ' constant answer' + (answered === 1 ? '' : 's') + ' included</span>';
+    }
+    $('who').innerHTML = h;
   }
 
   function list(title, items, cls, render) {
