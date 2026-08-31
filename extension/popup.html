@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CTI DS-160 Autofill</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { width: 360px; margin: 0; padding: 12px; font: 13px/1.45 system-ui, "Segoe UI", sans-serif; }
+  h1 { font-size: 14px; margin: 0 0 8px; }
+  .who { background: #f3f4f6; border-radius: 6px; padding: 8px; margin-bottom: 8px; }
+  .who b { display: block; font-size: 14px; }
+  .who span { color: #6b7280; }
+  button { font: inherit; padding: 6px 10px; border-radius: 6px; border: 1px solid #d1d5db;
+           background: #fff; cursor: pointer; }
+  button.primary { background: #B01A18; border-color: #B01A18; color: #fff; }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  label.chk { font-size: 12px; color: #4b5563; display: flex; align-items: center; gap: 4px; }
+  #report { font-size: 12px; max-height: 220px; overflow: auto; border-top: 1px solid #e5e7eb;
+            padding-top: 8px; }
+  #report ul { margin: 2px 0 8px; padding-left: 16px; }
+  .ok { color: #15803d; } .warn { color: #b45309; } .err { color: #b91c1c; }
+  textarea { width: 100%; box-sizing: border-box; height: 60px; font: 11px/1.3 ui-monospace, monospace; }
+  details { margin-top: 8px; font-size: 12px; }
+  .teach { display: flex; gap: 4px; margin: 3px 0; align-items: center; }
+  .teach code { flex: 1; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  select { font: 11px system-ui; max-width: 130px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #111827; color: #e5e7eb; }
+    .who { background: #1f2937; } .who span { color: #9ca3af; }
+    button { background: #1f2937; color: #e5e7eb; border-color: #374151; }
+    button.primary { background: #B01A18; border-color: #B01A18; }
+    #report { border-color: #374151; }
+  }
+</style>
+</head>
+<body>
+  <h1>CTI DS-160 Autofill</h1>
+  <div class="who" id="who">No applicant loaded.</div>
+
+  <div class="row">
+    <button class="primary" id="fill">Fill this page</button>
+    <label class="chk"><input type="checkbox" id="overwrite"> overwrite</label>
+    <label class="chk"><input type="checkbox" id="auto" checked> auto-continue</label>
+  </div>
+
+  <div id="report"></div>
+
+  <details>
+    <summary>Teach unmatched fields</summary>
+    <div id="teach"></div>
+    <button id="scan">Scan page</button>
+    <button id="copymap">Copy page map</button>
+  </details>
+
+  <details>
+    <summary>Load a record manually</summary>
+    <textarea id="json" placeholder="Paste the JSON copied from the worksheet"></textarea>
+    <button id="load">Load</button>
+  </details>
+
+  <script src="matcher.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

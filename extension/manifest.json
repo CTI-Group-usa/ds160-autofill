@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "CTI DS-160 Autofill",
+  "version": "0.1.0",
+  "description": "Fills the DS-160 form on ceac.state.gov from a CTI seafarer intake record. The agent still reviews, solves the security check, and signs.",
+  "permissions": ["storage", "scripting", "activeTab"],
+  "host_permissions": ["https://ceac.state.gov/*"],
+  "action": {
+    "default_title": "CTI DS-160 Autofill",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://ceac.state.gov/*"],
+      "js": ["matcher.js", "content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://putuastra.github.io/ds160-autofill/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

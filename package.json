@@ -1,0 +1,10 @@
+{
+  "name": "ds160-autofill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CTI DS-160 worksheet + CEAC autofill extension",
+  "scripts": {
+    "test": "node test/normalize.test.js && node test/matcher.test.js",
+    "serve": "node server.js"
+  }
+}

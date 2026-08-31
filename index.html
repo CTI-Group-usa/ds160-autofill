@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DS-160 Worksheet &middot; CTI Group</title>
+<link rel="stylesheet" href="style.css?v=20260831">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="mark">CTI</span>
+    <div><b>DS-160 Worksheet</b><small>Visa Registration Log &rarr; DS-160</small></div>
+  </div>
+  <div class="tools">
+    <span id="extBadge" class="badge off">extension not detected</span>
+    <button id="btnLoad">Load data</button>
+  </div>
+</header>
+
+<div id="loader" class="panel">
+  <h2>Load the intake data</h2>
+  <p>In Zoho Sheet open <b>Visa Registration Log</b> &rarr; worksheet <b>VISA APPLICATIONS</b>,
+     then <b>File &rarr; Download As &rarr; CSV</b>. Drop the file here, or paste the rows below.</p>
+  <div id="drop">Drop the CSV file here</div>
+  <textarea id="paste" placeholder="...or paste CSV / TSV including the header row"></textarea>
+  <div class="row">
+    <button class="primary" id="btnParse">Load</button>
+    <button id="btnDemo">Load a sample row</button>
+    <span id="loadMsg"></span>
+  </div>
+</div>
+
+<main id="main" hidden>
+  <aside>
+    <input id="search" type="search" placeholder="Search name, passport, email">
+    <div class="filters">
+      <label><input type="checkbox" id="onlyProblems"> only rows with errors</label>
+    </div>
+    <div id="people"></div>
+  </aside>
+  <section id="detail"></section>
+</main>
+
+<script src="normalize.js?v=20260831"></script>
+<script src="app.js?v=20260831"></script>
+</body>
+</html>
