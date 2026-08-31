@@ -268,8 +268,8 @@
       (url
         ? '<button id="letterFetch" class="primary">Read supporting letter</button> ' +
           '<a href="' + esc(url) + '" target="_blank" rel="noopener">open it</a>'
-        : '<b>No supporting letter link in this row.</b>') +
-      '<span id="letterMsg"></span>' +
+        : '<b>No supporting letter link in this row &mdash; paste it below.</b>') +
+      ' <span id="letterMsg"></span>' +
       '<details><summary>paste it instead</summary>' +
       '<textarea id="letterText" placeholder="Paste the whole letter"></textarea>' +
       '<button id="letterParse" class="tiny">Read pasted text</button></details></div>';
@@ -317,7 +317,9 @@
 
     /* The page cannot fetch a Zoho URL itself - cross-origin, and behind
        the user's login - so the extension does it and hands back bytes. */
-    if ($('letterFetch')) $('letterFetch').addEventListener('click', () => {
+    if ($('letterFetch')) $('letterFetch').addEventListener('click', () => fetchLetter(rec.supportingLetterUrl));
+
+    function fetchLetter(url) {
       if (!hasExtension()) {
         letterMsg('err', 'The extension is not loaded on this page, so the letter cannot be fetched. Paste it instead.');
         return;
@@ -343,12 +345,15 @@
         window.removeEventListener('message', done);
         letterMsg('err', 'The extension did not answer. Reload it, refresh this page, or paste the letter.');
       }, 20000);
-      window.postMessage({ channel: 'cti-ds160', type: 'fetch-letter', url: rec.supportingLetterUrl, id }, '*');
-    });
+      window.postMessage({ channel: 'cti-ds160', type: 'fetch-letter', url, id }, '*');
+    }
 
     $('letterParse').addEventListener('click', () => {
-      const text = $('letterText').value;
-      if (!text.trim()) { letterMsg('err', 'Paste the letter text first.'); return; }
+      const text = $('letterText').value.trim();
+      if (!text) { letterMsg('err', 'Paste the letter text, or its link.'); return; }
+      // Pasting the link is the obvious thing to do; treat it as one.
+      const url = text.match(/^https?:\/\/\S+$/i);
+      if (url) { fetchLetter(url[0]); return; }
       useLetterText(text);
     });
 

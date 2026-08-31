@@ -104,7 +104,8 @@ The cell renders empty in Zoho Sheet because it holds a *hyperlink*, not text �
 `xlsx.js → hyperlinks()` reads both storage forms (a rels-backed
 `<hyperlink ref=…>` and an `=HYPERLINK("…")` formula), `gridToObjects` attaches
 them to the row as `_links`, and `normalize.js` exposes
-`rec.supportingLetterUrl`, which the worksheet shows as a link in the Trip
+`rec.supportingLetterUrl` — falling back to the **cell's own text** when it is
+just a URL, which is how the real workbook turned out to store it, which the worksheet shows as a link in the Trip
 details block. `letter.js` parses the letter itself. Two things about the format matter:
 
 - **The extracted text has no line breaks.** Labels and values run together
@@ -143,6 +144,13 @@ object streams, no page tree. Two things it has to get right:
   dropped rather than emitted; otherwise they corrupt the value that precedes
   them. What survives of the body can be a bare word like "Company", which
   `letter.js` cuts on.
+
+A WorkDrive `/file/<id>` link opens a **viewer**, not the document, so
+`background.js` tries the link, then
+`https://download-accl.zoho.com/v1/workdrive/download/<id>`, then
+`<link>/download`, and reports every attempt if none yields a PDF. Pasting a URL
+into the paste box is treated as a link, not as letter text — that is what an
+agent will naturally do.
 
 `test/pdftext.test.js` runs end-to-end against a real letter if one is present
 at `~/Downloads/SL-*.pdf` (or `LETTER_PDF=`); the unit tests run either way. The
@@ -250,7 +258,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 42 + xlsx 12 + constants 26 + trip 26 + letter 28 + pdftext 17
+npm test   # normalize 36 + matcher 42 + xlsx 12 + constants 26 + trip 26 + letter 28 + pdftext 17 + background 9
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

@@ -221,7 +221,9 @@
     rec.nativeName = rec.fullName;
 
     const links = row._links || {};
-    rec.supportingLetterUrl = links['Supporting Letter'] || '';
+    const cell = clean(row['Supporting Letter']);
+    rec.supportingLetterUrl = links['Supporting Letter'] ||
+                              (/^https?:\/\//i.test(cell) ? cell : '');
     for (const [k] of MISSING_FROM_INTAKE) if (!(k in rec)) rec[k] = '';
     rec._raw = row;
     return rec;
