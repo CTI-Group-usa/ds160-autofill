@@ -36,18 +36,19 @@
     return out.filter(r => r.some(v => v.trim() !== ''));
   }
 
-  function toObjects(text) {
-    const grid = parseDelimited(text, detectDelim(text));
+  function gridToObjects(grid) {
     if (grid.length < 2) throw new Error('Need a header row plus at least one data row.');
-    const head = grid[0].map(h => h.trim());
+    const head = grid[0].map(h => String(h == null ? '' : h).trim());
     if (!head.some(h => /^name$/i.test(h)))
       throw new Error('No "Name" column found - is this the VISA APPLICATIONS sheet?');
     return grid.slice(1).map(r => {
       const o = {};
-      head.forEach((h, i) => { if (h) o[h] = (r[i] || '').trim(); });
+      head.forEach((h, i) => { if (h) o[h] = String(r[i] == null ? '' : r[i]).trim(); });
       return o;
-    });
+    }).filter(o => Object.values(o).some(v => v !== ''));
   }
+
+  const toObjects = text => gridToObjects(parseDelimited(text, detectDelim(text)));
 
   // -- state -----------------------------------------------------------
   function build() {
@@ -60,12 +61,33 @@
     if (people.length) select(0);
   }
 
+  function accept(objects, note) {
+    rows = objects;
+    try { sessionStorage.setItem(STORE, JSON.stringify(rows)); } catch (e) { /* over quota, fine */ }
+    $('loadMsg').textContent = note || '';
+    build();
+  }
+
   function loadText(text) {
+    try { accept(toObjects(text)); }
+    catch (e) { $('loadMsg').textContent = e.message; }
+  }
+
+  /* Excel keeps the sheet as a ZIP of XML, CSV is just text. Sniff the
+     ZIP magic rather than trusting the file extension. */
+  async function loadFile(file) {
+    $('loadMsg').textContent = 'Reading ' + file.name + '...';
     try {
-      rows = toObjects(text);
-      try { sessionStorage.setItem(STORE, JSON.stringify(rows)); } catch (e) { /* over quota, fine */ }
-      $('loadMsg').textContent = '';
-      build();
+      const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      const isZip = head[0] === 0x50 && head[1] === 0x4b;
+      if (/\.xls$/i.test(file.name) && !isZip)
+        throw new Error('Old .xls files are not supported - re-save as .xlsx or CSV.');
+      if (!isZip) { loadText(await file.text()); return; }
+
+      const res = await XLSXLite.read(await file.arrayBuffer(), 'VISA APPLICATIONS');
+      accept(gridToObjects(res.grid),
+             'Loaded worksheet "' + res.name + '"' +
+             (res.sheets.length > 1 ? ' of ' + res.sheets.length : '') + '.');
     } catch (e) {
       $('loadMsg').textContent = e.message;
     }
@@ -197,7 +219,13 @@
   drop.addEventListener('drop', e => {
     e.preventDefault();
     const f = e.dataTransfer.files[0];
-    if (f) f.text().then(loadText);
+    if (f) loadFile(f);
+  });
+  drop.addEventListener('click', () => $('file').click());
+  $('file').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) loadFile(f);
+    e.target.value = '';
   });
 
   $('btnDemo').addEventListener('click', () => {

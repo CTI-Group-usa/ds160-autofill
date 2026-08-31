@@ -18,6 +18,7 @@ Dashboard and the Indonesia Monitoring Dashboard.
 index.html    — worksheet SPA shell
 app.js        — CSV parsing, applicant list, detail rendering, extension bridge
 normalize.js  — sheet row -> canonical DS-160 record + validation  (SHARED, tested)
+xlsx.js       — dependency-free .xlsx reader (ZIP + XML)  (SHARED, tested)
 style.css     — all styles, light/dark via CSS variables
 server.js     — local static preview on :7773
 extension/
@@ -40,7 +41,11 @@ through the `cti-indo-proxy` Worker (Zoho refresh token has
 `ZohoSheet.dataAPI.READ`). A live feed for this project should extend that
 Worker rather than mint a second Zoho self-client.
 
-For now the worksheet loads a **CSV export** — no auth, works offline.
+For now the worksheet loads a **file export** — `.xlsx` or CSV, no auth,
+works offline. `.xlsx` is unzipped in the browser with
+`DecompressionStream('deflate-raw')` and parsed with regexes (`xlsx.js`);
+Excel serial dates fall straight through `normalize.js`'s serial branch.
+Old binary `.xls` is rejected with a clear message.
 
 ## Hard Rules (safety, not preference)
 - Never automate the CAPTCHA / security check.
@@ -75,9 +80,11 @@ wrong seed degrades to "not filled", never to "filled wrong".
 
 ## Testing
 ```bash
-node test/normalize.test.js   # 36 assertions
-node test/matcher.test.js     # 33 assertions
+npm test   # normalize 36 + matcher 33 + xlsx 9 assertions
 ```
+`test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
+The unzip half needs a browser, so it is checked by loading that fixture in
+the app rather than under node.
 
 ## UI copy
 English only.

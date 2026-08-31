@@ -34,7 +34,7 @@ button.tiny{padding:2px 7px;font-size:11px}
        border:1px solid var(--line);border-radius:10px}
 .panel h2{margin:0 0 6px;font-size:16px}
 .panel p{color:var(--muted);margin:0 0 12px}
-#drop{border:2px dashed var(--line);border-radius:8px;padding:26px;text-align:center;
+#drop{cursor:pointer;border:2px dashed var(--line);border-radius:8px;padding:26px;text-align:center;
       color:var(--muted);margin-bottom:10px}
 #drop.hot{border-color:var(--accent);color:var(--accent)}
 textarea{width:100%;height:120px;padding:8px;border:1px solid var(--line);border-radius:6px;

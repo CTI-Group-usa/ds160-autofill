@@ -23,8 +23,9 @@ filled in honestly, and the applicant signs their own application.
 ## Using it
 
 1. Zoho Sheet → **Visa Registration Log** → worksheet **VISA APPLICATIONS** →
-   *File → Download As → CSV*.
-2. Open the worksheet app, drop the CSV in.
+   *File → Download As* — **XLSX** or **CSV**, either works.
+2. Open the worksheet app, drop the file in (or click the box to browse).
+   An `.xlsx` with several sheets is opened at **VISA APPLICATIONS**.
 3. Work the list: fix every red **error** before booking an appointment — those
    are the ones that waste a slot.
 4. Pick an applicant → **Send to extension** (or **Copy JSON** if the extension
@@ -58,10 +59,14 @@ the page for adding new rules to `extension/matcher.js`.
 ## Development
 
 ```bash
-node test/normalize.test.js
-node test/matcher.test.js
-node server.js          # http://localhost:7773
+npm test                     # normalize + matcher + xlsx
+node server.js               # http://localhost:7773
+python test/make-fixture.py  # rebuild test/fixtures/sample.xlsx
 ```
+
+`.xlsx` is read by `xlsx.js`, a ~150-line ZIP + XML reader built on the
+browser's own `DecompressionStream('deflate-raw')` — no library, nothing to
+install. Old binary `.xls` is not supported; re-save as `.xlsx` or CSV.
 
 `docs/sheet-schema.md` is the live column list read from the Zoho sheet, plus
 the DS-160 fields the intake form does not yet ask for.

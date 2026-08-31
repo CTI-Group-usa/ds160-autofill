@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DS-160 Worksheet &middot; CTI Group</title>
-<link rel="stylesheet" href="style.css?v=20260831">
+<link rel="stylesheet" href="style.css?v=20260831b">
 </head>
 <body>
 <header>
@@ -21,8 +21,10 @@
 <div id="loader" class="panel">
   <h2>Load the intake data</h2>
   <p>In Zoho Sheet open <b>Visa Registration Log</b> &rarr; worksheet <b>VISA APPLICATIONS</b>,
-     then <b>File &rarr; Download As &rarr; CSV</b>. Drop the file here, or paste the rows below.</p>
-  <div id="drop">Drop the CSV file here</div>
+     then <b>File &rarr; Download As</b> &mdash; either <b>XLSX</b> or <b>CSV</b> works.
+     Drop the file here, or paste the rows below.</p>
+  <div id="drop">Drop the <b>.xlsx</b> or <b>.csv</b> file here &mdash; or click to browse</div>
+  <input type="file" id="file" accept=".xlsx,.csv,.tsv,.txt" hidden>
   <textarea id="paste" placeholder="...or paste CSV / TSV including the header row"></textarea>
   <div class="row">
     <button class="primary" id="btnParse">Load</button>
@@ -42,7 +44,8 @@
   <section id="detail"></section>
 </main>
 
-<script src="normalize.js?v=20260831"></script>
-<script src="app.js?v=20260831"></script>
+<script src="xlsx.js?v=20260831b"></script>
+<script src="normalize.js?v=20260831b"></script>
+<script src="app.js?v=20260831b"></script>
 </body>
 </html>
