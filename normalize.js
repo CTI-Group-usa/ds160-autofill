@@ -256,33 +256,16 @@
     rec._nameMononym = n.mononym;
     rec._nameGuessed = n.guessed;
 
-    /* "Present Employer or School" is NOT the manning agency. CTI Indonesia
-       belongs in the agency block on the Crew Visa page, and the intake
-       sheet's "Current Workplace" columns (AU-AX) hold CTI's OWN name,
-       address and phone - so filling the present employer from them put the
-       agent where the employer goes, which is what the live page showed.
+    /* "Present Employer or School" comes straight from columns AU-AY, the
+       "Current Workplace" block. A conditional source keyed on column AZ was
+       built here on 2026-09-01 and reverted the same day at the user's
+       request: AU holds whatever that seafarer's employer or school actually
+       is - a shipping company for one applicant, "INSTITUTE TOURISM OF SAHID"
+       for another - so there is nothing to branch on. Do not reintroduce it.
 
-       At the user's instruction the block is sourced on column AZ instead:
-         AZ = YES -> the last real employer, columns BA / BB / BC / BF
-         AZ = NO  -> the college or university, columns BO / BP / BR
-       A seafarer who has worked names that employer; one who never has names
-       his school, which is exactly what "Employer or School" asks for.
-       `_employerSource` records which branch ran, for the worksheet. */
-    if (rec.prevEmployed === 'YES') {
-      rec.employerName    = rec.prevEmployerName;
-      rec.employerAddress = rec.prevEmployerAddress;
-      rec.employerPhone   = rec.prevEmployerPhone;
-      rec.employerStart   = rec.prevStart;
-      rec._employerSource = 'previous employer (AZ = YES, columns BA-BG)';
-    } else {
-      rec.employerName    = rec.uniName;
-      rec.employerAddress = rec.uniAddress;
-      rec.employerPhone   = '';
-      // Already DD-MMM-YYYY, or '' if the cell held only a year - see strictDate.
-      rec.employerStart   = rec.uniFrom;
-      rec._employerSource = 'college / university (AZ = ' +
-                            (rec.prevEmployed || 'blank') + ', columns BO-BS)';
-    }
+       CTI Indonesia appearing in this box for one applicant was that row's
+       own AU value, not a mapping error. The agency block on the Crew Visa
+       page is separate and lives in constants.js. */
 
     // C1/D crew are employed by the cruise line, not the manning agent.
     if (!rec.employerName && rec.cruiseLine) rec.employerName = upper(rec.cruiseLine);
@@ -414,22 +397,13 @@
 
     if (rec.prevEmployed === 'YES' && !rec.prevEmployerName)
       E('prevEmployerName', 'Marked as previously employed but no previous employer given');
-    /* The Present Employer block is sourced on column AZ, so say which branch
-       ran and what it could not supply. */
-    if (!rec.employerStart) {
-      /* strictDate() blanks a cell that held only a year, so read the raw cell
-         to say WHY: "2019" is not a date CEAC will take, and 01-JAN-2019 is not
-         ours to invent. */
-      const rawEntry = clean(rec._raw && rec._raw['Year of College/University Entry']);
-      W('employerStart', rawEntry && rec.prevEmployed !== 'YES'
-          ? 'Start Date reads "' + rawEntry + '", which is a year rather than a ' +
-            'full date - CEAC wants DD-MMM-YYYY, so enter the day and month by hand'
-          : 'No Start Date for the present employer or school, which CEAC ' +
-            'requires: taken from ' + (rec._employerSource || 'the intake form'));
-    }
+    /* CEAC requires both of these on the Work/Education page, and both come
+       from columns AX and AV. A blank has to be visible rather than silent. */
+    if (!rec.employerStart)
+      W('employerStart', 'No Start Date for the present employer or school ' +
+                         '(column AX), which CEAC requires');
     if (!rec.employerAddress)
-      W('employerAddress', 'No address for the present employer or school: ' +
-                           'taken from ' + (rec._employerSource || 'the intake form'));
+      W('employerAddress', 'No address for the present employer or school (column AV)');
     if (rec.priorUsVisa === 'YES') {
       if (!rec.lastVisaNumber) W('lastVisaNumber', 'Held a US visa before - DS-160 asks for the previous visa number');
       if (!rec.lastVisaIssued) W('lastVisaIssued', 'Held a US visa before - DS-160 asks when it was issued');
@@ -525,7 +499,6 @@
       ['marriageDate','Date of Marriage'], ['marriageEnded','Date Marriage Ended'],
       ['marriageEndHow','How the Marriage Ended'], ['marriageEndCountry','Country Terminated'] ] },
     { title: 'Present Work / Education', fields: [
-      ['_employerSource','Present block sourced from'],
       ['employerName','Present Employer or School'], ['employerAddress','Address'],
       ['employerCity','City'], ['employerState','State/Province'],
       ['employerPostal','Postal Zone/ZIP'], ['employerCountry','Country/Region'],

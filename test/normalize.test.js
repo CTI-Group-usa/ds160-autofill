@@ -100,70 +100,67 @@ has('bad: phone',            bv.warnings, 'phone', 'Indonesian');
 has('bad: ambiguous dob',    bv.warnings, 'dob', 'Ambiguous');
 has('bad: mrz chars',        bv.warnings, 'fullName', 'MRZ');
 
-// -- Present Employer or School is sourced on column AZ ----------------
-// CTI Indonesia is the manning AGENCY, and the sheet keeps its name and
-// address in the "Current Workplace" columns - so filling the present
-// employer from those put the agent where the employer belongs.
-const worked = D.toRecord({ 'Name': 'X', 'Cruise Line': 'Cunard Line',
-  "Current Workplace's Name": 'CTI INDONESIA',
-  "Current Workplace's Address": 'JL HANG TUAH NO.14 RENON',
+// -- Present Employer or School comes from columns AU-AY ---------------
+/* A conditional source keyed on column AZ was built and reverted the same
+   day: AU holds whatever that seafarer's employer or school actually is, so
+   there is nothing to branch on. CTI Indonesia appearing in this box for one
+   applicant was that row's own AU value, not a mapping error - the agency
+   block on the Crew Visa page is separate. */
+const present = D.toRecord({ 'Name': 'X',
+  "Current Workplace's Name": 'INSTITUTE TOURISM OF SAHID',
+  "Current Workplace's Address": 'JL KEMIRI RAYA NO 22 PD CABE UDIK',
+  "Current Workplace's Phone Number": '0217402329',
+  'Start Date at Current Workplace': '28 Aug 2015',
+  'Current Employment Position': 'Student',
+  // These must NOT be consulted for this block any more.
   'Were you previously employed?': 'Yes',
   'Previous Work Place Name': 'PT SAMUDERA BAHARI',
-  'Previous Workplace Address': 'JL PELABUHAN 8, SURABAYA',
-  'Previous Workplace Phone Number': '0313344556',
-  'Previous Workplace Start Date': '01/02/2022' });
-eq('AZ yes: employer name',  worked.employerName, 'PT SAMUDERA BAHARI');
-eq('AZ yes: address',        worked.employerAddress, 'JL PELABUHAN 8, SURABAYA');
-eq('AZ yes: phone',          worked.employerPhone, '+62313344556');
-eq('AZ yes: start date',     worked.employerStart, '01-FEB-2022');
-eq('the agency never lands here', worked.employerName === 'CTI INDONESIA' ? 'LEAKED' : 'clear', 'clear');
+  'Name of College/University': 'UDAYANA UNIVERSITY' });
+eq('AU: employer or school name', present.employerName, 'INSTITUTE TOURISM OF SAHID');
+eq('AV: address',                 present.employerAddress, 'JL KEMIRI RAYA NO 22 PD CABE UDIK');
+eq('AW: phone',                   present.employerPhone, '+62217402329');
+eq('AX: start date',              present.employerStart, '28-AUG-2015');
+eq('AY: position',                present.jobTitle, 'STUDENT');
+eq('BA is not consulted here',
+   present.employerName === 'PT SAMUDERA BAHARI' ? 'BRANCHED' : 'clear', 'clear');
+eq('BO is not consulted here',
+   present.employerName === 'UDAYANA UNIVERSITY' ? 'BRANCHED' : 'clear', 'clear');
+none('a complete block is quiet',
+     D.validate(present, { today: '2026-08-31' }).warnings, 'employerStart');
 
-const student = D.toRecord({ 'Name': 'X', 'Cruise Line': 'Cunard Line',
-  "Current Workplace's Name": 'CTI INDONESIA',
-  'Were you previously employed?': 'No',
-  'Name of College/University': 'UDAYANA UNIVERSITY',
-  'Address of College/University': 'JL RAYA KAMPUS, JIMBARAN',
-  'Year of College/University Entry': '2019' });
-eq('AZ no: school name',  student.employerName, 'UDAYANA UNIVERSITY');
-eq('AZ no: school address', student.employerAddress, 'JL RAYA KAMPUS, JIMBARAN');
-eq('AZ no: no school phone', student.employerPhone, '');
-/* A bare year is not a date. Feeding "2019" to the parser produced
-   01-JAN-2019 - a day and month nobody stated, on a sworn form. */
-eq('AZ no: bare year is not a start date', student.employerStart, '');
-has('AZ no: asks for the full date', D.validate(student, { today: '2026-08-31' }).warnings,
-    'employerStart', 'enter the day and month');
-/* Column BR is headed "Year of College/University Entry" but holds full dates
-   in practice - the live sheet shows "28 Aug 2015", "06 Apr 2017". Those must
-   pass straight through; the year-only guard above is only a safety net. */
-const uniStart = v => D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'No',
-  'Name of College/University': 'U', 'Year of College/University Entry': v }).employerStart;
-/* All four "Year of ..." columns hold full dates - the user confirmed there
-   are no year-only values - so all four are parsed, not passed through raw.
-   CEAC's attendance dates are split day/month/year dropdowns. */
+// CEAC requires both, so an empty AV or AX has to be visible.
+const bare = D.toRecord({ 'Name': 'X', "Current Workplace's Name": 'SOMEWHERE' });
+has('empty start date reported', D.validate(bare, { today: '2026-08-31' }).warnings,
+    'employerStart', 'column AX');
+has('empty address reported',    D.validate(bare, { today: '2026-08-31' }).warnings,
+    'employerAddress', 'column AV');
+
+/* The four education columns are headed "Year of ..." but hold full dates -
+   the user confirmed there are no year-only values. All four are parsed, not
+   passed through raw, because CEAC's attendance dates are split dropdowns. */
 const edu = D.toRecord({ 'Name': 'X',
   'Year of High School/Vocational School Entry': '16 Jul 2012',
   'Year of High School High School Graduation': '22 Aug 2015',
   'Year of College/University Entry': '28 Aug 2015',
   'Year of High School/University Graduation': '06 Apr 2019' });
-eq('hsFrom parsed', edu.hsFrom, '16-JUL-2012');
-eq('hsTo parsed',   edu.hsTo,   '22-AUG-2015');
+eq('hsFrom parsed',  edu.hsFrom, '16-JUL-2012');
+eq('hsTo parsed',    edu.hsTo,   '22-AUG-2015');
 eq('uniFrom parsed', edu.uniFrom, '28-AUG-2015');
 eq('uniTo parsed',   edu.uniTo,   '06-APR-2019');
-// strictDate refuses a bare year in every one of them.
+eq('uniFrom slash format',
+   D.toRecord({ 'Name': 'X', 'Year of College/University Entry': '15/08/2019' }).uniFrom,
+   '15-AUG-2019');
+/* strictDate refuses a bare year in every one of them: feeding "2019" to the
+   parser produced 01-JAN-2019, a day and month nobody stated, on a sworn
+   form. Empty is the honest answer. */
 eq('hsFrom year-only refused',
    D.toRecord({ 'Name': 'X', 'Year of High School/Vocational School Entry': '2012' }).hsFrom, '');
+eq('uniFrom year-only refused',
+   D.toRecord({ 'Name': 'X', 'Year of College/University Entry': '2019' }).uniFrom, '');
 eq('uniTo year-only refused',
    D.toRecord({ 'Name': 'X', 'Year of High School/University Graduation': '2019' }).uniTo, '');
-eq('BR real format, Aug 2015', uniStart('28 Aug 2015'), '28-AUG-2015');
-eq('BR real format, Apr 2017', uniStart('06 Apr 2017'), '06-APR-2017');
-eq('BR real format, 1999',     uniStart('28 Aug 1999'), '28-AUG-1999');
-eq('BR slash format',          uniStart('15/08/2019'), '15-AUG-2019');
-// An empty cell leaves a CEAC-required field blank, so say so.
-eq('BR empty', uniStart(''), '');
-has('empty start date is reported',
-    D.validate(D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'No',
-                            'Name of College/University': 'U' }), { today: '2026-08-31' }).warnings,
-    'employerStart', 'which CEAC');
+eq('empty cell stays empty',
+   D.toRecord({ 'Name': 'X', 'Year of College/University Entry': '' }).uniFrom, '');
 
 // -- employer falls back to the cruise line ---------------------------
 const fb = D.toRecord({ 'Name': 'Sukarno', 'Cruise Line': 'Carnival', "Current Workplace's Name": '' });

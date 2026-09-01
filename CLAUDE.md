@@ -321,26 +321,27 @@ changes:
 in `matcher.test.js`, which passes the block text explicitly — a fixture's
 `blockLabel()` does not necessarily reproduce the live nesting.
 
-## CTI Indonesia is the AGENCY, not the employer (2026-09-01)
-The live Work/Education page showed **Present Employer or School Name = CTI
-INDONESIA** with CTI's Denpasar address. That is the manning agency, and it
-belongs in the agency block on the **Crew Visa** page. It landed in the wrong
-place because the intake sheet keeps CTI's own name, address, phone and start
-date in its *"Current Workplace"* columns AU–AX.
+## Present Employer or School comes from AU–AY — do not branch it
+A conditional source keyed on column AZ was built here on 2026-09-01 and
+**reverted the same day at the user's request**. Column AU holds whatever that
+seafarer's employer or school actually is: a shipping company for one applicant,
+`INSTITUTE TOURISM OF SAHID` for another. There is nothing to branch on.
 
-**Present Employer or School is now sourced on column AZ**, at the user's
-instruction:
+`CTI INDONESIA` appearing in this box for one applicant was **that row's own AU
+value**, not a mapping error. The manning agency block on the Crew Visa page is a
+separate thing and lives in `constants.js`.
 
-| Column AZ | Source | Columns |
-|---|---|---|
-| YES | the last real employer | BA, BB, BC, BF |
-| NO / blank | the college or university | BO, BP, BR |
+| Box | Column |
+|---|---|
+| Present Employer or School Name | AU |
+| Street Address | AV |
+| Phone Number | AW |
+| Start Date | AX |
+| Primary Occupation / position | AY |
 
-A seafarer who has worked names that employer; one who never has names his
-school — which is exactly what "Employer **or School**" asks. `_employerSource`
-carries which branch ran and is shown on the worksheet, and the pre-existing
-cruise-line fallback still catches a row where both blocks are empty. AU–AX are
-no longer read for this block.
+CEAC requires the address and the start date, so a blank AV or AX is reported
+rather than passed over. Tests assert that BA (previous employer) and BO
+(university) are **not** consulted for this block.
 
 ### Two constants on this page
 `employerCountry` = **INDONESIA** and `monthlyIncomeNA` = **tick Does Not
