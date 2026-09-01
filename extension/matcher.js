@@ -336,11 +336,37 @@
     { key: 'spousePob',         kind: 'text', ids: [/SPOUSE_POB_CITY/i], labels: [/spouse.*city of birth/i] },
 
     { key: 'employerName',    kind: 'text', ids: [/EmpSchName/i, /PRES_EMPL_NAME/i], labels: [/present employer|school name/i] },
-    { key: 'employerAddress', kind: 'text', ids: [/EmpSchAddr1/i], labels: [/employer.*street address/i] },
+    /* Both lines take the same field; addressHalf() splits it on a word at
+       Line 1's real maxlength, so a long address overflows instead of being
+       clipped away. See homeAddress for the same arrangement. */
+    { key: 'employerAddress', kind: 'text', ids: [/EmpSchAddr[12]/i],
+      labels: [/employer.*street address/i] },
+    /* No column in the sheet for these three - one free-text address, same as
+       the home address. Named so the report says "no value in record" and
+       points at the sheet rather than blaming the rules. Id only: "City" and
+       "State/Province" are identical in four other blocks. */
+    { key: 'employerCity',   kind: 'text', ids: [/EmpSch(Addr)?City/i] },
+    { key: 'employerState',  kind: 'text', ids: [/EmpSch(Addr)?State/i], not: /_?NA\b/i },
+    { key: 'employerPostal', kind: 'text', ids: [/EmpSch(Addr)?Postal/i], not: /_?NA\b/i },
     { key: 'employerPhone',   kind: 'text', ids: [/WorkEducTel/i, /EmpSchTel/i], labels: [/telephone number.*employer/i] },
     { key: 'employerStart',   kind: 'date', ids: [/EmpDateFrom(Day|Month|Year)/i], labels: [/start date/i] },
+    /* "Country/Region" is bare and shared by the home address, the passport
+       issue block, the manning agency and this one, so the label match has to
+       see the "Present employer or school address" heading. `must` gates the
+       id too - an unfilled dropdown is reported, a wrongly filled one is not. */
+    { key: 'employerCountry', kind: 'text',
+      ids: [/EmpSch.*(CNTRY|COUNTRY)/i, /EMPLOYER.*CNTRY/i, /WorkEduc.*CNTRY/i],
+      labels: [/^country\s*\/?\s*region$/i], must: /employer|school/i },
     { key: 'jobTitle',        kind: 'text', ids: [/tbxJobTitle/i, /JOB_TITLE/i], labels: [/job title/i] },
-    { key: 'monthlyIncome',   kind: 'text', ids: [/MonthlySalary/i], labels: [/monthly (income|salary)/i] },
+    /* The box is left empty and the one beside it ticked - the intake form has
+       no salary column, and CEAC only asks "if employed". `not` keeps the text
+       rule off the checkbox's id; `must` keeps the checkbox rule off the four
+       other "Does Not Apply" boxes on this page. */
+    { key: 'monthlyIncome',   kind: 'text', ids: [/MonthlySalary/i, /MONTHLY_SALARY/i],
+      labels: [/monthly (income|salary)/i], not: /_NA\b|NA$/i },
+    { key: 'monthlyIncomeNA', kind: 'checkbox',
+      ids: [/MONTHLY_SALARY.*_?NA/i, /MonthlySalary.*NA/i],
+      labels: [/does not apply/i], must: /monthly (income|salary)/i },
 
     { key: 'prevEmployerName',    kind: 'text', ids: [/PrevEmplName/i], labels: [/employer name/i] },
     { key: 'prevEmployerAddress', kind: 'text', ids: [/PrevEmplAddr1/i], labels: [/employer street address/i] },
@@ -499,11 +525,14 @@
      with a length limit. Line 1 takes as much as fits, breaking on a word
      so a street name is never cut mid-word; Line 2 takes the rest. `cap`
      is the real maxlength read off the page, not a guess. */
-  const ADDRESS_KEYS = ['homeAddress'];
+  const ADDRESS_KEYS = ['homeAddress', 'employerAddress'];
 
   function addressHalf(id, value, cap) {
     const s = String(value || '').trim();
-    const isLine2 = /_LN2\b|LINE.?2/i.test(String(id || ''));
+    /* CEAC names the second line _LN2 on the address pages and Addr2 on the
+       Work/Education one. The employer address was clipping in Line 1 while
+       Line 2 sat empty, because nothing claimed it. */
+    const isLine2 = /_LN2\b|LINE.?2|Addr2\b/i.test(String(id || ''));
     const max = Number(cap) > 0 ? Number(cap) : 40;
     if (s.length <= max) return isLine2 ? '' : s;
     let cut = s.lastIndexOf(' ', max);

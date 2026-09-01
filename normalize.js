@@ -236,6 +236,9 @@
     ['passportIssuedState', 'Passport - state/province where issued'],
     ['homeState',     'Home address - state / province'],
     ['homePostal',    'Home address - postal code'],
+    ['employerCity',   'Employer / school - city (one address column in the sheet)'],
+    ['employerState',  'Employer / school - state / province'],
+    ['employerPostal', 'Employer / school - postal code'],
     ['arrivalDate',   'Intended date of arrival in the US'],
     ['stayAddress',   'Address where you will stay in the US'],
     ['tripPayer',     'Person / entity paying for the trip'],
@@ -524,6 +527,9 @@
     { title: 'Present Work / Education', fields: [
       ['_employerSource','Present block sourced from'],
       ['employerName','Present Employer or School'], ['employerAddress','Address'],
+      ['employerCity','City'], ['employerState','State/Province'],
+      ['employerPostal','Postal Zone/ZIP'], ['employerCountry','Country/Region'],
+      ['monthlyIncomeNA','Monthly Income - Does Not Apply'],
       ['employerPhone','Phone'], ['employerStart','Start Date'],
       ['jobTitle','Job Title'] ] },
     { title: 'Previous Work / Education', fields: [

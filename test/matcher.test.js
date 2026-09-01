@@ -184,6 +184,52 @@ eq('driver licence by curly-apostrophe label', radio('rblUnknownDL', DL), 'usDri
 eq('driver licence by ascii-apostrophe label',
    radio('rblUnknownDL2', "Do you or did you ever hold a U.S. Driver's License?"), 'usDriverLicense');
 
+// -- four blocks, one bare "Country/Region" label ---------------------
+/* Home address, passport issue, manning agency and present employer all show
+   a dropdown labelled exactly "Country/Region". Every rule is pinned to its
+   own block, and a bare one outside any block must stay unclaimed. */
+const cr = (section, id) =>
+  (M.matchKey({ id: P + (id || 'ddlUnknown'), name: '', label: 'Country/Region',
+                section, tag: 'select' }, {}) || {}).key;
+const empBlk = 'Present Employer or School Name Present employer or school address: ' +
+               'Street Address City State/Province Postal Zone/ZIP Code Phone Number Country/Region';
+eq('employer country by id',    cr(empBlk, 'ddlEmpSchCountry'), 'employerCountry');
+eq('employer country by label', cr(empBlk), 'employerCountry');
+eq('home country',    cr('Home Address Street Address City State/Province', 'ddlAPP_ADDR_CNTRY'),
+   'homeCountry');
+eq('passport issue country',
+   cr('Where was the Passport/Travel Document Issued? City State/Province Country/Region',
+      'ddlPPT_ISSUED_IN_CNTRY'), 'passportIssuedInCountry');
+eq('agency country',
+   cr('recruiting/manning/crewing agency Agency Name City State/Province Country/Region'),
+   'agencyCountry');
+eq('no block, no claim', cr(''), undefined);
+
+/* Monthly Income is left empty and its "Does Not Apply" ticked - no salary
+   column in the sheet, and CEAC only asks "if employed". Three other
+   Does-Not-Apply boxes sit on this same page, and State and Postal hold real
+   values, so ticking the wrong one would wipe an address. */
+const dna2 = (id, label, section) =>
+  (M.matchKey({ id: P + id, name: '', label, section, type: 'checkbox',
+                tag: 'input' }, {}) || {}).key;
+eq('monthly income Does Not Apply',
+   dna2('cbexCURR_MONTHLY_SALARY_NA',
+        'Does Not Apply Monthly Income in Local Currency (if employed)'), 'monthlyIncomeNA');
+eq('the income box itself still matches',
+   (M.matchKey({ id: P + 'tbxCURR_MONTHLY_SALARY', name: '',
+                 label: 'Monthly Income in Local Currency (if employed)',
+                 type: 'text', tag: 'input' }, {}) || {}).key, 'monthlyIncome');
+eq('income text rule stays off the _NA id',
+   (M.matchKey({ id: P + 'tbxCURR_MONTHLY_SALARY_NA', name: '',
+                 label: 'Monthly Income in Local Currency',
+                 type: 'text', tag: 'input' }, {}) || {}).key, undefined);
+eq('employer state Does Not Apply stays unclaimed',
+   dna2('cbexEmpSchStateNA', 'Does Not Apply State/Province',
+        'Present employer or school address: City State/Province'), undefined);
+eq('employer postal Does Not Apply stays unclaimed',
+   dna2('cbexEmpSchPostalNA', 'Does Not Apply Postal Zone/ZIP Code',
+        'Present employer or school address: Postal Zone/ZIP Code'), undefined);
+
 // -- Crew Visa: the manning agency block ------------------------------
 /* CTI Indonesia is the AGENCY, not the employer. Every box here shares its
    label with four other blocks - City, State/Province, Street Address,

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Present Work / Education / Training</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- "Present Employer or School Name" is sourced on intake column AZ:
+     YES -> the last real employer (BA/BB/BC/BF), NO -> the college or
+     university (BO/BP/BR). CTI Indonesia is the manning AGENCY and belongs on
+     the Crew Visa page; it used to land here because the sheet keeps CTI's own
+     details in its "Current Workplace" columns.
+
+     Country/Region here is a constant, INDONESIA. That label is bare and four
+     blocks share it - home address, passport issue, manning agency and this
+     one - so the rule is pinned by `must: /employer|school/i`. The Home
+     Address block below exists to prove the two do not swap.
+
+     City, State/Province and Postal Zone have no column in the sheet for the
+     employer either, so they stay for the agent to type. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Present Work/Education/Training Information</h2>
+
+<table>
+  <tr><td>Primary Occupation</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPresentOccupation">
+            <option>- SELECT ONE -</option><option>CULINARY/FOOD SERVICES</option></select></td></tr>
+  <tr><td>Present Employer or School Name</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxEmpSchName" size="40"></td></tr>
+</table>
+
+<fieldset>
+  <legend>Present employer or school address:</legend>
+  <table>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxEmpSchAddr1" size="40" maxlength="40"></td></tr>
+    <tr><td>Street Address (Line 2) <i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxEmpSchAddr2" size="40" maxlength="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxEmpSchCity"></td></tr>
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxEmpSchState">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexEmpSchStateNA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexEmpSchStateNA">Does Not Apply</label>
+        </td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxEmpSchPostal">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexEmpSchPostalNA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexEmpSchPostalNA">Does Not Apply</label>
+        </td></tr>
+    <tr><td>Phone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxWorkEducTel"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlEmpSchCountry">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+  </table>
+</fieldset>
+
+<table>
+  <tr><td>Start Date</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlEmpDateFromDay">
+      <option value="">-</option><option>28</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlEmpDateFromMonth">
+      <option value="">-</option><option value="AUG">AUG</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxEmpDateFromYear" size="4">
+    <br><span>(Format: DD-MMM-YYYY)</span>
+  </td></tr>
+  <tr><td>Monthly Income in Local Currency (if employed)</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxCURR_MONTHLY_SALARY">
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexCURR_MONTHLY_SALARY_NA">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexCURR_MONTHLY_SALARY_NA">Does Not Apply</label>
+      </td></tr>
+</table>
+
+<fieldset>
+  <legend>Home Address</legend>
+  <table>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_LN1" size="40" maxlength="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_CITY"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlAPP_ADDR_CNTRY">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

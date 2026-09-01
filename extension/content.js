@@ -321,11 +321,19 @@
                      { blankGiven: (M.MONONYM_NA_KEYS || []).indexOf(key) >= 0 });
     }
     if (M.ADDRESS_KEYS.indexOf(key) >= 0) {
-      /* Split on Line 1's own maxlength, whichever box we are filling, so
-         the two halves always meet. Writing past maxlength would let the
-         browser clip it and lose the tail silently. */
-      const ln1 = document.querySelector('input[id*="ADDR_LN1"]');
-      v = M.addressHalf(ctl.id || ctl.name, v, ln1 && ln1.maxLength > 0 ? ln1.maxLength : 0);
+      /* Split on LINE 1's own maxlength, whichever box we are filling, so the
+         two halves always meet - writing past maxlength lets the browser clip
+         the tail away silently. Find the partner by turning the 2 into a 1 in
+         this control's own id: a page-wide search for ADDR_LN1 picked the HOME
+         address line even while filling the employer's. */
+      const id = String(ctl.id || ctl.name || '');
+      let cap = ctl.el && ctl.el.maxLength > 0 ? ctl.el.maxLength : 0;
+      const partnerId = id.replace(/(_LN)2\b/i, '$11').replace(/Addr2\b/i, 'Addr1');
+      if (partnerId !== id) {
+        const ln1 = document.getElementById(partnerId);
+        if (ln1 && ln1.maxLength > 0) cap = ln1.maxLength;
+      }
+      v = M.addressHalf(id, v, cap);
     }
     return v;
   }

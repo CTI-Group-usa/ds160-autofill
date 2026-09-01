@@ -179,6 +179,16 @@
       label: 'Agency - telephone number', def: '085333735407',
       why: 'Left exactly as CEAC shows it, not normalised to +62.' },
 
+    { key: 'employerCountry', kind: 'text', page: 'Work / Education',
+      label: 'Present employer or school - country/region', def: 'INDONESIA',
+      why: 'The employer or school is in Indonesia on every application CTI files. ' +
+           'The intake form has one free-text address column and no country field.' },
+    { key: 'monthlyIncomeNA', kind: 'checkbox', page: 'Work / Education',
+      label: 'Monthly Income in Local Currency - tick "Does Not Apply"',
+      def: 'YES', why: 'The intake form does not collect a salary, and the question is ' +
+                       'only asked "if employed". Untick it and fill the box for a ' +
+                       'seafarer who does report one.' },
+
     { key: 'fatherInUs', kind: 'yesno', page: 'Family',
       label: 'Is your father in the U.S.?',
       def: 'NO', why: 'Parents of CTI seafarers live in Indonesia. A Yes here makes CEAC ask ' +

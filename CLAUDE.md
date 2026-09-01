@@ -342,6 +342,39 @@ carries which branch ran and is shown on the worksheet, and the pre-existing
 cruise-line fallback still catches a row where both blocks are empty. AU–AX are
 no longer read for this block.
 
+### Two constants on this page
+`employerCountry` = **INDONESIA** and `monthlyIncomeNA` = **tick Does Not
+Apply**. The income box has no salary column in the sheet and CEAC only asks it
+"if employed".
+
+`Country/Region` is a bare label shared by **four** blocks — home address,
+passport issue, manning agency and present employer — so every one of those
+rules is pinned to its own block, and a bare one outside any block stays
+unclaimed. A cross-block test covers all four. Likewise `monthlyIncomeNA` is
+pinned by `must: /monthly (income|salary)/i`, because State/Province and Postal
+Zone on this same page carry an identical "Does Not Apply" and hold real values.
+
+### The employer address was clipping in Line 1
+`employerAddress` matched only `EmpSchAddr1`, so nothing claimed Line 2 and an
+address over CEAC's 40 characters lost its tail to the browser — silently.
+`employerAddress` joined `ADDRESS_KEYS`, its rule takes `EmpSchAddr[12]`, and
+`addressHalf()` recognises `Addr2` as a second line alongside `_LN2`.
+
+The cap lookup in `valueFor` had to change with it: it searched the whole page
+for `ADDR_LN1` and so measured the **home** address line while filling the
+employer's. It now finds the partner by turning the 2 into a 1 in the control's
+own id.
+
+`employerCity`, `employerState` and `employerPostal` have no column in the sheet
+either — one free-text address, same as home — so they get id-only rules and
+join `MISSING_FROM_INTAKE`, which puts them in the calm "not collected by the
+intake form" note instead of the red re-send banner.
+
+**`ddlPresentOccupation` (Primary Occupation) is still unmatched.** It is a fixed
+CEAC dropdown and no intake column maps onto its option list; the shipboard rank
+in the supporting letter is not the same thing (a Hotel Assistant is not
+CULINARY/FOOD SERVICES). It needs a decision, not a guess.
+
 ### The four "Year of ..." columns hold full dates
 BM, BN, BR and BS are headed *"Year of ... Entry"* / *"... Graduation"*, but the
 sheet holds `28 Aug 2015`, `06 Apr 2017`, `16 Jul 2019` — the user confirmed
@@ -732,7 +765,7 @@ on the five Security and Background pages. Guards:
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
 `fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
 `fake-us-contact.html`, `fake-family.html`,
-`fake-crew-visa.html` and
+`fake-crew-visa.html`, `fake-work-education.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated
