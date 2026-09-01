@@ -538,6 +538,45 @@ addresses.
 free-text addresses — so both are named by id only and join
 `MISSING_FROM_INTAKE`.
 
+## Crew Visa: the vessel block (2026-09-01, at the user's instruction)
+Nine controls, and they describe **three different companies plus the ship**.
+
+| Question | Key | Source |
+|---|---|---|
+| Specific job title aboard aircraft or vessel | `jobTitleAboard` | supporting letter |
+| Name of company that owns the aircraft or vessel | `vesselOwnerCompany` | constant CARNIVAL UK |
+| Company Telephone Number | `vesselOwnerPhone` | constant `+19545685888` |
+| Did you acquire your position using a recruiting/manning/crewing agency? | `usedAgency` | constant YES |
+| Are you serving aboard a seagoing ship or vessel? | `servingAboardVessel` | constant YES |
+| Seagoing Ship/Vessel Name | `vesselName` | supporting letter |
+| Seagoing Ship/Vessel Identification Number | `vesselImo` | supporting letter |
+
+The three from the letter stay in `trip.js`, per applicant - a different ship
+every contract. The owner's phone is the **same number** the payer block carries
+on the Travel page, but stored with the `+` where the payer's has none; that is
+how each page shows it, and the `why` on the constant says so, otherwise it looks
+like one of them is a typo.
+
+### Two ways a guard can name the wrong thing
+Both of these fill something **wrong** rather than leaving it empty, which is the
+worst class of bug here, and both were silent.
+
+1. **Never name a sibling field in a `not` guard.** `vesselName` carried
+   `not: /IDENT|IMO|NUMBER/i` to keep off the IMO box. But `not` is tested
+   against the **section**, and this block's text contains "Seagoing Ship/Vessel
+   Identification Number" - so the rule excluded **itself** on every real page.
+   The ids separate the two cleanly; put `vesselImo` first and drop the guard.
+2. **Sibling ids can share a prefix.** `VESSEL_OWNER_NAME` and
+   `VESSEL_OWNER_TEL` both contain `VESSEL_OWNER`, so the company rule claimed
+   the phone box in the id pass and wrote `CARNIVAL UK` into it - caught in the
+   browser, not by the matcher tests. A `not` cannot fix this one either: the
+   block says "Company Telephone Number". The company id carries a negative
+   **lookahead** - `/VESSEL_OWNER(?!.*(?:TEL|PHONE))/i` - which only ever looks
+   at the id, and the phone rule sits first as well.
+
+The general shape: **a `not` guard is for other blocks, never for a neighbour in
+the same one.** Neighbours are separated by ids, ordering, or a lookahead.
+
 ### The agency block is constants
 `usedAgency` = YES plus `agencyName`, `agencyContactSurname` /
 `agencyContactGiven`, `agencyAddr1`, `agencyCity`, `agencyState`,
@@ -770,14 +809,12 @@ comes from intake column N.
 its label for the Do-Not-Know box verbatim
 (`Do Not Know Visa Number Do Not Know`), so these do not regress.
 
-**Still not implemented from that sample:** the Crew Visa manning-agency block
-(constant: CTI INDONESIA / OKTAVIANIA, DORKAS / JL. HANG TUAH NO.14B RENON,
-DENPASAR, BALI 80239 / 085333735407) and roughly 25 further constants
-(Passport Type REGULAR, Passport Book Number NA, secondary/work phone NA,
-ever-in-US / issued / refused NO, parents in US NO, monthly salary NA,
-clan/tribe NO, languages ENGLISH, military NO, Primary Occupation OTHER +
-SAILOR OS, US contact relationship BUSINESS ASSOCIATE, …). The user has not
-asked for these yet.
+**Still not implemented from that sample:** `Primary Occupation`
+(`ddlPresentOccupation`, the printed sample shows OTHER + SAILOR OS) and
+`Passport Book Number NA`. Everything else on that list has since been
+implemented at the user's instruction - the manning-agency block, Passport Type,
+secondary/work phone, the ever-in-US questions, parents in US, monthly salary,
+clan/tribe, languages, military, the U.S. contact relationship.
 
 ## The payer block has no usable labels
 On the live page `deriveLabel` returns **nothing** for the paying-company

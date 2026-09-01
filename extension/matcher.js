@@ -200,10 +200,43 @@
     { key: 'stayCity',  kind: 'text', ids: [/STAY_ADDR_CITY/i], labels: [/^city$/i], must: /will stay/i },
     { key: 'stayState', kind: 'text', ids: [/STAY_ADDR_STATE/i], labels: [/^state$/i], must: /will stay/i },
     { key: 'stayZip',   kind: 'text', ids: [/STAY_ADDR_POSTAL/i], labels: [/zip code|postal/i], must: /will stay/i },
-    { key: 'vesselName',     kind: 'text',  ids: [/SEAGOING.*NAME/i, /tbxSHIP/i],
-      labels: [/seagoing ship.*vessel name|^vessel name/i], not: /IDENT|IMO|NUMBER/i },
+    /* The gate for the vessel block. A No hides the name and IMO fields, so it
+       lands on its own pass. `kind: 'yesno'` also keeps it clear of the two
+       text rules below, whose ids start with the same SEAGOING fragment. */
+    { key: 'servingAboardVessel', kind: 'yesno',
+      ids: [/SEAGOING.*IND/i, /VESSEL_IND/i, /rblSeagoing/i],
+      labels: [/serving aboard a seagoing/i] },
+    /* Three separate companies appear on this form and none of them is this
+       one: the manning agency (CTI), the payer (Travel page) and the seafarer's
+       own employer. This is the OWNER of the ship. Its label contains the word
+       "vessel", so `vesselName` below is anchored to keep off it. */
+    /* Phone first, and the company id carries a negative LOOKAHEAD rather than
+       a `not` guard. The owner's two boxes share a prefix - VESSEL_OWNER_NAME
+       and VESSEL_OWNER_TEL - so the company rule claimed the phone box and
+       wrote "CARNIVAL UK" into it. A `not: /TEL|PHONE/i` cannot fix that:
+       `not` is tested against the section too, and this block's text contains
+       "Company Telephone Number", so it would exclude the company box as well.
+       A lookahead only ever looks at the id. */
+    { key: 'vesselOwnerPhone', kind: 'text',
+      ids: [/VESSEL_OWNER.*(TEL|PHONE)/i, /SHIP_OWNER.*(TEL|PHONE)/i],
+      labels: [/^company telephone number$/i] },
+    { key: 'vesselOwnerCompany', kind: 'text',
+      ids: [/VESSEL_OWNER(?!.*(?:TEL|PHONE))/i, /OWNS.*(VESSEL|AIRCRAFT)/i,
+            /SHIP_OWNER(?!.*(?:TEL|PHONE))/i],
+      labels: [/name of company that owns/i] },
+    /* NEVER name a sibling field in a `not` guard. `vesselName` used to carry
+       `not: /IDENT|IMO|NUMBER/i` to stay off the IMO box - but `not` is tested
+       against the SECTION too, and this block's text contains "Seagoing
+       Ship/Vessel Identification Number". The rule was excluding itself on
+       every real page, silently.
+
+       The ids separate these two cleanly on their own: SEAGOING_VESSEL_NAME
+       holds no IDENT or NUM, and SEAGOING_VESSEL_IDENT holds no NAME. The IMO
+       rule goes first so its id wins outright. */
     { key: 'vesselImo',      kind: 'text',  ids: [/SEAGOING.*(IDENT|NUM)/i, /VESSEL_ID/i],
       labels: [/vessel identification number/i] },
+    { key: 'vesselName',     kind: 'text',  ids: [/SEAGOING.*NAME/i, /tbxSHIP/i],
+      labels: [/seagoing ship.*vessel name|^vessel name$/i] },
     /* The manning agency block. Ids are best guesses from CEAC's naming - the
        labels are what these will match on until a live Fill report pins them,
        and every one of them is scoped to the agency block by `must`, because

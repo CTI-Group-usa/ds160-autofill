@@ -298,6 +298,61 @@ eq('and its Do Not Know box too',
    (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
                  section: pocOrgBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key, 'usPocOrgNA');
 
+// -- Crew Visa: the vessel block --------------------------------------
+/* NEVER name a sibling field in a `not` guard. vesselName used to carry
+   `not: /IDENT|IMO|NUMBER/i` to stay off the IMO box - but `not` is tested
+   against the SECTION too, and this block's text contains "Seagoing
+   Ship/Vessel Identification Number". The rule excluded itself on every real
+   page, silently. The ids separate the two on their own. */
+const vesselBlk = 'Crew Visa Information Specific job title aboard aircraft or vessel ' +
+                  'Name of company that owns the aircraft or vessel Company Telephone Number ' +
+                  'Are you serving aboard a seagoing ship or vessel? Seagoing Ship/Vessel Name ' +
+                  'Seagoing Ship/Vessel Identification Number';
+const vessel = (id, label, type) =>
+  (M.matchKey({ id: P + id, name: '', label, section: vesselBlk,
+                type: type || 'text', tag: 'input' }, {}) || {}).key;
+eq('vessel name by id',    vessel('tbxSEAGOING_VESSEL_NAME', 'Seagoing Ship/Vessel Name'), 'vesselName');
+eq('vessel name by label', vessel('tbxUnknown', 'Seagoing Ship/Vessel Name'), 'vesselName');
+eq('vessel IMO by id',     vessel('tbxSEAGOING_VESSEL_IDENT',
+                                  'Seagoing Ship/Vessel Identification Number'), 'vesselImo');
+eq('vessel IMO by label',  vessel('tbxUnknown2', 'Vessel Identification Number'), 'vesselImo');
+eq('job title aboard',     vessel('tbxCREW_JOB_TITLE',
+                                  'Specific job title aboard aircraft or vessel'), 'jobTitleAboard');
+eq('serving aboard a vessel',
+   vessel('rblSEAGOING_VESSEL_IND_0', 'Yes Are you serving aboard a seagoing ship or vessel?',
+          'radio'), 'servingAboardVessel');
+/* Four companies appear on this form and this is none of the other three: not
+   the manning agency, not the payer, not the seafarer's own employer. */
+eq('the vessel owner company',
+   vessel('tbxVESSEL_OWNER_NAME',
+          'Name of company that owns the aircraft or vessel you will be working on'),
+   'vesselOwnerCompany');
+eq('the owner company by label alone',
+   vessel('tbxUnknown3', 'Name of company that owns the aircraft or vessel you will be working on'),
+   'vesselOwnerCompany');
+eq('vessel name stays off the owner box',
+   vessel('tbxVESSEL_OWNER_NAME', 'Name of company that owns the vessel') === 'vesselName'
+     ? 'LEAKED' : 'clear', 'clear');
+eq('company telephone number', vessel('tbxUnknown4', 'Company Telephone Number'),
+   'vesselOwnerPhone');
+/* The owner's two boxes SHARE A PREFIX - VESSEL_OWNER_NAME and
+   VESSEL_OWNER_TEL - so the company rule claimed the phone box by id and wrote
+   "CARNIVAL UK" into it, found in the browser on 2026-09-01. A `not` guard
+   cannot fix that either: the block text says "Company Telephone Number", so
+   `not: /TEL|PHONE/i` would exclude the company box as well. The company id
+   carries a negative LOOKAHEAD, which only ever looks at the id. */
+eq('the owner phone by id, not the company name',
+   vessel('tbxVESSEL_OWNER_TEL', 'Company Telephone Number'), 'vesselOwnerPhone');
+eq('the owner phone by id with no label at all',
+   vessel('tbxVESSEL_OWNER_TEL', ''), 'vesselOwnerPhone');
+eq('the owner company still matches its own id',
+   vessel('tbxVESSEL_OWNER_NAME', ''), 'vesselOwnerCompany');
+// The payer phone on the Travel page is a bare "Telephone Number" - unaffected.
+eq('the payer phone is still its own',
+   (M.matchKey({ id: P + 'tbxPayerPhone', name: '', label: 'Telephone Number',
+                 section: 'Person/Entity Paying for Your Trip Telephone Number',
+                 type: 'text', tag: 'input' }, {}) || {}).key, 'payerPhone');
+
 // -- Crew Visa: the manning agency block ------------------------------
 /* CTI Indonesia is the AGENCY, not the employer. Every box here shares its
    label with four other blocks - City, State/Province, Street Address,

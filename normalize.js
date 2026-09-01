@@ -562,6 +562,15 @@
       ['visaType','Visa Class'], ['vesselName','Vessel / Ship Name'],
       ['employerName','Principal / Employer'], ['arrivalDate','Intended Date of Arrival'],
       ['stayAddress','Address Where You Will Stay'], ['tripPayer','Person Paying for Trip'] ] },
+    { title: 'Crew Visa', fields: [
+      ['servingAboardVessel','Serving aboard a seagoing vessel?'],
+      ['jobTitleAboard','Specific job title aboard (supporting letter)'],
+      ['vesselName','Seagoing Ship / Vessel Name (supporting letter)'],
+      ['vesselImo','Vessel Identification Number (supporting letter)'],
+      ['vesselOwnerCompany','Company that owns the vessel'],
+      ['vesselOwnerPhone','Company Telephone Number'],
+      ['usedAgency','Used a recruiting/manning agency?'],
+      ['agencyName','Agency Name'], ['agencyPhone','Agency Telephone'] ] },
     { title: 'U.S. Point of Contact', fields: [
       ['usPocName','Contact Name'],
       ['usPocOrgNA','Organization Name - Do Not Know'],
