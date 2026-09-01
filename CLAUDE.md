@@ -342,15 +342,24 @@ carries which branch ran and is shown on the worksheet, and the pre-existing
 cruise-line fallback still catches a row where both blocks are empty. AU–AX are
 no longer read for this block.
 
-**Column BR is headed "Year of College/University Entry" but holds full dates.**
-The live sheet shows `28 Aug 2015`, `06 Apr 2017`, `16 Jul 2019` — the parser
-takes those straight through, so the header is misleading, not the data. Tests
-pin that format.
+### The four "Year of ..." columns hold full dates
+BM, BN, BR and BS are headed *"Year of ... Entry"* / *"... Graduation"*, but the
+sheet holds `28 Aug 2015`, `06 Apr 2017`, `16 Jul 2019` — the user confirmed
+there are **no year-only values**. The header is misleading, not the data.
 
-A row that really is year-only still gets caught: feeding `2019` to the date
-parser produced `01-JAN-2019`, a day and month nobody stated, on a sworn form.
-`employerStart` is left empty there. An empty cell is reported too — CEAC
-requires Start Date, so a blank one has to be visible rather than silent.
+All four are therefore parsed with **`strictDate`**, not passed through as text:
+CEAC's attendance dates are split day/month/year dropdowns, so raw text would
+never land. `strictDate` is `dateStr` with one refusal — a bare 4-digit year
+returns `''` rather than `01-JAN-YYYY`, a day and month nobody stated on a sworn
+form. `validate()` then quotes the raw cell and asks for the real date.
+
+An empty cell is reported too: CEAC requires Start Date, so a blank has to be
+visible rather than silent.
+
+**The education block has no matcher rules yet** — `hsName`, `hsAddress` and
+`hsCourse` exist, but nothing for `uniName`, `uniAddress`, `uniCourse`, or any
+of the four dates. The Previous Work/Education page has not been reported from
+a live Fill yet, and inventing ids for it would be guessing.
 
 ### The agency block is constants
 `usedAgency` = YES plus `agencyName`, `agencyContactSurname` /

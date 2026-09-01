@@ -137,6 +137,23 @@ has('AZ no: asks for the full date', D.validate(student, { today: '2026-08-31' }
    pass straight through; the year-only guard above is only a safety net. */
 const uniStart = v => D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'No',
   'Name of College/University': 'U', 'Year of College/University Entry': v }).employerStart;
+/* All four "Year of ..." columns hold full dates - the user confirmed there
+   are no year-only values - so all four are parsed, not passed through raw.
+   CEAC's attendance dates are split day/month/year dropdowns. */
+const edu = D.toRecord({ 'Name': 'X',
+  'Year of High School/Vocational School Entry': '16 Jul 2012',
+  'Year of High School High School Graduation': '22 Aug 2015',
+  'Year of College/University Entry': '28 Aug 2015',
+  'Year of High School/University Graduation': '06 Apr 2019' });
+eq('hsFrom parsed', edu.hsFrom, '16-JUL-2012');
+eq('hsTo parsed',   edu.hsTo,   '22-AUG-2015');
+eq('uniFrom parsed', edu.uniFrom, '28-AUG-2015');
+eq('uniTo parsed',   edu.uniTo,   '06-APR-2019');
+// strictDate refuses a bare year in every one of them.
+eq('hsFrom year-only refused',
+   D.toRecord({ 'Name': 'X', 'Year of High School/Vocational School Entry': '2012' }).hsFrom, '');
+eq('uniTo year-only refused',
+   D.toRecord({ 'Name': 'X', 'Year of High School/University Graduation': '2019' }).uniTo, '');
 eq('BR real format, Aug 2015', uniStart('28 Aug 2015'), '28-AUG-2015');
 eq('BR real format, Apr 2017', uniStart('06 Apr 2017'), '06-APR-2017');
 eq('BR real format, 1999',     uniStart('28 Aug 1999'), '28-AUG-1999');

@@ -64,6 +64,13 @@
     return p ? String(p.d).padStart(2, '0') + '-' + MONTHS[p.m - 1] + '-' + p.y : '';
   }
   const dateStr = raw => fmtDate(parseDate(raw));
+
+  /* The four education columns are headed "Year of ..." but hold full dates -
+     the user confirmed there are no year-only values in the sheet. They still
+     go through a stricter parser than `dateStr`: a bare 4-digit year would
+     otherwise come back as 01-JAN-YYYY, a day and month nobody stated, on a
+     sworn form. Empty is the honest answer, and validate() asks for the rest. */
+  const strictDate = raw => (/^\s*\d{4}\s*$/.test(clean(raw)) ? '' : dateStr(raw));
   const toJs = p => (p ? new Date(Date.UTC(p.y, p.m - 1, p.d)) : null);
 
   function monthsBetween(a, b) {
@@ -201,13 +208,13 @@
     'Name of high school/vocational school':                         ['hsName', upper],
     'Address of high school/vocational school':                      ['hsAddress', clean],
     'Course of Study in High School/Vocational School':              ['hsCourse', clean],
-    'Year of High School/Vocational School Entry':                   ['hsFrom', clean],
-    'Year of High School High School Graduation':                    ['hsTo', clean],
+    'Year of High School/Vocational School Entry':                   ['hsFrom', strictDate],
+    'Year of High School High School Graduation':                    ['hsTo', strictDate],
     'Name of College/University':                                    ['uniName', upper],
     'Address of College/University':                                 ['uniAddress', clean],
     'Course of Study in College/University':                         ['uniCourse', clean],
-    'Year of College/University Entry':                              ['uniFrom', clean],
-    'Year of High School/University Graduation':                     ['uniTo', clean],
+    'Year of College/University Entry':                              ['uniFrom', strictDate],
+    'Year of High School/University Graduation':                     ['uniTo', strictDate],
     'Payment Status':                                                ['paymentStatus', clean],
     'Visa Application ID':                                           ['visaAppId', clean],
     'Visa Status':                                                   ['visaStatus', clean],
@@ -268,11 +275,8 @@
       rec.employerName    = rec.uniName;
       rec.employerAddress = rec.uniAddress;
       rec.employerPhone   = '';
-      /* The sheet holds a YEAR of entry, and CEAC wants DD-MMM-YYYY. Feeding
-         "2019" to the date parser produced 01-JAN-2019 - a day and month
-         nobody stated, on a sworn form. Leave it empty and let validate()
-         ask for the real date. */
-      rec.employerStart   = /^\s*\d{4}\s*$/.test(String(rec.uniFrom || '')) ? '' : dateStr(rec.uniFrom);
+      // Already DD-MMM-YYYY, or '' if the cell held only a year - see strictDate.
+      rec.employerStart   = rec.uniFrom;
       rec._employerSource = 'college / university (AZ = ' +
                             (rec.prevEmployed || 'blank') + ', columns BO-BS)';
     }
@@ -409,14 +413,17 @@
       E('prevEmployerName', 'Marked as previously employed but no previous employer given');
     /* The Present Employer block is sourced on column AZ, so say which branch
        ran and what it could not supply. */
-    if (!rec.employerStart)
-      W('employerStart', clean(rec.uniFrom) && rec.prevEmployed !== 'YES'
-          /* Column BR is headed "Year of ... Entry" but holds full dates in
-             practice; this only fires on a row that really is year-only. */
-          ? 'Start Date reads "' + clean(rec.uniFrom) + '", which is not a full ' +
-            'date - CEAC wants DD-MMM-YYYY, so enter the day and month by hand'
+    if (!rec.employerStart) {
+      /* strictDate() blanks a cell that held only a year, so read the raw cell
+         to say WHY: "2019" is not a date CEAC will take, and 01-JAN-2019 is not
+         ours to invent. */
+      const rawEntry = clean(rec._raw && rec._raw['Year of College/University Entry']);
+      W('employerStart', rawEntry && rec.prevEmployed !== 'YES'
+          ? 'Start Date reads "' + rawEntry + '", which is a year rather than a ' +
+            'full date - CEAC wants DD-MMM-YYYY, so enter the day and month by hand'
           : 'No Start Date for the present employer or school, which CEAC ' +
             'requires: taken from ' + (rec._employerSource || 'the intake form'));
+    }
     if (!rec.employerAddress)
       W('employerAddress', 'No address for the present employer or school: ' +
                            'taken from ' + (rec._employerSource || 'the intake form'));
