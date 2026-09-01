@@ -152,8 +152,10 @@
        is tested against the section, and this block's text contains "Passport
        Book Number", so passportNumber excluded ITSELF. Second time in one day
        - a `not` guard is for other blocks, never for a neighbour. */
-    { key: 'passportNumber',     kind: 'text', ids: [/PPT_NUM(?!.*BOOK)/i],
-      labels: [/^passport\s*\/?\s*travel document number/i, /^passport number$/i] },
+    { key: 'passportNumber',     kind: 'text',
+      ids: [/PPT_NUM(?!.*BOOK)/i, /PPTNum(?!.*BOOK)/i],
+      labels: [/^passport\s*\/?\s*travel document number/i, /^passport number$/i,
+               /^enter your passport\s*\/?\s*travel document number/i] },
     { key: 'passportBookNumberNA', kind: 'checkbox',
       ids: [/PPT_BOOK.*NA/i, /PassportBookNum.*(NA|Unknown)/i],
       labels: [/^does not apply/i], must: /book number/i },
@@ -529,6 +531,17 @@
     { key: 'insurgentOrg', kind: 'yesno', ids: [/INSURGENT_ORG_IND/i],
       labels: [/paramilitary|vigilante|insurgent organization/i] },
     { key: 'eduCity', kind: 'text', ids: [/School.*Addr.*City/i, /EducInst.*City/i] },
+
+    /* Sign and Submit. The filler fills the three answers CEAC asks for here
+       and NOTHING else: the CAPTCHA is FORBIDDEN (/codetextbox/) and the Sign
+       and Submit button is FORBIDDEN too (/sign(and)?submit/, /btnsign/).
+       Pressing that button is the applicant's act, not ours - see the hard
+       rules in CLAUDE.md. Note the ids on this page carry no FormView1
+       segment, which is why they are matched on bare fragments. */
+    { key: 'fgmcFactSheet', kind: 'checkbox', ids: [/FGMC/i],
+      labels: [/fact sheet on female genital/i] },
+    { key: 'preparerAssisted', kind: 'yesno', ids: [/PREP_IND/i, /rblPreparer/i],
+      labels: [/anyone assist you in filling out/i] },
 
     /* Two different questions that used to share one key. "Have you ever
        been in the U.S.?" is about entries; "Have you ever been issued a

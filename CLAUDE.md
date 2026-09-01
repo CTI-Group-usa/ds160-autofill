@@ -884,6 +884,39 @@ implemented at the user's instruction - the manning-agency block, Passport Type,
 secondary/work phone, the ever-in-US questions, parents in US, monthly salary,
 clan/tribe, languages, military, the U.S. contact relationship.
 
+## Sign and Submit (2026-09-01, at the user's instruction)
+Three answers on the signature page, and **nothing else on it is touched**.
+
+| Question | Key | Source |
+|---|---|---|
+| I certify I have read the FGM/C Fact Sheet | `fgmcFactSheet` | constant, ticked |
+| Did anyone assist you in filling out this application? | `preparerAssisted` | constant NO |
+| Enter your Passport/Travel Document Number | `passportNumber` | column, re-entered |
+
+`preparerAssisted` = NO because CTI transcribes the answers the seafarer gave on
+the intake form, which is not what CEAC means by an assisting preparer. If
+someone genuinely filled the form in for them, answer Yes and name them.
+
+The e-signature box is the passport number a second time, and its id is
+**`PPTNumTbx`** - no underscore, so `/PPT_NUM/i` misses it entirely. Both
+spellings are matched now. The lookahead that keeps the rule off the Book Number
+box is carried on both.
+
+**The ids on this page have no `FormView1` segment.** Two of the three are
+`ctl00_SiteContentPlaceHolder_*` directly and the third is `FormView3`. Rules
+here match bare fragments; nothing may be anchored to the usual prefix.
+
+### What is never touched, and why
+- the **CAPTCHA** - `/codetextbox/` in `FORBIDDEN`. Automating it is off the
+  table, full stop;
+- the **Sign and Submit** button - `/sign(and)?submit/`, `/btnsign/`. Signing is
+  the applicant's act under penalty of perjury, and it is not ours to perform.
+
+`test/fake-sign.html` carries the live ids and asserts both stay untouched -
+that is what the fixture is for, more than the three fills. Verified in a
+browser: three answers in one pass, CAPTCHA empty, zero postbacks, nothing
+unrecognised.
+
 ## The payer block has no usable labels
 On the live page `deriveLabel` returns **nothing** for the paying-company
 controls, so the id is the only signal there. Three rounds of guessed ids all
@@ -1014,7 +1047,7 @@ on the five Security and Background pages. Guards:
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
 `fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
 `fake-us-contact.html`, `fake-family.html`,
-`fake-crew-visa.html`, `fake-work-education.html`, `fake-prev-work-education.html`, `fake-additional-work.html` and
+`fake-crew-visa.html`, `fake-sign.html`, `fake-work-education.html`, `fake-prev-work-education.html`, `fake-additional-work.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

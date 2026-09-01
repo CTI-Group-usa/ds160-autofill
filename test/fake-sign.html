@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Sign and Submit</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} .box{border:1px solid #ccc;padding:10px;margin:10px 0}</style>
+</head>
+<body>
+<!-- The signature page, from a live session on 2026-09-01. Three things are
+     filled here and NOTHING else.
+
+     The ids on this page carry NO FormView1 segment - two of the three are
+     ctl00_SiteContentPlaceHolder_* directly - which is why the rules match on
+     bare fragments rather than anything anchored to the usual prefix.
+
+     What must stay untouched is the point of this fixture:
+       - the CAPTCHA code box (FORBIDDEN, /codetextbox/)
+       - the Sign and Submit button (FORBIDDEN, /sign(and)?submit/, /btnsign/)
+     Pressing that button is the applicant's act. See the hard rules in
+     CLAUDE.md. -->
+<h2>Sign and Submit</h2>
+
+<div class="box">
+  <p>I certify that I have viewed and read the U.S. Government Fact Sheet on
+     Female Genital Mutilation or Cutting (FGM/C).
+     <input type="checkbox" id="ctl00_SiteContentPlaceHolder_chkbxFGMC"></p>
+</div>
+
+<h2>Preparer of Application</h2>
+<table>
+  <tr><td>Q:</td><td>Did anyone assist you in filling out this application?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView3_rblPREP_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView3$rblPREP_IND" value="Y">
+    <label for="ctl00_SiteContentPlaceHolder_FormView3_rblPREP_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView3_rblPREP_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView3$rblPREP_IND" value="N">
+    <label for="ctl00_SiteContentPlaceHolder_FormView3_rblPREP_IND_1">No</label>
+  </td></tr>
+</table>
+
+<h2>E-Signature</h2>
+<div class="box">
+  <p>I certify under penalty of perjury under the laws of the United States of
+     America that the foregoing is true and correct.</p>
+  <table>
+    <tr><td>Enter your Passport/Travel Document Number:</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_PPTNumTbx"></td></tr>
+    <tr><td>Enter the code as shown:</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_ucLocation_IdentifyCaptcha1_CodeTextBox"></td></tr>
+  </table>
+</div>
+
+<p><input type="submit" id="ctl00_SiteContentPlaceHolder_btnSignAndSubmit"
+          value="Sign and Submit Application"></p>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

@@ -59,6 +59,15 @@
       label: 'Passport/Travel Document Type', def: 'REGULAR',
       why: 'An ordinary Indonesian passport. Change it for an official, diplomatic or ' +
            'emergency travel document.' },
+    { key: 'fgmcFactSheet', kind: 'checkbox', page: 'Sign and Submit',
+      label: 'Certify you have read the FGM/C Fact Sheet - tick',
+      def: 'YES', why: 'CEAC will not accept the signature without it. The fact sheet is ' +
+                       'linked on that page; read it before signing.' },
+    { key: 'preparerAssisted', kind: 'yesno', page: 'Sign and Submit',
+      label: 'Did anyone assist you in filling out this application?',
+      def: 'NO', why: 'CTI prepares the form from the intake answers the seafarer gave, ' +
+                      'which CEAC does not count as an assisting preparer. If someone ' +
+                      'else genuinely filled it in for them, answer Yes and name them.' },
     { key: 'passportBookNumberNA', kind: 'checkbox', page: 'Passport',
       label: 'Passport Book Number - tick "Does Not Apply"',
       def: 'YES', why: 'An Indonesian passport has no separate book number, and the filed ' +

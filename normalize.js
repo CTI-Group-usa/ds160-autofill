@@ -571,6 +571,10 @@
       ['vesselOwnerPhone','Company Telephone Number'],
       ['usedAgency','Used a recruiting/manning agency?'],
       ['agencyName','Agency Name'], ['agencyPhone','Agency Telephone'] ] },
+    { title: 'Sign and Submit', fields: [
+      ['fgmcFactSheet','FGM/C Fact Sheet certification - tick'],
+      ['preparerAssisted','Did anyone assist you in filling out this application?'],
+      ['passportNumber','Passport number, re-entered as the e-signature'] ] },
     { title: 'U.S. Point of Contact', fields: [
       ['usPocName','Contact Name'],
       ['usPocOrgNA','Organization Name - Do Not Know'],

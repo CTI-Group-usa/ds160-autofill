@@ -298,6 +298,41 @@ eq('and its Do Not Know box too',
    (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
                  section: pocOrgBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key, 'usPocOrgNA');
 
+// -- Sign and Submit --------------------------------------------------
+/* Three answers on this page and nothing else. The ids carry no FormView1
+   segment - two are ctl00_SiteContentPlaceHolder_* directly - so the rules
+   match bare fragments. */
+const signBlk = 'Sign and Submit E-Signature I certify under penalty of perjury';
+const sign = (id, label, type) =>
+  (M.matchKey({ id: 'ctl00_SiteContentPlaceHolder_' + id, name: '', label,
+                section: signBlk, type: type || 'text', tag: 'input' }, {}) || {}).key;
+eq('the FGM/C certification by id',
+   sign('chkbxFGMC', 'I certify that I have viewed and read the U.S. Government Fact Sheet ' +
+                     'on Female Genital Mutilation or Cutting (FGM/C).', 'checkbox'),
+   'fgmcFactSheet');
+eq('the FGM/C certification by label alone',
+   sign('chkbxUnknown', 'I certify that I have viewed and read the U.S. Government Fact ' +
+                        'Sheet on Female Genital Mutilation or Cutting (FGM/C).', 'checkbox'),
+   'fgmcFactSheet');
+eq('did anyone assist you, by id',
+   sign('FormView3_rblPREP_IND_0', 'Yes', 'radio'), 'preparerAssisted');
+eq('did anyone assist you, by label',
+   sign('rblUnknown_0', 'Yes Did anyone assist you in filling out this application?', 'radio'),
+   'preparerAssisted');
+/* The e-signature box wants the passport number again, and its id has no
+   underscore - PPTNumTbx, not PPT_NUM. */
+eq('the e-signature passport box by id', sign('PPTNumTbx', ''), 'passportNumber');
+eq('the e-signature passport box by label',
+   sign('tbxUnknown9', 'Enter your Passport/Travel Document Number:'), 'passportNumber');
+/* What must stay untouched. Pressing Sign and Submit is the applicant's act,
+   and the CAPTCHA is never automated - see the hard rules in CLAUDE.md. */
+eq('the CAPTCHA is forbidden',
+   M.isForbidden('ctl00_SiteContentPlaceHolder_ucLocation_IdentifyCaptcha1_CodeTextBox'), true);
+eq('the Sign and Submit button is forbidden',
+   M.isForbidden('ctl00_SiteContentPlaceHolder_btnSignAndSubmit'), true);
+eq('no rule claims the CAPTCHA box',
+   sign('ucLocation_IdentifyCaptcha1_CodeTextBox', 'Enter the code as shown:'), undefined);
+
 // -- Crew Visa: the vessel block --------------------------------------
 /* NEVER name a sibling field in a `not` guard. vesselName used to carry
    `not: /IDENT|IMO|NUMBER/i` to stay off the IMO box - but `not` is tested
