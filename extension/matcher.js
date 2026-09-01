@@ -65,7 +65,10 @@
       labels: [/social security number/i] },
     { key: 'taxIdNA', kind: 'checkbox', ids: [/APP_TAX_ID_NA/i, /TAX_ID.*_NA/i],
       labels: [/taxpayer id/i] },
-    { key: 'mailingSameAsHome',   kind: 'yesno', ids: [/MAILING_ADDR_SAME/i],
+    /* The live page left this unanswered. The label matches, so widen the
+       id: CEAC also writes it without underscores (rblMailingAddrSame). */
+    { key: 'mailingSameAsHome',   kind: 'yesno',
+      ids: [/MAILING_ADDR_SAME/i, /MailingAddrSame/i, /MAILING.*SAME/i],
       labels: [/mailing address.*same as.*home address/i] },
     { key: 'immediateRelativesUS', kind: 'yesno', ids: [/US_IMMED_RELATIVE_IND/i, /US_IMMEDIATE_RELATIVE/i],
       labels: [/immediate relatives.*united states/i] },
@@ -77,7 +80,44 @@
        address can never land in the U.S. stay address again. */
     { key: 'homeAddress', kind: 'text', ids: [/APP_ADDR_LN1/i], labels: [/street address/i],
       not: /will stay|contact|employer|school|paying|mailing/i },
+    /* The intake form has one free-text address column and no country field,
+       so the home country is a constant. The label is bare "Country/Region",
+       which several blocks reuse - the guard keeps it in Home Address, and
+       `nationality` sits earlier in this list so Personal 2 still wins. */
+    /* "Country/Region" is bare and reused by several blocks, so a label match
+       has to see the Home Address heading. `must` gates the id too, which is
+       the safe side of the trade: an unfilled dropdown is now reported, a
+       wrongly filled one would not be. `nationality` sits earlier in this
+       list, so Personal 2 still wins there. */
+    { key: 'homeCountry', kind: 'text', ids: [/APP_ADDR_CNTRY/i],
+      labels: [/^country\s*\/?\s*region$/i], must: /home address/i },
+    /* The intake form has one free-text address column, so these three have
+       no source. They are named anyway: "no value in record" tells the agent
+       the sheet is the gap, where "not recognised" blamed the rules.
+
+       Id only, no label. "City" and "State/Province" are word-for-word the
+       same in the U.S. stay block, and a bare one outside any block must
+       stay unclaimed - writing an Indonesian city into the U.S. address is
+       the bug this codebase already had once. */
+    { key: 'homeCity',   kind: 'text', ids: [/APP_ADDR_CITY/i] },
+    { key: 'homeState',  kind: 'text', ids: [/APP_ADDR_STATE/i] },
+    { key: 'homePostal', kind: 'text', ids: [/APP_ADDR_POSTAL/i] },
     { key: 'phone',          kind: 'text',  ids: [/APP_HOME_TEL/i, /PRIMARY.*PHONE/i], labels: [/primary phone/i] },
+    /* One number on the intake form, so the other two are ticked away. The
+       "Does Not Apply" label is identical on both, and on the State and
+       Postal boxes further up the page - only the block tells them apart. */
+    { key: 'secondaryPhoneNA', kind: 'checkbox',
+      ids: [/APP_(MOBILE|SEC)_TEL_NA/i, /SECONDARY.*TEL.*_NA/i],
+      labels: [/does not apply/i], must: /secondary phone/i },
+    { key: 'workPhoneNA', kind: 'checkbox',
+      ids: [/APP_BUS_TEL_NA/i, /WORK.*TEL.*_NA/i],
+      labels: [/does not apply/i], must: /work phone/i },
+    { key: 'otherPhones5y', kind: 'yesno', ids: [/ADD_PHONE_IND/i, /OTHER_PHONE/i],
+      labels: [/other phone numbers in the last five years/i] },
+    { key: 'otherEmails5y', kind: 'yesno', ids: [/ADD_EMAIL_IND/i, /OTHER_EMAIL/i],
+      labels: [/other email addresses in the last five years/i] },
+    { key: 'otherWebsites5y', kind: 'yesno', ids: [/ADD_SOCIAL_IND/i, /OTHER_WEBSITE/i],
+      labels: [/presence on any other websites/i, /other websites or applications/i] },
     { key: 'email',          kind: 'text',  ids: [/APP_EMAIL_ADDR/i], labels: [/^e-?mail address/i] },
     { key: 'socialPlatform', kind: 'text',  ids: [/SOCIAL_MEDIA_PROVIDER/i, /ddlSocialMedia/i], labels: [/social media platform/i] },
     { key: 'socialHandle',   kind: 'text',  ids: [/SOCIAL_MEDIA_IDENT/i, /tbxSocialMediaIdent/i], labels: [/social media identifier/i] },

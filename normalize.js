@@ -212,11 +212,12 @@
     ['usPocAddress',  'US point of contact - address'],
     ['usPocPhone',    'US point of contact - phone'],
     ['usPocEmail',    'US point of contact - email'],
+    ['homeCity',      'Home address - city (the sheet has one address column)'],
+    ['homeState',     'Home address - state / province'],
+    ['homePostal',    'Home address - postal code'],
     ['arrivalDate',   'Intended date of arrival in the US'],
     ['stayAddress',   'Address where you will stay in the US'],
     ['tripPayer',     'Person / entity paying for the trip'],
-    ['otherEmails5y', 'Other email addresses used in the last 5 years'],
-    ['otherPhones5y', 'Other phone numbers used in the last 5 years'],
   ];
 
   function toRecord(row) {
@@ -410,10 +411,17 @@
       ['nationality','Country/Region of Origin (Nationality)'],
       ['nationalId','National Identification Number (KTP)'] ] },
     { title: 'Address and Phone', fields: [
-      ['homeAddress','Home Address'], ['phone','Primary Phone Number'],
-      ['otherPhones5y','Additional Phone Numbers (last 5 yrs)'],
-      ['email','Email Address'], ['otherEmails5y','Additional Email (last 5 yrs)'],
-      ['socialPlatform','Social Media Platform'], ['socialHandle','Social Media Identifier'] ] },
+      ['homeAddress','Home Address'], ['homeCity','City'],
+      ['homeState','State/Province'], ['homePostal','Postal Zone/ZIP'],
+      ['homeCountry','Country/Region'],
+      ['mailingSameAsHome','Mailing address same as home?'],
+      ['phone','Primary Phone Number'],
+      ['secondaryPhoneNA','Secondary phone - Does Not Apply'],
+      ['workPhoneNA','Work phone - Does Not Apply'],
+      ['otherPhones5y','Other phone numbers in the last 5 years?'],
+      ['email','Email Address'], ['otherEmails5y','Other email addresses in the last 5 years?'],
+      ['socialPlatform','Social Media Platform'], ['socialHandle','Social Media Identifier'],
+      ['otherWebsites5y','Provide any other websites or applications?'] ] },
     { title: 'Passport', fields: [
       ['passportNumber','Passport Number'], ['passportIssuePlace','City/Country of Issuance'],
       ['passportIssued','Issuance Date'], ['passportExpiry','Expiration Date'],

@@ -283,6 +283,43 @@ separate explanation for a refusal (column Y explains the cancellation). If a
 refusal column is ever added to the sheet, point `visaRefused` at it and delete
 the derivation.
 
+## Address and Phone (added 2026-09-01, at the user's instruction)
+Seven answers, all constants except where noted. The live page came back with
+Country/Region on `- SELECT ONE -` and the mailing question unanswered, while
+Street Address and Primary Phone filled fine.
+
+| Answer | Key | Value |
+|---|---|---|
+| Home Country/Region | `homeCountry` | INDONESIA |
+| Mailing address same as home? | `mailingSameAsHome` | YES |
+| Secondary Phone Number | `secondaryPhoneNA` | tick *Does Not Apply* |
+| Work Phone Number | `workPhoneNA` | tick *Does Not Apply* |
+| Other phone numbers in last 5 yrs? | `otherPhones5y` | NO |
+| Other email addresses in last 5 yrs? | `otherEmails5y` | NO |
+| Any other websites or applications? | `otherWebsites5y` | NO |
+
+`otherPhones5y` and `otherEmails5y` used to sit in `MISSING_FROM_INTAKE` as
+missing *details*. Answered No, there are no details to give, so they moved out.
+
+**`mailingSameAsHome` was already a constant and still came back blank** — CEAC
+writes the id without underscores (`rblMailingAddrSame`), so only the label was
+matching. It is also a postback, so it lands on its own pass.
+
+**"Does Not Apply" appears on four boxes on this page:** Secondary Phone, Work
+Phone, State/Province and Postal Zone. Only the block heading separates them, and
+the last two hold correct values — ticking one of those wipes an address that is
+right. The two phone rules carry `must: /secondary phone/i` and
+`must: /work phone/i`; `test/fake-address-phone.html` asserts the State and Postal
+boxes stay untouched.
+
+**`homeCity` / `homeState` / `homePostal` have no source** — the intake form has
+one free-text address column, so the whole address goes into Street Address Line 1
+and the agent types the rest. They are still given rules, **matched on id only**,
+so the report says "no value in record" rather than "not recognised": the gap is
+the sheet's, not the matcher's. No label rule, because *City* and *State/Province*
+are word-for-word identical in the U.S. stay block and a bare one must stay
+unclaimed. `homeCountry` does keep a label, gated by `must: /home address/i`.
+
 ### What the live page corrected (2026-09-01)
 Running it against the real CEAC page found four things the fixture had not:
 
@@ -454,7 +491,7 @@ on the five Security and Background pages. Guards:
   so the agent reads them before clicking Next.
 
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
-`fake-prev-us-travel.html` and
+`fake-prev-us-travel.html`, `fake-address-phone.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

@@ -36,6 +36,30 @@
     { key: 'mailingSameAsHome', kind: 'yesno', page: 'Address and Phone',
       label: 'Is your mailing address the same as your home address?',
       def: 'YES', why: 'The intake form collects only one address.' },
+    { key: 'homeCountry', kind: 'text', page: 'Address and Phone',
+      label: 'Home address - country/region', def: 'INDONESIA',
+      why: 'Every seafarer CTI files for is resident in Indonesia. The intake form ' +
+           'has one free-text address column and no country field.' },
+    { key: 'secondaryPhoneNA', kind: 'checkbox', page: 'Address and Phone',
+      label: 'Secondary Phone Number - tick "Does Not Apply"',
+      def: 'YES', why: 'The intake form collects one number. Untick it and fill the box ' +
+                       'if a seafarer gives a second.' },
+    { key: 'workPhoneNA', kind: 'checkbox', page: 'Address and Phone',
+      label: 'Work Phone Number - tick "Does Not Apply"',
+      def: 'YES', why: 'Their work phone is the ship. Untick it if a shoreside number applies.' },
+    { key: 'otherPhones5y', kind: 'yesno', page: 'Address and Phone',
+      label: 'Have you used any other phone numbers in the last five years?',
+      def: 'NO', why: 'A Yes makes CEAC ask for each number. Check it for anyone who has ' +
+                      'changed number recently - it is a sworn answer.' },
+    { key: 'otherEmails5y', kind: 'yesno', page: 'Address and Phone',
+      label: 'Have you used any other email addresses in the last five years?',
+      def: 'NO', why: 'A Yes makes CEAC ask for each address. Same caution as the phone ' +
+                      'question above.' },
+    { key: 'otherWebsites5y', kind: 'yesno', page: 'Address and Phone',
+      label: 'Do you wish to provide information about your presence on any other ' +
+             'websites or applications?',
+      def: 'NO', why: 'This is the optional question after the listed social media ' +
+                      'platform, which is filled from the intake form.' },
     /* The U.S. contact and the paying company are the same on every
        application CTI files - they describe the cruise line, not the
        seafarer. Values below are Carnival UK, taken from a filed

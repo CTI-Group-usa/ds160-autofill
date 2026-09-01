@@ -171,6 +171,58 @@ eq('driver licence by curly-apostrophe label', radio('rblUnknownDL', DL), 'usDri
 eq('driver licence by ascii-apostrophe label',
    radio('rblUnknownDL2', "Do you or did you ever hold a U.S. Driver's License?"), 'usDriverLicense');
 
+// -- Address and Phone ------------------------------------------------
+const homeBlk = 'Home Address Street Address (Line 1) City State/Province Postal Zone Country/Region';
+const inHome = (label, id) =>
+  (M.matchKey({ id: P + (id || 'ddlUnknown'), name: '', label, section: homeBlk,
+                tag: 'select' }, {}) || {}).key;
+eq('home country by id',    inHome('Country/Region', 'ddlAPP_ADDR_CNTRY'), 'homeCountry');
+eq('home country by label', inHome('Country/Region'), 'homeCountry');
+// Bare, outside the block: must stay unclaimed - it could be the U.S. stay
+// country or the paying company's.
+eq('country with no block',
+   (M.matchKey({ id: P + 'ddlUnknown', name: '', label: 'Country/Region', tag: 'select' }, {}) || {}).key,
+   undefined);
+eq('nationality still wins on Personal 2',
+   (M.matchKey({ id: P + 'ddlAPP_POB_CNTRY', name: '',
+                 label: 'Country/Region of Origin (Nationality)', tag: 'select' }, {}) || {}).key,
+   'nationality');
+// No source on the sheet, but named so the gap reads as the sheet's, not
+// the matcher's. Id only - see the rule.
+eq('home city by id',   key('tbxAPP_ADDR_CITY'), 'homeCity');
+eq('home state by id',  key('tbxAPP_ADDR_STATE'), 'homeState');
+eq('home postal by id', key('tbxAPP_ADDR_POSTAL'), 'homePostal');
+
+eq('mailing same, no underscores in the id',
+   (M.matchKey({ id: P + 'rblMailingAddrSame_0', name: '',
+                 label: 'Yes Is your Mailing Address the same as your Home Address?',
+                 type: 'radio', tag: 'input' }, {}) || {}).key, 'mailingSameAsHome');
+
+// "Does Not Apply" is identical on four boxes on this page. Ticking the
+// wrong one wipes a State or Postal value that is correct.
+const dna = (id, section) =>
+  (M.matchKey({ id: P + id, name: '', label: 'Does Not Apply', section,
+                type: 'checkbox', tag: 'input' }, {}) || {}).key;
+eq('secondary phone DNA', dna('cbexAPP_MOBILE_TEL_NA', 'Phone Secondary Phone Number Does Not Apply'),
+   'secondaryPhoneNA');
+eq('work phone DNA', dna('cbexAPP_BUS_TEL_NA', 'Phone Work Phone Number Does Not Apply'),
+   'workPhoneNA');
+eq('state DNA claims nothing', dna('cbexAPP_ADDR_STATE_NA', homeBlk), undefined);
+eq('postal DNA claims nothing', dna('cbexAPP_ADDR_POSTAL_NA', homeBlk), undefined);
+
+const other = (id, label) =>
+  (M.matchKey({ id: P + id, name: '', label, type: 'radio', tag: 'input' }, {}) || {}).key;
+eq('other phones 5y',
+   other('rblAddPhone_0', 'Yes Have you used any other phone numbers in the last five years?'),
+   'otherPhones5y');
+eq('other emails 5y',
+   other('rblAddEmail_0', 'Yes Have you used any other email addresses in the last five years?'),
+   'otherEmails5y');
+eq('other websites 5y',
+   other('rblAddSocial_0', 'Yes Do you wish to provide information about your presence on any ' +
+         'other websites or applications you have used within the last five years?'),
+   'otherWebsites5y');
+
 // The trip's intended stay must not leak into the previous-visit boxes.
 eq('intended stay stays off the prev block',
    (M.matchKey({ id: P + PREV + 'ddlPREV_US_VISIT_LOS_CD', name: '',

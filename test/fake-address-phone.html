@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Address and Phone Information</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2,h3{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- The live page came back with Country/Region on "- SELECT ONE -" and the
+     mailing-address radio unanswered, while Street Address and Primary Phone
+     filled correctly.
+
+     Three things this page has to prove:
+
+     1. "Country/Region" is a bare label reused by several blocks. It must
+        take the home country here and nowhere else - and `nationality` must
+        still win on Personal 2, which is why that rule sits earlier.
+     2. "Does Not Apply" is identical on the Secondary Phone, Work Phone,
+        State/Province and Postal Zone boxes. Only the block tells them
+        apart, so the wrong tick is a real risk: State and Postal DO have
+        values and must stay unticked.
+     3. The mailing-address question is a postback, so it is filled on its
+        own pass. Its id has no underscores on the live page. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Address and Phone Information</h2>
+
+<fieldset>
+  <legend>Home Address</legend>
+  <table>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_LN1" size="40"></td></tr>
+    <tr><td>Street Address (Line 2) <i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_LN2" size="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_CITY"></td></tr>
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_STATE" value="JAWA TENGAH">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_ADDR_STATE_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_ADDR_STATE_NA">Does Not Apply</label>
+        </td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_POSTAL" value="52364">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_ADDR_POSTAL_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_ADDR_POSTAL_NA">Does Not Apply</label>
+        </td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlAPP_ADDR_CNTRY">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option>
+            </select></td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Mailing Address</legend>
+  <table>
+    <tr><td>Q:</td><td>Is your Mailing Address the same as your Home Address?</td></tr>
+    <tr><td>A:</td><td>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblMailingAddrSame_0"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblMailingAddrSame" value="Y"
+             onclick="javascript:setTimeout('__doPostBack(\'m\',\'\')', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblMailingAddrSame_0">Yes</label>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblMailingAddrSame_1"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblMailingAddrSame" value="N"
+             onclick="javascript:setTimeout('__doPostBack(\'m\',\'\')', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblMailingAddrSame_1">No</label>
+    </td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Phone</legend>
+  <table>
+    <tr><td>Primary Phone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_HOME_TEL"></td></tr>
+    <tr><td>Secondary Phone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_MOBILE_TEL">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_MOBILE_TEL_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_MOBILE_TEL_NA">Does Not Apply</label>
+        </td></tr>
+    <tr><td>Work Phone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_BUS_TEL">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_BUS_TEL_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexAPP_BUS_TEL_NA">Does Not Apply</label>
+        </td></tr>
+    <tr><td>Q:</td><td>Have you used any other phone numbers in the last five years?</td></tr>
+    <tr><td>A:</td><td>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAddPhone_0"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblAddPhone" value="Y">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAddPhone_0">Yes</label>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAddPhone_1"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblAddPhone" value="N">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAddPhone_1">No</label>
+    </td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Email Address</legend>
+  <table>
+    <tr><td>E-Mail Address</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_EMAIL_ADDR" size="40"></td></tr>
+    <tr><td>Q:</td><td>Have you used any other email addresses in the last five years?</td></tr>
+    <tr><td>A:</td><td>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAddEmail_0"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblAddEmail" value="Y">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAddEmail_0">Yes</label>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAddEmail_1"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblAddEmail" value="N">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAddEmail_1">No</label>
+    </td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Social Media</legend>
+  <table>
+    <tr><td>Social Media Platform</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSocialMediaProvider">
+              <option value="">- SELECT ONE -</option><option>FACEBOOK</option><option>INSTAGRAM</option>
+            </select></td></tr>
+    <tr><td>Social Media Identifier</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSocialMediaIdent"></td></tr>
+    <tr><td>Q:</td><td>Do you wish to provide information about your presence on any other
+        websites or applications you have used within the last five years to create or share
+        content (photos, videos, status updates, etc.)?</td></tr>
+    <tr><td>A:</td><td>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAddSocial_0"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblAddSocial" value="Y">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAddSocial_0">Yes</label>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblAddSocial_1"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblAddSocial" value="N">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblAddSocial_1">No</label>
+    </td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>
