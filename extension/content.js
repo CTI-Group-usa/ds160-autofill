@@ -352,22 +352,26 @@
 
     if (rec.securityAllNo === 'YES' && isSecurityPage()) sweepSecurityNo(all, radioGroups, report);
 
-    // One postback control per pass; the page reloads after it.
-    if (deferred.length) {
-      const d = deferred[0];
+    /* One *reloading* postback per pass. Walk the queue until something
+       actually changes: an answer already correct reloads nothing, so it
+       must not consume the pass. Previously only deferred[0] was ever
+       touched, and a page with two postback questions - Previous U.S.
+       Travel has "been in the U.S." and "issued a U.S. Visa" - left the
+       second permanently unfilled and unreported once the first was
+       already answered. */
+    for (let i = 0; i < deferred.length; i++) {
+      const d = deferred[i];
       let st;
       if (d.c.type === 'radio') st = setRadio(radioGroups[d.c.name], d.value);
       else if (d.c.type === 'checkbox') st = setCheckbox(d.c.el, d.value);
       else if (d.c.tag === 'select') st = setSelect(d.c.el, d.value);
       else st = setText(d.c.el, d.value);
-      /* Already correct means nothing reloads, so this is not a pending
-         postback and the agent is not told to press Fill again. */
       if (st === SET) {
         report.postbackPending = { id: d.c.id, key: d.m.key, value: String(d.value),
-                                   applied: true, remaining: deferred.length - 1 };
-      } else {
-        record(report, st, d.c, d.m, d.value);
+                                   applied: true, remaining: deferred.length - 1 - i };
+        break;
       }
+      record(report, st, d.c, d.m, d.value);
     }
     return report;
   }
