@@ -184,6 +184,14 @@
        UK filled INDONESIA against an address in Southampton, Hampshire. The
        employer is Indonesian for most applicants and foreign for some, so
        there is no constant to have - the agent picks it. */
+    /* The SCHOOL is always in Indonesia - unlike the employer, which can be
+       Carnival UK in Southampton. That is why `employerCountry` is not a
+       constant and this one is. */
+    { key: 'eduCountry', kind: 'text', page: 'Work / Education',
+      label: 'Educational institution - country/region', def: 'INDONESIA',
+      why: 'Every seafarer CTI files studied in Indonesia. Change it for anyone who ' +
+           'attended a school abroad.' },
+
     /* "Were you previously employed?" is column AZ, not a constant. This one
        has no column: CEAC's own help says answer Yes if you ever attended a
        high school or its equivalent, for any length of time, so it is Yes for

@@ -363,7 +363,8 @@
        id too - an unfilled dropdown is reported, a wrongly filled one is not. */
     { key: 'employerCountry', kind: 'text',
       ids: [/EmpSch.*(CNTRY|COUNTRY)/i, /EMPLOYER.*CNTRY/i, /WorkEduc.*CNTRY/i],
-      labels: [/^country\s*\/?\s*region$/i], must: /employer|school/i },
+      labels: [/^country\s*\/?\s*region$/i], must: /employer|school/i,
+      not: /institution|attendance/i },
     { key: 'jobTitle',        kind: 'text', ids: [/tbxJobTitle/i, /JOB_TITLE/i], labels: [/job title/i] },
     /* The box is left empty and the one beside it ticked - the intake form has
        no salary column, and CEAC only asks "if employed". `not` keeps the text
@@ -407,6 +408,11 @@
       labels: [/institution.*street address/i] },
     { key: 'eduCourse',  kind: 'text', ids: [/SchoolCourseOfStudy/i, /CourseOfStudy/i],
       labels: [/course of study/i] },
+    /* The FIFTH block with a bare "Country/Region" label. The school is always
+       in Indonesia, so unlike `employerCountry` this one is a constant. */
+    { key: 'eduCountry', kind: 'text',
+      ids: [/School.*(CNTRY|COUNTRY)/i, /EducInst.*(CNTRY|COUNTRY)/i],
+      labels: [/^country\s*\/?\s*region$/i], must: /institution|attendance/i },
     { key: 'eduFrom',    kind: 'date',
       ids: [/School(Date)?From(Day|Month|Year)/i, /EducInstFrom(Day|Month|Year)/i],
       labels: [/date of attendance.*from/i, /^from$/i], must: /institution|attendance|school/i },
@@ -418,6 +424,7 @@
     /* Column BB is one free-text address, so there is no city to fill. Named
        by id only, so the report points at the sheet rather than the rules. */
     { key: 'prevEmployerCity', kind: 'text', ids: [/PrevEmpl.*Addr.*City/i] },
+    { key: 'eduCity', kind: 'text', ids: [/School.*Addr.*City/i, /EducInst.*City/i] },
 
     /* Two different questions that used to share one key. "Have you ever
        been in the U.S.?" is about entries; "Have you ever been issued a
@@ -559,7 +566,7 @@
      with a length limit. Line 1 takes as much as fits, breaking on a word
      so a street name is never cut mid-word; Line 2 takes the rest. `cap`
      is the real maxlength read off the page, not a guess. */
-  const ADDRESS_KEYS = ['homeAddress', 'employerAddress'];
+  const ADDRESS_KEYS = ['homeAddress', 'employerAddress', 'eduAddress'];
 
   function addressHalf(id, value, cap) {
     const s = String(value || '').trim();

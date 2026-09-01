@@ -203,6 +203,18 @@ eq('passport issue country',
 eq('agency country',
    cr('recruiting/manning/crewing agency Agency Name City State/Province Country/Region'),
    'agencyCountry');
+/* A fifth block with the same bare label. The SCHOOL is always in Indonesia,
+   unlike the employer, so this one is a constant and employerCountry is not. */
+const eduBlk = 'Provide the following information on the educational institution(s) you ' +
+               'have attended. Name of Institution Street Address City State/Province ' +
+               'Postal Zone Country/Region Course of Study Date of Attendance From';
+eq('education country by id',    cr(eduBlk, 'ddlSchoolCountry'), 'eduCountry');
+eq('education country by label',  cr(eduBlk), 'eduCountry');
+/* employerCountry's guard includes "school", for "Present employer or school
+   address" - so it needs an explicit `not` to stay out of this block. */
+eq('employer country never reaches the education block',
+   cr(eduBlk, 'ddlEmpSchCountry'), 'eduCountry');
+eq('and still claims its own block', cr(empBlk, 'ddlEmpSchCountry'), 'employerCountry');
 eq('no block, no claim', cr(''), undefined);
 
 /* Column AW was landing nowhere: the live label is a bare "Phone Number" and

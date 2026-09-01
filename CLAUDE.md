@@ -448,8 +448,25 @@ With only one block filled there is no ambiguity, so it is used.
 attended for any length of time, and every seafarer CTI files has at least an SMA
 or SMK. Answering No would hide the block entirely.
 
-`prevEmployerCity` has no column — BB is one free-text address — so it is named
-by id only and joins `MISSING_FROM_INTAKE`.
+**`eduCountry` = INDONESIA is a constant, and `employerCountry` is not.** The
+school is always in Indonesia; the employer can be Carnival UK in Southampton.
+That is the whole distinction, and it is why one is a constant and the other
+was withdrawn.
+
+This is the **fifth** block with a bare `Country/Region` label — home address,
+passport issue, manning agency, present employer, educational institution.
+`employerCountry`'s guard is `must: /employer|school/i`, for the heading
+*"Present employer or school address"*, so it needed an explicit
+`not: /institution|attendance/i` to stay out of the education block. A test
+covers all five.
+
+`eduAddress` joined `ADDRESS_KEYS`, so a long school address overflows into
+Line 2 instead of being clipped — same arrangement as the home and employer
+addresses.
+
+`prevEmployerCity` and `eduCity` have no columns — BB and BP are single
+free-text addresses — so both are named by id only and join
+`MISSING_FROM_INTAKE`.
 
 ### The agency block is constants
 `usedAgency` = YES plus `agencyName`, `agencyContactSurname` /

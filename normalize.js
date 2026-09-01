@@ -246,6 +246,7 @@
     ['homePostal',    'Home address - postal code'],
     ['employerCountry','Employer / school - country/region'],
     ['prevEmployerCity','Previous employer - city (one address column in the sheet)'],
+    ['eduCity','Educational institution - city'],
     ['employerCity',   'Employer / school - city (one address column in the sheet)'],
     ['employerState',  'Employer / school - state / province'],
     ['employerPostal', 'Employer / school - postal code'],
@@ -567,7 +568,7 @@
     { title: 'Additional Education', fields: [
       ['educationLevel','Highest Level Completed (column BI)'], ['_eduSource','Education block sourced from'],
       ['eduName','Name of Institution'], ['eduAddress','Institution Address'],
-      ['eduCourse','Course of Study'], ['eduFrom','Attendance From'], ['eduTo','Attendance To'],
+      ['eduCourse','Course of Study'], ['eduCountry','Country/Region'], ['eduFrom','Attendance From'], ['eduTo','Attendance To'],
       ['hsName','School Name'], ['hsAddress','School Address'], ['hsCourse','Course of Study'],
       ['hsFrom','Attendance From'], ['hsTo','Attendance To'],
       ['uniName','University Name'], ['uniAddress','University Address'],
