@@ -11,7 +11,14 @@
 
   const M = window.DS160Matcher;
   const MARK = 'data-ds160-filled';
-  const MAX_AUTO_STEPS = 12;
+  /* CEAC sits behind a WAF, and on 2026-08-31 it blocked the agent
+     mid-application. A burst of postbacks answered 400ms apart, twelve
+     deep, is exactly the shape of traffic that trips one. Auto-continue
+     is now opt-in, paced at human speed, and gives up early: a tool that
+     gets the agent blocked is worse than one that asks for another
+     click. */
+  const MAX_AUTO_STEPS = 3;
+  const AUTO_DELAY_MS = 2500;
 
   // -- reading the page ----------------------------------------------
   const FILLABLE =
@@ -396,7 +403,7 @@
       chrome.storage.local.get(['record', 'overrides', 'autoContinue'], st => {
         if (!st.record) { send({ error: 'No applicant loaded. Open the worksheet and send one to the extension.' }); return; }
         const rep = fillPage(st.record, st.overrides || {}, { overwrite: !!msg.overwrite });
-        if (rep.postbackPending && st.autoContinue !== false) {
+        if (rep.postbackPending && st.autoContinue === true) {
           chrome.storage.local.set({ autoStep: (msg.step || 0) + 1 });
         } else {
           chrome.storage.local.set({ autoStep: 0 });
@@ -409,10 +416,10 @@
     return false;
   });
 
-  /* Resume automatically after an ASP.NET postback reload. */
+  /* Resume after an ASP.NET postback reload - only if explicitly asked. */
   try {
     chrome.storage.local.get(['autoStep', 'autoContinue', 'record', 'overrides'], st => {
-      if (!alive() || st.autoContinue === false || !st.record) return;
+      if (!alive() || st.autoContinue !== true || !st.record) return;
       const step = st.autoStep || 0;
       if (step <= 0 || step > MAX_AUTO_STEPS) return;
       setTimeout(() => {
@@ -421,7 +428,7 @@
           const rep = fillPage(st.record, st.overrides || {}, {});
           chrome.storage.local.set({ autoStep: rep.postbackPending ? step + 1 : 0, lastReport: rep });
         } catch (e) { /* the extension was reloaded mid-pass */ }
-      }, 400);
+      }, AUTO_DELAY_MS);
     });
   } catch (e) { /* orphaned by an extension reload; refreshing the page fixes it */ }
 })();

@@ -98,7 +98,7 @@
   // -- boot -----------------------------------------------------------
   chrome.storage.local.get(['record', 'autoContinue', 'lastReport'], st => {
     showWho(st.record);
-    $('auto').checked = st.autoContinue !== false;
+    $('auto').checked = st.autoContinue === true;
     if (st.lastReport) showReport(st.lastReport);
   });
 

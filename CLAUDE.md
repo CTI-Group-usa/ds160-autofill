@@ -51,6 +51,22 @@ works offline. `.xlsx` is unzipped in the browser with
 Excel serial dates fall straight through `normalize.js`'s serial branch.
 Old binary `.xls` is rejected with a clear message.
 
+## CEAC blocked the agent once - pace accordingly
+On 2026-08-31 ceac.state.gov's security service blocked the agent mid
+application ("Why have I been blocked?"). The likely trigger was
+auto-continue: every postback dropdown reloads the page, and the filler
+resumed 400ms later, up to twelve times - a burst of rapid form posts from
+one session is the shape of traffic a WAF exists to stop.
+
+Auto-continue is therefore **off unless switched on**, waits 2.5s, and gives
+up after 3 passes. Do not tune these back up for convenience. A tool that
+gets the agent blocked out of CEAC is worse than one that asks for another
+click, because the block costs the whole day's applications, not one page.
+
+If it happens again: stop, do not retry in a loop, and wait it out. Never
+work around a block by changing IP, browser or identity - that is evasion of
+a security control on a government system, and it is not on the table.
+
 ## Hard Rules (safety, not preference)
 - Never automate the CAPTCHA / security check.
 - Never click Next, Sign, Submit, or Confirm.

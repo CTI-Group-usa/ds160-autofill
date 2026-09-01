@@ -15,6 +15,9 @@ Two pieces:
 - It never solves the security check (CAPTCHA) — the agent does.
 - It never clicks **Next**, **Sign**, or **Submit**.
 - It never touches the Application ID, security question, or answer.
+- **Auto-continue is off by default.** CEAC sits behind a security service;
+  rapid repeated page reloads have got an agent blocked before. Leave it off
+  unless you have a reason, and never retry a block in a loop.
 - On the Security and Background pages it answers No to every unanswered
   question **only while that switch is on**, outlines each one on the page, and
   lists them in the report for you to read before clicking Next.
