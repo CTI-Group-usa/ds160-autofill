@@ -246,6 +246,37 @@
     rec._nameMononym = n.mononym;
     rec._nameGuessed = n.guessed;
 
+    /* "Present Employer or School" is NOT the manning agency. CTI Indonesia
+       belongs in the agency block on the Crew Visa page, and the intake
+       sheet's "Current Workplace" columns (AU-AX) hold CTI's OWN name,
+       address and phone - so filling the present employer from them put the
+       agent where the employer goes, which is what the live page showed.
+
+       At the user's instruction the block is sourced on column AZ instead:
+         AZ = YES -> the last real employer, columns BA / BB / BC / BF
+         AZ = NO  -> the college or university, columns BO / BP / BR
+       A seafarer who has worked names that employer; one who never has names
+       his school, which is exactly what "Employer or School" asks for.
+       `_employerSource` records which branch ran, for the worksheet. */
+    if (rec.prevEmployed === 'YES') {
+      rec.employerName    = rec.prevEmployerName;
+      rec.employerAddress = rec.prevEmployerAddress;
+      rec.employerPhone   = rec.prevEmployerPhone;
+      rec.employerStart   = rec.prevStart;
+      rec._employerSource = 'previous employer (AZ = YES, columns BA-BG)';
+    } else {
+      rec.employerName    = rec.uniName;
+      rec.employerAddress = rec.uniAddress;
+      rec.employerPhone   = '';
+      /* The sheet holds a YEAR of entry, and CEAC wants DD-MMM-YYYY. Feeding
+         "2019" to the date parser produced 01-JAN-2019 - a day and month
+         nobody stated, on a sworn form. Leave it empty and let validate()
+         ask for the real date. */
+      rec.employerStart   = /^\s*\d{4}\s*$/.test(String(rec.uniFrom || '')) ? '' : dateStr(rec.uniFrom);
+      rec._employerSource = 'college / university (AZ = ' +
+                            (rec.prevEmployed || 'blank') + ', columns BO-BS)';
+    }
+
     // C1/D crew are employed by the cruise line, not the manning agent.
     if (!rec.employerName && rec.cruiseLine) rec.employerName = upper(rec.cruiseLine);
 
@@ -376,6 +407,15 @@
 
     if (rec.prevEmployed === 'YES' && !rec.prevEmployerName)
       E('prevEmployerName', 'Marked as previously employed but no previous employer given');
+    /* The Present Employer block is sourced on column AZ, so say which branch
+       ran and what it could not supply. */
+    if (rec.prevEmployed !== 'YES' && rec.uniFrom && !rec.employerStart)
+      W('employerStart', 'Start Date comes from the year of university entry (' +
+                         clean(rec.uniFrom) + '), and CEAC wants a full date - ' +
+                         'enter the day and month by hand');
+    if (!rec.employerAddress)
+      W('employerAddress', 'No address for the present employer or school: ' +
+                           'taken from ' + (rec._employerSource || 'the intake form'));
     if (rec.priorUsVisa === 'YES') {
       if (!rec.lastVisaNumber) W('lastVisaNumber', 'Held a US visa before - DS-160 asks for the previous visa number');
       if (!rec.lastVisaIssued) W('lastVisaIssued', 'Held a US visa before - DS-160 asks when it was issued');
@@ -471,8 +511,9 @@
       ['marriageDate','Date of Marriage'], ['marriageEnded','Date Marriage Ended'],
       ['marriageEndHow','How the Marriage Ended'], ['marriageEndCountry','Country Terminated'] ] },
     { title: 'Present Work / Education', fields: [
-      ['employerName','Present Employer'], ['employerAddress','Employer Address'],
-      ['employerPhone','Employer Phone'], ['employerStart','Start Date'],
+      ['_employerSource','Present block sourced from'],
+      ['employerName','Present Employer or School'], ['employerAddress','Address'],
+      ['employerPhone','Phone'], ['employerStart','Start Date'],
       ['jobTitle','Job Title'] ] },
     { title: 'Previous Work / Education', fields: [
       ['prevEmployed','Previously employed?'], ['prevEmployerName','Employer Name'],

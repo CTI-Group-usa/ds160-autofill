@@ -100,6 +100,44 @@ has('bad: phone',            bv.warnings, 'phone', 'Indonesian');
 has('bad: ambiguous dob',    bv.warnings, 'dob', 'Ambiguous');
 has('bad: mrz chars',        bv.warnings, 'fullName', 'MRZ');
 
+// -- Present Employer or School is sourced on column AZ ----------------
+// CTI Indonesia is the manning AGENCY, and the sheet keeps its name and
+// address in the "Current Workplace" columns - so filling the present
+// employer from those put the agent where the employer belongs.
+const worked = D.toRecord({ 'Name': 'X', 'Cruise Line': 'Cunard Line',
+  "Current Workplace's Name": 'CTI INDONESIA',
+  "Current Workplace's Address": 'JL HANG TUAH NO.14 RENON',
+  'Were you previously employed?': 'Yes',
+  'Previous Work Place Name': 'PT SAMUDERA BAHARI',
+  'Previous Workplace Address': 'JL PELABUHAN 8, SURABAYA',
+  'Previous Workplace Phone Number': '0313344556',
+  'Previous Workplace Start Date': '01/02/2022' });
+eq('AZ yes: employer name',  worked.employerName, 'PT SAMUDERA BAHARI');
+eq('AZ yes: address',        worked.employerAddress, 'JL PELABUHAN 8, SURABAYA');
+eq('AZ yes: phone',          worked.employerPhone, '+62313344556');
+eq('AZ yes: start date',     worked.employerStart, '01-FEB-2022');
+eq('the agency never lands here', worked.employerName === 'CTI INDONESIA' ? 'LEAKED' : 'clear', 'clear');
+
+const student = D.toRecord({ 'Name': 'X', 'Cruise Line': 'Cunard Line',
+  "Current Workplace's Name": 'CTI INDONESIA',
+  'Were you previously employed?': 'No',
+  'Name of College/University': 'UDAYANA UNIVERSITY',
+  'Address of College/University': 'JL RAYA KAMPUS, JIMBARAN',
+  'Year of College/University Entry': '2019' });
+eq('AZ no: school name',  student.employerName, 'UDAYANA UNIVERSITY');
+eq('AZ no: school address', student.employerAddress, 'JL RAYA KAMPUS, JIMBARAN');
+eq('AZ no: no school phone', student.employerPhone, '');
+/* A bare year is not a date. Feeding "2019" to the parser produced
+   01-JAN-2019 - a day and month nobody stated, on a sworn form. */
+eq('AZ no: bare year is not a start date', student.employerStart, '');
+has('AZ no: asks for the full date', D.validate(student, { today: '2026-08-31' }).warnings,
+    'employerStart', 'enter the day and month');
+// A real date in that column is still used.
+eq('AZ no: a full date is kept',
+   D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'No',
+                'Name of College/University': 'U', 'Year of College/University Entry': '15/08/2019' })
+     .employerStart, '15-AUG-2019');
+
 // -- employer falls back to the cruise line ---------------------------
 const fb = D.toRecord({ 'Name': 'Sukarno', 'Cruise Line': 'Carnival', "Current Workplace's Name": '' });
 eq('employer fallback', fb.employerName, 'CARNIVAL');

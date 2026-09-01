@@ -184,6 +184,43 @@ eq('driver licence by curly-apostrophe label', radio('rblUnknownDL', DL), 'usDri
 eq('driver licence by ascii-apostrophe label',
    radio('rblUnknownDL2', "Do you or did you ever hold a U.S. Driver's License?"), 'usDriverLicense');
 
+// -- Crew Visa: the manning agency block ------------------------------
+/* CTI Indonesia is the AGENCY, not the employer. Every box here shares its
+   label with four other blocks - City, State/Province, Street Address,
+   Telephone Number, Surnames, Given Names - so all of them are scoped by
+   `must: /agency/i`. Ids are guesses until a live report lands; the labels
+   carry them meanwhile. */
+const agencyBlk = 'Did you acquire your position using a recruiting/manning/crewing agency? ' +
+                  'Agency Name Contact Name Street Address City State/Province ' +
+                  'Postal Zone/ZIP Code Country/Region Telephone Number';
+const inAgency = (label, id, type) =>
+  (M.matchKey({ id: P + (id || 'tbxUnknown'), name: '', label, section: agencyBlk,
+                type: type || 'text', tag: type === 'radio' ? 'input' : 'input' }, {}) || {}).key;
+eq('used an agency',   inAgency('Yes Did you acquire your position using a recruiting/manning/crewing agency?',
+                               'rblAgencyIND_0', 'radio'), 'usedAgency');
+eq('agency name',      inAgency('Agency Name', 'tbxAgencyName'), 'agencyName');
+eq('agency street',    inAgency('Street Address'), 'agencyAddr1');
+eq('agency city',      inAgency('City'), 'agencyCity');
+eq('agency state',     inAgency('State/Province'), 'agencyState');
+eq('agency postal',    inAgency('Postal Zone/ZIP Code'), 'agencyPostal');
+eq('agency country',   inAgency('Country/Region'), 'agencyCountry');
+eq('agency phone',     inAgency('Telephone Number'), 'agencyPhone');
+eq('agency contact surname', inAgency('Surnames'), 'agencyContactSurname');
+eq('agency contact given',   inAgency('Given Names'), 'agencyContactGiven');
+/* The same labels outside the agency block must NOT reach these rules -
+   the seafarer's home city and the U.S. stay city are the two that would
+   hurt most. */
+const outside = (label, section, id) =>
+  (M.matchKey({ id: P + (id || 'tbxUnknown'), name: '', label, section,
+                type: 'text', tag: 'input' }, {}) || {}).key;
+eq('home city is not the agency city',
+   outside('City', 'Home Address Street Address City State/Province', 'tbxAPP_ADDR_CITY'), 'homeCity');
+eq('a bare City outside any block stays unclaimed', outside('City', ''), undefined);
+eq('the U.S. stay city is still its own',
+   outside('City', 'Address Where You Will Stay in the U.S. City State ZIP Code'), 'stayCity');
+eq('the agency phone rule stays off the primary phone',
+   outside('Telephone Number', 'Phone Primary Phone Number Secondary Phone Number'), undefined);
+
 // -- Family: the parents' controls are PascalCase plurals -------------
 // The live page reported all six DOB parts unrecognised while the names
 // filled on their labels: the ids are ddlFathersDOBDay, not FATHER_DOBDay.

@@ -321,6 +321,55 @@ changes:
 in `matcher.test.js`, which passes the block text explicitly — a fixture's
 `blockLabel()` does not necessarily reproduce the live nesting.
 
+## CTI Indonesia is the AGENCY, not the employer (2026-09-01)
+The live Work/Education page showed **Present Employer or School Name = CTI
+INDONESIA** with CTI's Denpasar address. That is the manning agency, and it
+belongs in the agency block on the **Crew Visa** page. It landed in the wrong
+place because the intake sheet keeps CTI's own name, address, phone and start
+date in its *"Current Workplace"* columns AU–AX.
+
+**Present Employer or School is now sourced on column AZ**, at the user's
+instruction:
+
+| Column AZ | Source | Columns |
+|---|---|---|
+| YES | the last real employer | BA, BB, BC, BF |
+| NO / blank | the college or university | BO, BP, BR |
+
+A seafarer who has worked names that employer; one who never has names his
+school — which is exactly what "Employer **or School**" asks. `_employerSource`
+carries which branch ran and is shown on the worksheet, and the pre-existing
+cruise-line fallback still catches a row where both blocks are empty. AU–AX are
+no longer read for this block.
+
+**A bare year is not a date.** Column BR holds a *year* of university entry, and
+feeding `2019` to the date parser produced `01-JAN-2019` — a day and month nobody
+stated, on a sworn form. `employerStart` is left empty for a bare year and
+`validate()` asks for the real date.
+
+### The agency block is constants
+`usedAgency` = YES plus `agencyName`, `agencyContactSurname` /
+`agencyContactGiven`, `agencyAddr1`, `agencyCity`, `agencyState`,
+`agencyPostal`, `agencyCountry`, `agencyPhone` — CTI's own office, identical on
+every application, so it sits with the payer and U.S. contact blocks in
+`constants.js`. The phone is stored as CEAC shows it (`085333735407`), **not**
+normalised to +62.
+
+Every one of those boxes shares its label with at least one other block —
+Surnames, Given Names, Street Address, City, State/Province, Postal Zone,
+Country/Region, Telephone Number — so every rule carries `must: /agency/i`.
+Writing the tests found two real leaks, both now guarded:
+
+- the applicant's own `surname` / `givenNames` rules claimed the **agency
+  contact** boxes on their labels, which would have sworn the seafarer's name as
+  the agency contact. `AGENCY` joined the relative guard;
+- `prevEmployerPhone` had a bare `/telephone number/i` label and claimed the
+  agency phone — a previous employer's number in the agency's box. Now scoped by
+  `must: /previous|prevempl/i`.
+
+Ids in this block are still guesses; the labels carry them until a live Fill
+report pins them.
+
 ## Family: Relatives (added 2026-09-01, at the user's instruction)
 Two constants — `fatherInUs` and `motherInUs`, both **NO**. A Yes makes CEAC ask
 for that parent's status, so check them per applicant.
@@ -668,7 +717,8 @@ on the five Security and Background pages. Guards:
 
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
 `fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
-`fake-us-contact.html`, `fake-family.html` and
+`fake-us-contact.html`, `fake-family.html`,
+`fake-crew-visa.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

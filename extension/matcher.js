@@ -36,9 +36,9 @@
        of those controls the label pass would write the SEAFARER's own name into
        his father's box. Same guard, and same reason, as `dob` below. */
     { key: 'surname',        kind: 'text',  ids: [/APP_SURNAME/i], labels: [/^surnames/i],
-      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR/i },
+      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency/i },
     { key: 'givenNames',     kind: 'text',  ids: [/APP_GIVEN_NAME/i], labels: [/^given names/i],
-      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR/i },
+      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency/i },
     { key: 'gender',         kind: 'text',  ids: [/APP_GENDER/i], labels: [/^sex$/i] },
     { key: 'maritalStatus',  kind: 'text',  ids: [/APP_MARITAL_STATUS/i], labels: [/marital status/i] },
     // Relatives get their own DOB controls with the same suffix, so the
@@ -204,6 +204,31 @@
       labels: [/seagoing ship.*vessel name|^vessel name/i], not: /IDENT|IMO|NUMBER/i },
     { key: 'vesselImo',      kind: 'text',  ids: [/SEAGOING.*(IDENT|NUM)/i, /VESSEL_ID/i],
       labels: [/vessel identification number/i] },
+    /* The manning agency block. Ids are best guesses from CEAC's naming - the
+       labels are what these will match on until a live Fill report pins them,
+       and every one of them is scoped to the agency block by `must`, because
+       "City", "State/Province" and "Telephone Number" are word-for-word the
+       same in four other blocks. */
+    { key: 'usedAgency', kind: 'yesno', ids: [/AGENCY_IND/i, /RECRUIT.*IND/i, /rblAgency/i],
+      labels: [/recruiting.*manning.*crewing agency/i, /using a recruit/i] },
+    { key: 'agencyName', kind: 'text', ids: [/AGENCY_NAME/i, /tbxAgencyName/i],
+      labels: [/^agency name/i] },
+    { key: 'agencyContactSurname', kind: 'text', ids: [/AGENCY.*(POC|CONTACT).*SURNAME/i],
+      labels: [/^surnames/i], must: /agency/i },
+    { key: 'agencyContactGiven', kind: 'text', ids: [/AGENCY.*(POC|CONTACT).*GIVEN/i],
+      labels: [/^given names/i], must: /agency/i },
+    { key: 'agencyAddr1', kind: 'text', ids: [/AGENCY.*ADDR_?LN1/i, /AGENCY.*STREET/i],
+      labels: [/street address/i], must: /agency/i },
+    { key: 'agencyCity', kind: 'text', ids: [/AGENCY.*ADDR.*CITY/i],
+      labels: [/^city$/i], must: /agency/i },
+    { key: 'agencyState', kind: 'text', ids: [/AGENCY.*ADDR.*(STATE|PROVINCE)/i],
+      labels: [/^state\s*\/?\s*province$/i], must: /agency/i },
+    { key: 'agencyPostal', kind: 'text', ids: [/AGENCY.*ADDR.*POSTAL/i],
+      labels: [/^postal zone/i], must: /agency/i },
+    { key: 'agencyCountry', kind: 'text', ids: [/AGENCY.*ADDR.*CNTRY/i],
+      labels: [/^country\s*\/?\s*region$/i], must: /agency/i },
+    { key: 'agencyPhone', kind: 'text', ids: [/AGENCY.*TEL/i, /AGENCY.*PHONE/i],
+      labels: [/^telephone number/i], must: /agency/i },
     { key: 'jobTitleAboard', kind: 'text',  ids: [/CREW_JOB_TITLE/i, /tbxJobTitleAboard/i],
       labels: [/specific job title aboard/i] },
     { key: 'tripPayer',      kind: 'text',  ids: [/WHO_IS_PAYING/i], labels: [/paying for your trip/i] },
@@ -319,7 +344,12 @@
 
     { key: 'prevEmployerName',    kind: 'text', ids: [/PrevEmplName/i], labels: [/employer name/i] },
     { key: 'prevEmployerAddress', kind: 'text', ids: [/PrevEmplAddr1/i], labels: [/employer street address/i] },
-    { key: 'prevEmployerPhone',   kind: 'text', ids: [/PrevEmplTel/i], labels: [/telephone number/i] },
+    /* A bare "Telephone Number" label reaches four blocks. Unscoped, this rule
+       claimed the manning agency's phone box and would have written a previous
+       employer's number there. `must` gates the id too, which is the safe side:
+       an unfilled box is reported, a wrongly filled one is not. */
+    { key: 'prevEmployerPhone',   kind: 'text', ids: [/PrevEmplTel/i],
+      labels: [/telephone number/i], must: /previous|prevempl/i },
     { key: 'prevJobTitle',        kind: 'text', ids: [/PrevEmplJobTitle/i], labels: [/job title/i] },
     { key: 'prevSupervisor',      kind: 'text', ids: [/PrevSupervisor(Surname|GivenName)/i], labels: [/supervisor/i] },
     { key: 'prevStart',           kind: 'date', ids: [/PrevEmplDateFrom(Day|Month|Year)/i], labels: [/employment date from/i] },

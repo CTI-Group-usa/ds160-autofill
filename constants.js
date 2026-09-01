@@ -150,6 +150,35 @@
     { key: 'usPocEmail', kind: 'text', page: 'U.S. Contact',
       label: 'U.S. contact - email', def: 'marcos@carnivaluk.com' },
 
+    /* The manning agency block on the Crew Visa page. This is CTI Indonesia's
+       OWN office - it describes the agency, not the seafarer, so it is the
+       same on every application. It is also where "CTI INDONESIA" and the
+       Hang Tuah address belong: they were landing in Present Employer because
+       the intake sheet keeps them in its "Current Workplace" columns. */
+    { key: 'usedAgency', kind: 'yesno', page: 'Crew Visa',
+      label: 'Did you acquire your position using a recruiting/manning/crewing agency?',
+      def: 'YES', why: 'CTI is that agency. A No here hides the whole block below.' },
+    { key: 'agencyName', kind: 'text', page: 'Crew Visa',
+      label: 'Agency Name', def: 'CTI INDONESIA' },
+    { key: 'agencyContactSurname', kind: 'text', page: 'Crew Visa',
+      label: 'Agency contact - surnames', def: 'OKTAVIANIA',
+      why: 'Separate boxes in CEAC, so the name is stored split rather than guessed at.' },
+    { key: 'agencyContactGiven', kind: 'text', page: 'Crew Visa',
+      label: 'Agency contact - given names', def: 'DORKAS' },
+    { key: 'agencyAddr1', kind: 'text', page: 'Crew Visa',
+      label: 'Agency - street address', def: 'JL. HANG TUAH NO.14B, RENON' },
+    { key: 'agencyCity', kind: 'text', page: 'Crew Visa',
+      label: 'Agency - city', def: 'DENPASAR' },
+    { key: 'agencyState', kind: 'text', page: 'Crew Visa',
+      label: 'Agency - state/province', def: 'BALI' },
+    { key: 'agencyPostal', kind: 'text', page: 'Crew Visa',
+      label: 'Agency - postal zone/ZIP code', def: '80239' },
+    { key: 'agencyCountry', kind: 'text', page: 'Crew Visa',
+      label: 'Agency - country/region', def: 'INDONESIA' },
+    { key: 'agencyPhone', kind: 'text', page: 'Crew Visa',
+      label: 'Agency - telephone number', def: '085333735407',
+      why: 'Left exactly as CEAC shows it, not normalised to +62.' },
+
     { key: 'fatherInUs', kind: 'yesno', page: 'Family',
       label: 'Is your father in the U.S.?',
       def: 'NO', why: 'Parents of CTI seafarers live in Indonesia. A Yes here makes CEAC ask ' +
