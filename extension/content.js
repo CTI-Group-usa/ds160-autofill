@@ -333,9 +333,19 @@
   window.DS160Filler = { fillPage, pageMap, isSecurityPage, controls, questionText };
 
   // -- messaging ------------------------------------------------------
-  if (typeof chrome === 'undefined' || !chrome.runtime) return;
+  /* Reloading the extension orphans the content scripts already running
+     in open CEAC tabs: chrome.* then throws "Extension context
+     invalidated" on the next call. The page still works, but the errors
+     pile up in chrome://extensions, so every call is guarded and the
+     agent is told to refresh rather than left guessing. */
+  const alive = () => {
+    try { return !!(chrome && chrome.runtime && chrome.runtime.id); }
+    catch (e) { return false; }
+  };
+  if (!alive()) return;
 
   chrome.runtime.onMessage.addListener((msg, _sender, send) => {
+    if (!alive()) return false;
     if (msg.type === 'ds160:fill') {
       chrome.storage.local.get(['record', 'overrides', 'autoContinue'], st => {
         if (!st.record) { send({ error: 'No applicant loaded. Open the worksheet and send one to the extension.' }); return; }
@@ -354,13 +364,18 @@
   });
 
   /* Resume automatically after an ASP.NET postback reload. */
-  chrome.storage.local.get(['autoStep', 'autoContinue', 'record', 'overrides'], st => {
-    if (st.autoContinue === false || !st.record) return;
-    const step = st.autoStep || 0;
-    if (step <= 0 || step > MAX_AUTO_STEPS) return;
-    setTimeout(() => {
-      const rep = fillPage(st.record, st.overrides || {}, {});
-      chrome.storage.local.set({ autoStep: rep.postbackPending ? step + 1 : 0, lastReport: rep });
-    }, 400);
-  });
+  try {
+    chrome.storage.local.get(['autoStep', 'autoContinue', 'record', 'overrides'], st => {
+      if (!alive() || st.autoContinue === false || !st.record) return;
+      const step = st.autoStep || 0;
+      if (step <= 0 || step > MAX_AUTO_STEPS) return;
+      setTimeout(() => {
+        if (!alive()) return;
+        try {
+          const rep = fillPage(st.record, st.overrides || {}, {});
+          chrome.storage.local.set({ autoStep: rep.postbackPending ? step + 1 : 0, lastReport: rep });
+        } catch (e) { /* the extension was reloaded mid-pass */ }
+      }, 400);
+    });
+  } catch (e) { /* orphaned by an extension reload; refreshing the page fixes it */ }
 })();
