@@ -448,6 +448,14 @@
       labels: [/^language name$/i] },
     { key: 'countriesVisited', kind: 'yesno', ids: [/COUNTRIES_VISITED_IND/i],
       labels: [/traveled to any countries.*last five years/i] },
+    /* The SIXTH block with a bare "Country/Region" label. Only the first row
+       of the repeater is filled - see firstCountryVisited in normalize.js.
+       `not: /_IND/` keeps it off the Yes/No radio's own id, which also
+       contains COUNTRIES_VISITED. */
+    { key: 'firstCountryVisited', kind: 'text',
+      ids: [/COUNTRIES_VISITED(?!_IND)/i, /COUNTRY_VISITED/i],
+      labels: [/^country\s*\/?\s*region$/i],
+      must: /countries.*visited|list of countries/i, not: /_IND\b/i },
     { key: 'belongedOrganization', kind: 'yesno', ids: [/ORGANIZATION_IND/i],
       labels: [/belonged to.*contributed to.*organization/i] },
     { key: 'specializedSkills', kind: 'yesno', ids: [/SPECIALIZED_SKILLS_IND/i],

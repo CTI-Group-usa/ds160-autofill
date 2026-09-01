@@ -454,13 +454,32 @@ Note on `specializedSkills`: STCW safety and firefighting training is **not**
 what that question asks about. Its `why` says so, because the temptation to
 answer Yes on a seafarer's behalf is real.
 
-**`countriesVisited` is derived, not constant:** an entry in column M means Yes.
-A Yes reveals a repeating country block that CEAC then requires, and nothing
-fills it — the column is free text ("Singapore, Malaysia, Hong Kong") and each
-row costs an *Add Another* postback. `validate()` hands the list back for the
-agent to type. The same reasoning caps `languageSpoken` at the first row of the
-languages repeater. **CEAC's WAF blocked the agent once over a burst of
-postbacks** — that is the whole reason these stop at the question.
+### Column M: "NONE" means No
+`countriesVisited` is derived, not constant, and the rule is the user's:
+
+| Column M | Answer | Country/Region |
+|---|---|---|
+| `NONE` (or blank, `Nil`, `-`) | **NO** | left alone |
+| anything else | **YES** | the **first** country |
+
+A first pass here answered Yes for any non-empty cell, which made `NONE` a Yes
+**and then left the country list CEAC demands empty** — a page that cannot be
+completed, from a cell that was saying the opposite.
+
+`firstCountryVisited` splits column M on commas, semicolons, slashes, newlines
+and the words *and* / *dan*, then takes the first. `setSelect`'s tolerant option
+matching does the rest. Every further country is handed back by `validate()`:
+
+> Only the first country is filled (SINGAPORE). Add these by hand: Malaysia, Thailand
+
+That is deliberate, not a shortcut. Each extra row costs an *Add Another*
+postback, and **CEAC's WAF blocked the agent once over a burst of postbacks** —
+see the note at the top of this file. `languageSpoken` stops at the first
+repeater row for the same reason.
+
+Country/Region here is the **sixth** block sharing that bare label, pinned by
+`must: /countries.*visited|list of countries/i` plus `not: /_IND\b/i` — the
+Yes/No radio's own id also contains `COUNTRIES_VISITED`.
 
 ## Previous Work / Education / Training (2026-09-01)
 The live page came back with **both** gating questions unanswered — neither had

@@ -344,14 +344,23 @@
                    : '';
 
     /* "Have you traveled to any countries/regions within the last five years?"
-       comes from column M, at the user's instruction: an entry there means Yes.
-       The other six questions on that page are constants - see constants.js.
+       comes from column M. The user's rule: the literal "NONE" means No, and
+       anything else means Yes with the FIRST country filling the one visible
+       row. The other six questions on that page are constants.
 
-       A Yes reveals a repeating country block that CEAC then requires, and the
-       column is free text ("Singapore, Malaysia"), so validate() hands the list
-       back for the agent to enter. Filling it here would mean one postback per
-       "Add Another", and a burst of those is what got the agent blocked once. */
-    rec.countriesVisited = clean(rec.countries5y) ? 'YES' : 'NO';
+       An earlier pass here answered Yes for any non-empty cell, which made
+       "NONE" a Yes - and then left the country list CEAC demands empty.
+
+       Only the first row is filled. Each further country needs an "Add
+       Another" postback, and a burst of those is what got the agent blocked
+       out of CEAC once, so validate() hands the rest back instead. */
+    const visited = clean(rec.countries5y);
+    const noneVisited = !visited || /^(none|nil|tidak ada|-)$/i.test(visited);
+    const countryList = noneVisited ? []
+      : visited.split(/[,;/\n]|\band\b|\bdan\b/i).map(s => clean(s)).filter(Boolean);
+    rec.countriesVisited     = noneVisited ? 'NO' : 'YES';
+    rec.firstCountryVisited  = countryList.length ? upper(countryList[0]) : '';
+    rec._otherCountriesVisited = countryList.slice(1).join(', ');
 
     /* A parent with one name is filled as Surnames + a ticked "Do Not Know"
        beside Given Names. Typing the literal "FNU" there was wrong: CEAC
@@ -468,11 +477,11 @@
                          '(column AX), which CEAC requires');
     if (!rec.employerAddress)
       W('employerAddress', 'No address for the present employer or school (column AV)');
-    /* Answering Yes reveals a country list CEAC requires, and nothing fills it:
-       the column is free text and each row costs an "Add Another" postback. */
-    if (rec.countriesVisited === 'YES')
-      W('countries5y', 'Countries visited answered Yes from column M - enter these in the ' +
-                       'list by hand: ' + clean(rec.countries5y));
+    /* The first country fills the one visible row; every further one costs an
+       "Add Another" postback, so they are handed back rather than filled. */
+    if (rec.countriesVisited === 'YES' && rec._otherCountriesVisited)
+      W('countries5y', 'Only the first country is filled (' + rec.firstCountryVisited +
+                       '). Add these by hand: ' + rec._otherCountriesVisited);
     if (rec.priorUsVisa === 'YES') {
       if (!rec.lastVisaNumber) W('lastVisaNumber', 'Held a US visa before - DS-160 asks for the previous visa number');
       if (!rec.lastVisaIssued) W('lastVisaIssued', 'Held a US visa before - DS-160 asks when it was issued');
@@ -603,7 +612,8 @@
       ['visaRefused','Ever refused a visa or admission? (also column X)'],
       ['immigrantPetition','Immigrant petition ever filed on your behalf?'],
       ['countries5y','Countries Visited in the Last 5 Years (column M)'],
-      ['countriesVisited','Traveled abroad in the last 5 years?'],
+      ['countriesVisited','Traveled abroad in the last 5 years?'], ['firstCountryVisited','First country (filled)'],
+      ['_otherCountriesVisited','Other countries (by hand)'],
       ['clanTribe','Belong to a clan or tribe?'], ['languageSpoken','Language spoken'],
       ['belongedOrganization','Belonged to an organization?'],
       ['specializedSkills','Specialized skills or training?'],

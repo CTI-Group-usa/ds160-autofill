@@ -176,6 +176,34 @@ eq('uniTo year-only refused',
 eq('empty cell stays empty',
    D.toRecord({ 'Name': 'X', 'Year of College/University Entry': '' }).uniFrom, '');
 
+// -- column M: countries visited in the last five years -----------------
+/* The user's rule: the literal "NONE" means No; anything else means Yes with
+   the FIRST country filling the one visible row. An earlier pass answered Yes
+   for any non-empty cell, which made "NONE" a Yes and then left the country
+   list CEAC demands empty. */
+const visited = v => D.toRecord({ 'Name': 'X',
+  "Countries I've Been to in the Last 5 Years": v });
+eq('M = NONE means No',      visited('NONE').countriesVisited, 'NO');
+eq('M = none, any case',     visited('none').countriesVisited, 'NO');
+eq('M = Nil',                visited('Nil').countriesVisited, 'NO');
+eq('M empty',                visited('').countriesVisited, 'NO');
+eq('NONE fills no country',  visited('NONE').firstCountryVisited, '');
+eq('one country: Yes',       visited('Singapore').countriesVisited, 'YES');
+eq('one country: filled',    visited('Singapore').firstCountryVisited, 'SINGAPORE');
+// More than one: take the first, hand the rest back.
+eq('comma list, first',      visited('Singapore, Malaysia, Hong Kong').firstCountryVisited, 'SINGAPORE');
+eq('comma list, rest',       visited('Singapore, Malaysia, Hong Kong')._otherCountriesVisited,
+   'Malaysia, Hong Kong');
+eq('"and" separator',        visited('Singapore and Malaysia').firstCountryVisited, 'SINGAPORE');
+eq('semicolon separator',    visited('SINGAPORE; THAILAND')._otherCountriesVisited, 'THAILAND');
+has('the rest are handed back',
+    D.validate(visited('Singapore, Malaysia'), { today: '2026-09-01' }).warnings,
+    'countries5y', 'Add these by hand: Malaysia');
+none('a single country is quiet',
+     D.validate(visited('Singapore'), { today: '2026-09-01' }).warnings, 'countries5y');
+none('NONE is quiet',
+     D.validate(visited('NONE'), { today: '2026-09-01' }).warnings, 'countries5y');
+
 // -- Previous Work / Education ------------------------------------------
 /* Column AZ answers "Were you previously employed?" and gates the employer
    block (BA-BH). Column BI picks which of the TWO candidate education blocks
