@@ -204,7 +204,8 @@
        lands on its own pass. `kind: 'yesno'` also keeps it clear of the two
        text rules below, whose ids start with the same SEAGOING fragment. */
     { key: 'servingAboardVessel', kind: 'yesno',
-      ids: [/SEAGOING.*IND/i, /VESSEL_IND/i, /rblSeagoing/i],
+      ids: [/VesselWorkQuestion/i, /VESSEL_WORK/i,
+            /SEAGOING.*IND/i, /VESSEL_IND/i, /rblSeagoing/i],
       labels: [/serving aboard a seagoing/i] },
     /* Three separate companies appear on this form and none of them is this
        one: the manning agency (CTI), the payer (Travel page) and the seafarer's
@@ -242,7 +243,9 @@
        and every one of them is scoped to the agency block by `must`, because
        "City", "State/Province" and "Telephone Number" are word-for-word the
        same in four other blocks. */
-    { key: 'usedAgency', kind: 'yesno', ids: [/AGENCY_IND/i, /RECRUIT.*IND/i, /rblAgency/i],
+    { key: 'usedAgency', kind: 'yesno',
+      ids: [/PositionThroughAgency/i, /POSITION_THROUGH_AGENCY/i,
+            /AGENCY_IND/i, /RECRUIT.*IND/i, /rblAgency/i],
       labels: [/recruiting.*manning.*crewing agency/i, /using a recruit/i] },
     { key: 'agencyName', kind: 'text', ids: [/AGENCY_NAME/i, /tbxAgencyName/i],
       labels: [/^agency name/i] },
@@ -262,7 +265,14 @@
       labels: [/^country\s*\/?\s*region$/i], must: /agency/i },
     { key: 'agencyPhone', kind: 'text', ids: [/AGENCY.*TEL/i, /AGENCY.*PHONE/i],
       labels: [/^telephone number/i], must: /agency/i },
-    { key: 'jobTitleAboard', kind: 'text',  ids: [/CREW_JOB_TITLE/i, /tbxJobTitleAboard/i],
+    /* The sheet's own `jobTitle` (column AY, the present employer's position)
+       claimed this box on a live page and wrote COMMIS into it, where the
+       supporting letter says COMMIS DE CUISINE. The label rule here matches
+       the live wording exactly - what beat it is that the ID PASS RUNS FIRST
+       across every rule, so `jobTitle`'s /JOB_TITLE/ id matched before any
+       label was tried. `jobTitle` now carries `not: /aboard/i` for it. */
+    { key: 'jobTitleAboard', kind: 'text',
+      ids: [/CREW.?JOB.?TITLE/i, /tbxJobTitleAboard/i],
       labels: [/specific job title aboard/i] },
     { key: 'tripPayer',      kind: 'text',  ids: [/WHO_IS_PAYING/i], labels: [/paying for your trip/i] },
 
@@ -403,7 +413,13 @@
          "Present employer or school address", so "employer" alone pins it. */
       labels: [/^country\s*\/?\s*region$/i], must: /employer/i,
       not: /institution|attendance/i },
-    { key: 'jobTitle',        kind: 'text', ids: [/tbxJobTitle/i, /JOB_TITLE/i], labels: [/job title/i] },
+    /* `not: /aboard/i` keeps the sheet's position out of the Crew Visa page's
+       "Specific job title aboard aircraft or vessel", which is the supporting
+       letter's `jobTitleAboard`. The word is in that box's own label, so this
+       holds even where `blockLabel()` gives no section at all. Present
+       Employer never says "aboard". */
+    { key: 'jobTitle',        kind: 'text', ids: [/tbxJobTitle/i, /JOB_TITLE/i],
+      labels: [/job title/i], not: /aboard/i },
     /* The box is left empty and the one beside it ticked - the intake form has
        no salary column, and CEAC only asks "if employed". `not` keeps the text
        rule off the checkbox's id; `must` keeps the checkbox rule off the four

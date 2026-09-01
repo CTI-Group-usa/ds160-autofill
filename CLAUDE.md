@@ -577,6 +577,41 @@ worst class of bug here, and both were silent.
 The general shape: **a `not` guard is for other blocks, never for a neighbour in
 the same one.** Neighbours are separated by ids, ordering, or a lookahead.
 
+### What the live page corrected
+Both gate questions came back unrecognised and their real ids look nothing like
+what was guessed:
+
+| Question | Guessed | Real |
+|---|---|---|
+| Did you acquire your position using an agency? | `rblAGENCY_IND` | **`rblPositionThroughAgency`** |
+| Are you serving aboard a seagoing ship or vessel? | `rblSEAGOING_VESSEL_IND` | **`rblVesselWorkQuestion`** |
+
+Neither label rule saved them, because a radio's derived label on this page is
+just "Yes" - so on a Yes/No question the id genuinely has to carry it.
+
+**The sheet's own job title claimed the crew box.** Column AY (the present
+employer's position) filled `COMMIS` into *Specific job title aboard aircraft or
+vessel*, where the supporting letter says `COMMIS DE CUISINE` - a different
+answer, from the wrong document. The label rule on `jobTitleAboard` matches the
+live wording exactly; what beat it is that **the id pass runs before any label
+pass, across every rule**, and the live id starts `tbxJobTitle`, which
+`jobTitle`'s own `/tbxJobTitle/i` matches. Rule order within the table does not
+help when the two passes are ordered like that.
+
+The discriminator is the word **"aboard"**, which is in the box's own label, so
+`jobTitle` carries `not: /aboard/i` - it holds even where `blockLabel()` yields
+no section at all, and Present Employer never says "aboard".
+
+**A pattern that only fires in the label pass is one `not` away from being
+overridden by any rule with a matching id fragment.** When two pages ask a
+similar question, guard the one whose source is *wrong* as well as pointing the
+right one at the right box.
+
+The Vessel Name and Identification Number boxes appear only after the gate is
+answered Yes, so **their real ids are still unknown** - the labels carry them,
+and no id has been guessed for them on purpose. The next Fill report on that
+revealed block settles it.
+
 ### The agency block is constants
 `usedAgency` = YES plus `agencyName`, `agencyContactSurname` /
 `agencyContactGiven`, `agencyAddr1`, `agencyCity`, `agencyState`,

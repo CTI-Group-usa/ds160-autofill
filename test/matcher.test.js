@@ -318,9 +318,30 @@ eq('vessel IMO by id',     vessel('tbxSEAGOING_VESSEL_IDENT',
 eq('vessel IMO by label',  vessel('tbxUnknown2', 'Vessel Identification Number'), 'vesselImo');
 eq('job title aboard',     vessel('tbxCREW_JOB_TITLE',
                                   'Specific job title aboard aircraft or vessel'), 'jobTitleAboard');
+/* The live id here starts `tbxJobTitle`, which the SHEET's own jobTitle rule
+   (column AY, the present employer's position) also matches - and the id pass
+   runs before any label, so it won and wrote COMMIS where the supporting
+   letter says COMMIS DE CUISINE. Only the word "aboard" separates them. */
+eq('the sheet position does not claim the crew box',
+   vessel('tbxJobTitle', 'Specific job title aboard aircraft or vessel'), 'jobTitleAboard');
+eq('the crew box by label with an unknown id',
+   vessel('tbxAnything', 'Specific job title aboard aircraft or vessel'), 'jobTitleAboard');
+/* ...and the sheet's position still fills its own box on Work/Education. */
+eq('the present employer job title is unaffected',
+   (M.matchKey({ id: P + 'tbxJobTitle', name: '', label: 'Job Title',
+                 section: 'Present Employer or School Information Job Title',
+                 type: 'text', tag: 'input' }, {}) || {}).key, 'jobTitle');
+/* Both gates came back unrecognised from the live page; these are the real
+   ids, and neither resembles what was guessed (rblSEAGOING_VESSEL_IND,
+   rblAGENCY_IND). A radio's derived label is often just "Yes", so the id has
+   to carry it. */
 eq('serving aboard a vessel',
    vessel('rblSEAGOING_VESSEL_IND_0', 'Yes Are you serving aboard a seagoing ship or vessel?',
           'radio'), 'servingAboardVessel');
+eq('serving aboard a vessel, live id, label just "Yes"',
+   vessel('rblVesselWorkQuestion_0', 'Yes', 'radio'), 'servingAboardVessel');
+eq('acquired the position through an agency, live id',
+   vessel('rblPositionThroughAgency_0', 'Yes', 'radio'), 'usedAgency');
 /* Four companies appear on this form and this is none of the other three: not
    the manning agency, not the payer, not the seafarer's own employer. */
 eq('the vessel owner company',
