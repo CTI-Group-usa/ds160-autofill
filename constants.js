@@ -178,10 +178,10 @@
       why: 'The owner of the ship, not the manning agency and not the seafarer. Change it ' +
            'for a different principal.' },
     { key: 'vesselOwnerPhone', kind: 'text', page: 'Crew Visa',
-      label: 'Company Telephone Number', def: '+19545685888',
-      why: 'Stored with the + as CEAC shows it here. The payer block on the Travel page ' +
-           'carries the same number without one - that is not a mistake, they are ' +
-           'separate fields on separate pages.' },
+      label: 'Company Telephone Number', def: '19545685888',
+      why: 'The + was dropped after CEAC refused a Primary Phone Number for carrying one: ' +
+           '"must be 5-15 digits, with no spaces or hyphens". Same number as the payer ' +
+           'block on the Travel page, which never had one.' },
     { key: 'usedAgency', kind: 'yesno', page: 'Crew Visa',
       label: 'Did you acquire your position using a recruiting/manning/crewing agency?',
       def: 'YES', why: 'CTI is that agency. A No here hides the whole block below.' },

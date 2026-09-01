@@ -106,21 +106,29 @@
      addressHalf() so nothing is clipped and lost. Do not reintroduce a
      parser here. */
 
-  /* Third-party numbers are left as the sheet has them. `normPhone` below is
+  /* CEAC PHONE BOXES TAKE DIGITS ONLY. Its own error message is the rule:
+     "Phone number must be 5-15 digits, with no spaces or hyphens (-)". A
+     leading + is rejected as well, which is how +628195201137810 came back
+     invalid on a live page - fifteen digits, within range, refused for the
+     plus alone. So no phone value this file produces carries one, and neither
+     does any phone constant. */
+  const PHONE_DIGITS = /[^0-9]/g;
+
+  /* Third-party numbers keep the sheet's own digits. `normPhone` below is
      Indonesia-specific, and an employer is not always Indonesian: Carnival
-     UK's Southampton number 02380655000 came out as +622380655000, a number
+     UK's Southampton number 02380655000 came out as 622380655000, a number
      that does not exist. An Indonesian landline starts with 0 too (0361, 021),
      so a prefix cannot tell them apart - and CEAC takes the local format. Only
      the applicant's own number, which is always Indonesian, is normalised. */
-  const phoneAsWritten = raw => clean(raw).replace(/[^\d+]/g, '');
+  const phoneAsWritten = raw => clean(raw).replace(PHONE_DIGITS, '');
 
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
-    let s = clean(raw).replace(/[^\d+]/g, '').replace(/^\+/, '');
+    let s = clean(raw).replace(PHONE_DIGITS, '');
     if (!s) return '';
     if (s.startsWith('0')) s = '62' + s.slice(1);
     else if (s.startsWith('8')) s = '62' + s;
-    return '+' + s;
+    return s;
   }
 
   /* DS-160 has no "single name" option: a mononym goes in Surnames and
@@ -439,8 +447,24 @@
       W('nationalId', 'KTP should be 16 digits, got ' + rec.nationalId.length);
     if (rec.email && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(rec.email))
       E('email', 'Email address is not valid');
-    if (rec.phone && !/^\+62\d{8,13}$/.test(rec.phone))
-      W('phone', 'Phone number does not look like a valid Indonesian number');
+    /* CEAC's own rule, quoted from the page it rejects on: 5-15 digits, no
+       spaces, no hyphens, and no leading +. Anything outside that is refused
+       when Next is pressed, so it is an error here, not a warning. */
+    for (const [k, what] of [['phone', 'Primary phone number'],
+                             ['employerPhone', "Employer's phone number"],
+                             ['prevEmployerPhone', "Previous employer's phone number"]]) {
+      const v = String(rec[k] || '');
+      if (!v) continue;
+      if (/[^0-9]/.test(v))
+        E(k, what + ' still has a character CEAC will not accept (' + v +
+             ') - its phone boxes take digits only, no + and no punctuation');
+      else if (v.length < 5 || v.length > 15)
+        E(k, what + ' is ' + v.length + ' digits (' + v +
+             ') - CEAC accepts 5 to 15, and refuses the page otherwise');
+    }
+    if (rec.phone && /^[0-9]+$/.test(rec.phone) && !/^62[0-9]{8,12}$/.test(rec.phone))
+      W('phone', 'Phone number does not look like a valid Indonesian number (' + rec.phone +
+                 ') - check the intake cell for a stray digit or two numbers in one cell');
 
     if (rec._nameMononym)
       W('surname', 'Single name - filled as Surname "' + rec.surname + '", Given Names "FNU". Confirm against the passport.');

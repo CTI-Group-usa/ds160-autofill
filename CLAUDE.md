@@ -791,6 +791,28 @@ right. The two phone rules carry `must: /secondary phone/i` and
 `must: /work phone/i`; `test/fake-address-phone.html` asserts the State and Postal
 boxes stay untouched.
 
+### CEAC phone boxes take DIGITS ONLY - no leading +
+The live page rejected the applicant's own number:
+
+> Primary Phone Number is invalid. Phone number must be 5-15 digits, with no
+> spaces or hyphens (-).
+
+The value was `+628195201137810` - **fifteen digits, inside the range, refused
+for the plus alone.** CEAC's message is the rule, so no phone value this project
+produces carries one any more: `normPhone` returns bare digits, `phoneAsWritten`
+strips a `+` off a foreign number too, and `vesselOwnerPhone` lost the `+` the
+user had specified for it (the payer block on the Travel page always stored the
+same number without one, which was the clue).
+
+`validate()` now treats a phone outside 5-15 digits, or holding any non-digit, as
+an **error** rather than a warning - CEAC refuses the page when Next is pressed,
+so it is not a matter of taste.
+
+The number above also survives a second look: `628195201137810` is 15 digits
+where an Indonesian mobile is 12-13, so the intake cell most likely holds a stray
+digit or two numbers run together. That is a separate warning quoting the value,
+because guessing which digits to drop from a phone number is not ours to do.
+
 ### The address stays one string
 The sheet has **only** column Z, `Address` - none of the 95 columns holds a city,
 province or postal code. A parser that pulled the city out of the text was built

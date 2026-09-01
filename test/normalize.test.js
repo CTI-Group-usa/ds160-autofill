@@ -26,9 +26,15 @@ eq('ambiguous flag',  D.parseDate('05/03/1995').ambiguous, true);
 eq('unambiguous',     !!D.parseDate('25/03/1995').ambiguous, false);
 
 // -- phones ----------------------------------------------------------
-eq('phone 08',   D.normPhone('0812-3456-7890'), '+6281234567890');
-eq('phone 62',   D.normPhone('62 812 3456 7890'), '+6281234567890');
-eq('phone bare', D.normPhone('81234567890'), '+6281234567890');
+/* DIGITS ONLY, NO LEADING +. CEAC's own message is the rule: "must be 5-15
+   digits, with no spaces or hyphens (-)". It refused +628195201137810 on a
+   live page - fifteen digits, in range, rejected for the plus alone. */
+eq('phone 08',   D.normPhone('0812-3456-7890'), '6281234567890');
+eq('phone 62',   D.normPhone('62 812 3456 7890'), '6281234567890');
+eq('phone bare', D.normPhone('81234567890'), '6281234567890');
+eq('a + is dropped, not kept', D.normPhone('+62 812 3456 7890'), '6281234567890');
+eq('no phone value ever starts with +',
+   /^\+/.test(D.normPhone('+62 812 3456 7890')), false);
 
 // -- names -----------------------------------------------------------
 eq('mononym surname', D.splitName('Sukarno').surname, 'SUKARNO');
@@ -127,12 +133,22 @@ eq('AW: phone as written',        present.employerPhone, '0217402329');
 eq('a UK employer number is untouched',
    D.toRecord({ 'Name': 'X', "Current Workplace's Phone Number": '02380655000' })
      .employerPhone, '02380655000');
-eq('an international prefix survives',
+/* The + goes from third-party numbers too - CEAC refuses it in every phone
+   box, not only the applicant's. The digits are otherwise left alone. */
+eq('an international prefix loses its +',
    D.toRecord({ 'Name': 'X', 'Previous Workplace Phone Number': '+44 23 8065 5000' })
-     .prevEmployerPhone, '+442380655000');
+     .prevEmployerPhone, '442380655000');
 // The applicant's own number is always Indonesian, so it is still normalised.
 eq('the applicant own number is still normalised',
-   D.toRecord({ 'Name': 'X', 'Phone Number': '081542474324' }).phone, '+6281542474324');
+   D.toRecord({ 'Name': 'X', 'Phone Number': '081542474324' }).phone, '6281542474324');
+/* CEAC refuses anything outside 5-15 digits when Next is pressed, so it is an
+   error here rather than a warning. */
+eq('a phone number over 15 digits is an error',
+   D.validate(D.toRecord({ 'Name': 'X', 'Phone Number': '0812345678901234567' }))
+    .errors.some(e => e.field === 'phone' && /accepts 5 to 15/.test(e.msg)), true);
+eq('a plausible number raises no phone error',
+   D.validate(D.toRecord({ 'Name': 'X', 'Phone Number': '081542474324' }))
+    .errors.some(e => e.field === 'phone'), false);
 eq('AX: start date',              present.employerStart, '28-AUG-2015');
 eq('AY: position',                present.jobTitle, 'STUDENT');
 eq('BA is not consulted here',
