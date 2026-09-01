@@ -383,9 +383,12 @@
       function onAck(ev) {
         if (ev.source !== window) return;
         const d = ev.data;
-        if (!d || d.channel !== 'cti-ds160' || d.type !== 'record-ack') return;
+        if (!d || d.channel !== 'cti-ds160') return;
+        if (d.type !== 'record-ack' && d.type !== 'record-ack-failed') return;
         acked = true;
         window.removeEventListener('message', onAck);
+        // The bridge reports why rather than letting the timeout guess.
+        if (d.type === 'record-ack-failed') { say('err', d.error || 'The extension refused the record.'); return; }
         say('ok', 'Loaded: ' + (d.name || rec.fullName) +
                   '. Now open the DS-160 tab, click the extension icon, then Fill this page.');
       }
@@ -396,8 +399,9 @@
       setTimeout(() => {
         if (acked) return;
         window.removeEventListener('message', onAck);
-        say('err', 'The extension did not answer. Reload it at chrome://extensions, ' +
-                   'refresh this page, then try again - or use Copy JSON.');
+        say('err', 'The extension did not answer. Reload it at chrome://extensions, refresh this page, ' +
+                   'then try again. If it keeps happening, use Copy JSON here and ' +
+                   '"Load a record manually" in the extension popup - that path needs no bridge.');
       }, 1200);
     });
 

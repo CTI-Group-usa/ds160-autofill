@@ -27,21 +27,36 @@
       return;
     }
 
+    /* Every path answers. A silent failure here shows up on the page as
+       "the extension did not answer", which says nothing about why. */
     if (d.type === 'record') {
-      chrome.storage.local.set({ record: d.record, autoStep: 0, lastReport: null }, () => {
-        reply('record-ack', { name: d.record && d.record.fullName });
-      });
+      try {
+        chrome.storage.local.set({ record: d.record, autoStep: 0, lastReport: null }, () => {
+          const err = chrome.runtime.lastError;
+          if (err) reply('record-ack-failed', { error: 'Storage refused the record: ' + err.message });
+          else reply('record-ack', { name: d.record && d.record.fullName });
+        });
+      } catch (e) {
+        reply('record-ack-failed', { error: String((e && e.message) || e) });
+      }
       return;
     }
 
     if (d.type === 'fetch-letter') {
-      chrome.runtime.sendMessage({ type: 'ds160:fetchLetter', url: d.url }, res => {
-        if (chrome.runtime.lastError) {
-          reply('fetch-letter-result', { id: d.id, ok: false, error: chrome.runtime.lastError.message });
-          return;
-        }
-        reply('fetch-letter-result', Object.assign({ id: d.id }, res));
-      });
+      try {
+        chrome.runtime.sendMessage({ type: 'ds160:fetchLetter', url: d.url }, res => {
+          const err = chrome.runtime.lastError;
+          if (err) {
+            reply('fetch-letter-result', { id: d.id, ok: false,
+              error: 'The background worker did not answer: ' + err.message +
+                     '. Check chrome://extensions for an error on this extension.' });
+            return;
+          }
+          reply('fetch-letter-result', Object.assign({ id: d.id }, res));
+        });
+      } catch (e) {
+        reply('fetch-letter-result', { id: d.id, ok: false, error: String((e && e.message) || e) });
+      }
     }
   });
 })();
