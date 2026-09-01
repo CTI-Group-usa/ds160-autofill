@@ -20,6 +20,7 @@
      only the applicant/agent is allowed to do. */
   const FORBIDDEN = [
     /captcha/i, /codetextbox/i, /securityquest/i, /_answer/i, /tbxanswer/i,
+    /ddlLanguage/i,                       // the tooltip language picker
     /sign(and)?submit/i, /btnsign/i, /esign/i, /confirm/i,
     /password/i, /appid/i, /applicationid/i, /retrieve/i,
   ];
@@ -95,7 +96,9 @@
     { key: 'specificTravelPlans', kind: 'yesno', ids: [/SpecificTravel/i, /TRAVEL_PLANS_IND/i],
       labels: [/made specific travel plans/i] },
     { key: 'arrivalDate',    kind: 'date',
-      ids: [/ARRIVAL_US_DTE(Day|Month|Year)/i, /ARRIVE_(Day|Month|Year)/i, /DTEIntendedDate/i],
+      // TRAVEL_DTE* are the real CEAC ids, taken from a live page.
+      ids: [/TRAVEL_DTE(Day|Month|Year)/i, /ARRIVAL_US_DTE(Day|Month|Year)/i,
+            /ARRIVE_(Day|Month|Year)/i, /DTEIntendedDate/i],
       labels: [/date of arrival in u\.?s|intended date of arrival/i] },
     // With travel plans answered No, CEAC replaces the itinerary with an
     // intended date plus a length of stay: a number and a unit dropdown

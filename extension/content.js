@@ -141,13 +141,18 @@
     for (const t of types) el.dispatchEvent(new Event(t, { bubbles: true }));
   }
 
+  /* Three outcomes, not two. "Already holds exactly this value" is a
+     success - reporting it as a failure told the agent that five
+     correctly filled address boxes had gone wrong. */
+  const SET = 'set', SAME = 'same', NOMATCH = 'nomatch';
+
   function setText(el, value) {
-    if (el.value === value) return false;
+    if (el.value === value) return SAME;
     el.focus();
     el.value = value;
     fire(el, ['input', 'change']);
     el.blur();
-    return true;
+    return SET;
   }
 
   function setSelect(el, value) {
@@ -158,32 +163,33 @@
            || opts.find(o => o.text.trim().toUpperCase() === want)
            || opts.find(o => o.text.trim().toUpperCase().startsWith(want))
            || opts.find(o => want.startsWith(o.text.trim().toUpperCase()) && o.text.trim().length > 2);
-    if (!hit) return false;
-    if (el.value === hit.value) return false;
+    if (!hit) return NOMATCH;
+    if (el.value === hit.value) return SAME;
     el.value = hit.value;
     fire(el, ['input', 'change']);
-    return true;
+    return SET;
   }
 
   function setRadio(group, value, quiet) {
     const want = String(value).trim().toUpperCase();
-    if (want !== 'YES' && want !== 'NO') return false;
+    if (want !== 'YES' && want !== 'NO') return NOMATCH;
     const hit = group.find(c => {
       const t = (deriveLabel(c.el) + ' ' + c.el.value + ' ' + c.id).toUpperCase();
       return want === 'YES' ? /\bY(ES)?\b|_0$/.test(t) : /\bNO?\b|_1$/.test(t);
     });
-    if (!hit || hit.el.checked) return false;
+    if (!hit) return NOMATCH;
+    if (hit.el.checked) return SAME;
     hit.el.checked = true;
     if (!quiet) fire(hit.el, ['click', 'change']);
-    return true;
+    return SET;
   }
 
   function setCheckbox(el, value, quiet) {
     const want = String(value).trim().toUpperCase() === 'YES';
-    if (el.checked === want) return false;
+    if (el.checked === want) return SAME;
     el.checked = want;
     if (!quiet) fire(el, ['click', 'change']);
-    return true;
+    return SET;
   }
 
   /* CEAC hangs __doPostBack on the conditional questions so that a Yes
@@ -233,6 +239,19 @@
     }
   }
 
+  function record(report, status, c, m, value) {
+    if (status === SET) {
+      mark(c.el, true);
+      report.filled.push({ id: c.id, key: m.key, via: m.via, value: String(value) });
+    } else if (status === SAME) {
+      mark(c.el, true);
+      report.already.push({ id: c.id, key: m.key, value: String(value) });
+    } else {
+      mark(c.el, false);
+      report.skipped.push({ id: c.id, key: m.key, why: 'no matching option on this page' });
+    }
+  }
+
   function mark(el, ok) {
     el.setAttribute(MARK, ok ? '1' : '0');
     el.style.outline = ok ? '2px solid #16a34a' : '2px solid #f59e0b';
@@ -256,7 +275,7 @@
 
   function fillPage(rec, overrides, opts) {
     opts = opts || {};
-    const report = { filled: [], skipped: [], unmatched: [], postbackPending: null, url: location.href };
+    const report = { filled: [], already: [], skipped: [], unmatched: [], postbackPending: null, url: location.href };
     const all = controls();
 
     // Radios sharing a name are one logical question.
@@ -282,11 +301,10 @@
       }
       if (isPostback(c.el)) {
         if (revealsNothing(c, value)) {
-          const ok = c.type === 'radio' ? setRadio(radioGroups[c.name], value, true)
+          const st = c.type === 'radio' ? setRadio(radioGroups[c.name], value, true)
                                         : setCheckbox(c.el, value, true);
           done.add(c.name);
-          if (ok) { mark(c.el, true); report.filled.push({ id: c.id, key: m.key, via: m.via, value: String(value) }); }
-          else report.skipped.push({ id: c.id, key: m.key, why: 'already set' });
+          record(report, st, c, m, value);
         } else {
           deferred.push({ c, m, value });
           done.add(c.name);
@@ -294,14 +312,12 @@
         continue;
       }
 
-      let ok = false;
-      if (c.type === 'radio') { ok = setRadio(radioGroups[c.name], value); done.add(c.name); }
-      else if (c.type === 'checkbox') ok = setCheckbox(c.el, value);
-      else if (c.tag === 'select') ok = setSelect(c.el, value);
-      else ok = setText(c.el, value);
-
-      if (ok) { mark(c.el, true); report.filled.push({ id: c.id, key: m.key, via: m.via, value: String(value) }); }
-      else { mark(c.el, false); report.skipped.push({ id: c.id, key: m.key, why: 'no matching option / unchanged' }); }
+      let st;
+      if (c.type === 'radio') { st = setRadio(radioGroups[c.name], value); done.add(c.name); }
+      else if (c.type === 'checkbox') st = setCheckbox(c.el, value);
+      else if (c.tag === 'select') st = setSelect(c.el, value);
+      else st = setText(c.el, value);
+      record(report, st, c, m, value);
     }
 
     if (rec.securityAllNo === 'YES' && isSecurityPage()) sweepSecurityNo(all, radioGroups, report);
@@ -309,12 +325,19 @@
     // One postback control per pass; the page reloads after it.
     if (deferred.length) {
       const d = deferred[0];
-      let ok = false;
-      if (d.c.type === 'radio') ok = setRadio(radioGroups[d.c.name], d.value);
-      else if (d.c.type === 'checkbox') ok = setCheckbox(d.c.el, d.value);
-      else if (d.c.tag === 'select') ok = setSelect(d.c.el, d.value);
-      else ok = setText(d.c.el, d.value);
-      report.postbackPending = { id: d.c.id, key: d.m.key, value: String(d.value), applied: ok, remaining: deferred.length - 1 };
+      let st;
+      if (d.c.type === 'radio') st = setRadio(radioGroups[d.c.name], d.value);
+      else if (d.c.type === 'checkbox') st = setCheckbox(d.c.el, d.value);
+      else if (d.c.tag === 'select') st = setSelect(d.c.el, d.value);
+      else st = setText(d.c.el, d.value);
+      /* Already correct means nothing reloads, so this is not a pending
+         postback and the agent is not told to press Fill again. */
+      if (st === SET) {
+        report.postbackPending = { id: d.c.id, key: d.m.key, value: String(d.value),
+                                   applied: true, remaining: deferred.length - 1 };
+      } else {
+        record(report, st, d.c, d.m, d.value);
+      }
     }
     return report;
   }

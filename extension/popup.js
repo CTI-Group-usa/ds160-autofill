@@ -48,6 +48,9 @@
            rep.security.map(s => '<li>' + esc(s.question) + '</li>').join('') + '</ul></div>';
     }
     h += list('Filled', rep.filled, 'ok', x => esc(x.key) + ' &rarr; <code>' + esc(x.value) + '</code>');
+    // Already correct is a success, and saying so is what tells the agent
+    // the page is done rather than broken.
+    h += list('Already correct', rep.already, 'ok', x => esc(x.key) + ' &rarr; <code>' + esc(x.value) + '</code>');
     if (rep.postbackPending) {
       const p = rep.postbackPending;
       h += '<div class="warn">The page reloads after <code>' + esc(p.key) + '</code>' +
@@ -58,6 +61,10 @@
        constant that has since been added or edited. Saying so beats any
        version number, which is only as good as the last time someone
        remembered to bump it. */
+    if (!rep.filled.length && !rep.skipped.length && !rep.postbackPending && rep.already.length) {
+      h = '<div class="ok"><b>This page is already complete.</b> ' + rep.already.length +
+          ' field(s) hold the right values.</div>' + h;
+    }
     const empty = rep.skipped.filter(x => x.why === 'no value in record');
     if (empty.length) {
       h += '<div class="stale">' + empty.length + ' field(s) on this page have no value in the ' +

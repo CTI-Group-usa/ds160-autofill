@@ -206,6 +206,18 @@ clan/tribe NO, languages ENGLISH, military NO, Primary Occupation OTHER +
 SAILOR OS, US contact relationship BUSINESS ASSOCIATE, …). The user has not
 asked for these yet.
 
+## A setter has three outcomes, not two
+`setText`/`setSelect`/`setRadio`/`setCheckbox` return `set`, `same` or
+`nomatch`. Collapsing `same` into failure meant a second press of Fill
+reported five correctly filled address boxes as "no matching option /
+unchanged" and outlined them amber - telling the agent the page was broken
+when it was finished. `report.already` carries them, and the popup says
+"This page is already complete" when that is all there is.
+
+A deferred postback control that is already correct fires no postback, so it
+is recorded rather than reported as pending: the agent is not told to press
+Fill again for a page that is done.
+
 ## Address rules are pinned to their block
 DS-160 repeats **"Street Address (Line 1)"** word for word in at least four
 places: the home address, the address where you will stay, the U.S. contact,
