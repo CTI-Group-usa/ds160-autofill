@@ -106,13 +106,19 @@
 
       /* The heading usually sits OUTSIDE the block's own table - as a
          legend, or as the element just before it - so taking only the
-         block's text misses the very words that identify it. */
+         block's text misses the very words that identify it.
+
+         CEAC does not always use a <fieldset>, and the heading is not always
+         the immediately preceding sibling: on the educational-institution
+         block it sits a level or two up. Climb until some preceding element
+         has text, or give up after a few levels. Without this, `lead` came
+         back '' on an oversized block and the section was empty again. */
       let lead = '';
       const fs = n.closest('fieldset');
       const legend = fs && fs.querySelector('legend');
       if (legend) lead = legend.textContent;
-      if (!lead) {
-        let prev = n.previousElementSibling;
+      for (let up = n, hops = 0; !lead && up && hops < 4; up = up.parentElement, hops++) {
+        let prev = up.previousElementSibling;
         while (prev && !prev.textContent.trim()) prev = prev.previousElementSibling;
         if (prev) lead = prev.textContent;
       }

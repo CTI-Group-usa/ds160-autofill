@@ -363,7 +363,12 @@
        id too - an unfilled dropdown is reported, a wrongly filled one is not. */
     { key: 'employerCountry', kind: 'text',
       ids: [/EmpSch.*(CNTRY|COUNTRY)/i, /EMPLOYER.*CNTRY/i, /WorkEduc.*CNTRY/i],
-      labels: [/^country\s*\/?\s*region$/i], must: /employer|school/i,
+      /* `must` is tested against id + name + label + section together, so
+         "school" in it was satisfied by the education block's OWN id,
+         ddlSchoolCountry - and this rule, which has no constant behind it,
+         claimed that box and left it blank. The Present block's heading says
+         "Present employer or school address", so "employer" alone pins it. */
+      labels: [/^country\s*\/?\s*region$/i], must: /employer/i,
       not: /institution|attendance/i },
     { key: 'jobTitle',        kind: 'text', ids: [/tbxJobTitle/i, /JOB_TITLE/i], labels: [/job title/i] },
     /* The box is left empty and the one beside it ticked - the intake form has
@@ -410,8 +415,14 @@
       labels: [/course of study/i] },
     /* The FIFTH block with a bare "Country/Region" label. The school is always
        in Indonesia, so unlike `employerCountry` this one is a constant. */
+    /* Two rules, one key. `must` gates a rule's id path as well as its label
+       path, and these ids are specific enough to stand alone - no other block's
+       country dropdown is named School*. Keeping them in one rule meant an
+       empty or heading-less section disabled the id match too, which is how
+       this box stayed blank on the live page even after the section fix. */
     { key: 'eduCountry', kind: 'text',
-      ids: [/School.*(CNTRY|COUNTRY)/i, /EducInst.*(CNTRY|COUNTRY)/i],
+      ids: [/School.*(CNTRY|COUNTRY)/i, /EducInst.*(CNTRY|COUNTRY)/i] },
+    { key: 'eduCountry', kind: 'text', ids: [],
       labels: [/^country\s*\/?\s*region$/i], must: /institution|attendance/i },
     { key: 'eduFrom',    kind: 'date',
       ids: [/School(Date)?From(Day|Month|Year)/i, /EducInstFrom(Day|Month|Year)/i],

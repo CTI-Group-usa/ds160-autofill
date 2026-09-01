@@ -208,6 +208,7 @@ eq('agency country',
 const eduBlk = 'Provide the following information on the educational institution(s) you ' +
                'have attended. Name of Institution Street Address City State/Province ' +
                'Postal Zone Country/Region Course of Study Date of Attendance From';
+const eduHead = 'Provide the following information on the educational institution(s) you have attended.';
 eq('education country by id',    cr(eduBlk, 'ddlSchoolCountry'), 'eduCountry');
 eq('education country by label',  cr(eduBlk), 'eduCountry');
 /* employerCountry's guard includes "school", for "Present employer or school
@@ -216,6 +217,19 @@ eq('employer country never reaches the education block',
    cr(eduBlk, 'ddlEmpSchCountry'), 'eduCountry');
 eq('and still claims its own block', cr(empBlk, 'ddlEmpSchCountry'), 'employerCountry');
 eq('no block, no claim', cr(''), undefined);
+/* The live failure, twice over. `must` is tested against id + name + label +
+   section TOGETHER, so "school" in employerCountry's guard was satisfied by
+   the education block's own id, ddlSchoolCountry - and that rule has no
+   constant behind it, so the box was claimed and left blank. Its guard is
+   `/employer/i` alone now.
+   And `must` gates a rule's id path as well as its label path, so an empty
+   section disabled the School* id match too. eduCountry is two rules: ids
+   with no guard, label with one. */
+eq('School id with an EMPTY section', cr('', 'ddlSchoolCountry'), 'eduCountry');
+eq('School id with the heading only', cr(eduHead, 'ddlSchoolCountry'), 'eduCountry');
+eq('education heading, unknown id',   cr(eduHead, 'ddlUnknown'), 'eduCountry');
+eq('the employer rule still needs its own block',
+   cr(eduHead, 'ddlEmpSchCountry') === 'employerCountry' ? 'LEAKED' : 'clear', 'clear');
 
 /* Column AW was landing nowhere: the live label is a bare "Phone Number" and
    the rule wanted "telephone number ... employer". A bare "Phone Number" also

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 education block - no fieldset</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} .hint{color:#666}</style>
+</head>
+<body>
+<!-- The same sixteen-control education block, but laid out the way CEAC
+     actually does it: NO <fieldset>, no <legend>, and the heading text sitting
+     a couple of levels above the table that holds the controls.
+
+     blockLabel() took its heading from a legend or the immediately preceding
+     sibling. With neither present, `lead` came back '' - so even after the
+     size-cap fix the section was still empty and every must/not guard on this
+     block stayed inert. That is why Country/Region kept coming back unfilled
+     on the live page while the fixture with a fieldset passed.
+
+     It now climbs a few levels looking for preceding text. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Previous Work/Education/Training Information</h2>
+
+<div>
+  <div class="hint">Provide the following information on the educational institution(s) you have attended.</div>
+  <div>
+    <div>
+      <table>
+        <tr><td>Name of Institution</td>
+            <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolName" size="40"></td></tr>
+        <tr><td>Street Address (Line 1)</td>
+            <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddr1" size="40" maxlength="40"></td></tr>
+        <tr><td>Street Address (Line 2) <i>*Optional</i></td>
+            <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddr2" size="40" maxlength="40"></td></tr>
+        <tr><td>City</td>
+            <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrCity"></td></tr>
+        <tr><td>State/Province</td>
+            <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrState">
+                <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrStateNA">
+                <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrStateNA">Does Not Apply</label></td></tr>
+        <tr><td>Postal Zone/ZIP Code</td>
+            <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrPostal">
+                <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrPostalNA">
+                <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrPostalNA">Does Not Apply</label></td></tr>
+        <tr><td>Country/Region</td>
+            <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolCountry">
+                  <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+        <tr><td>Course of Study</td>
+            <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolCourseOfStudy" size="40"></td></tr>
+        <tr><td>Date of Attendance From</td><td>
+          <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolFromDay">
+            <option value="">-</option><option>28</option></select>
+          <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolFromMonth">
+            <option value="">-</option><option value="AUG">AUG</option></select>
+          <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolFromYear" size="4">
+        </td></tr>
+        <tr><td>Date of Attendance To</td><td>
+          <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolToDay">
+            <option value="">-</option><option>03</option></select>
+          <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolToMonth">
+            <option value="">-</option><option value="AUG">AUG</option></select>
+          <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolToYear" size="4">
+        </td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>
