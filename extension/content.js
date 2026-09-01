@@ -334,13 +334,17 @@
 
       const m = M.matchKey(c, overrides);
       if (!m) {
-        /* Forbidden controls are excluded on purpose, not gaps in the
-           rules. Listing them as unrecognised is noise that hides the
-           real gaps - the tooltip language picker was showing up as one. */
-        if (c.type !== 'radio' && !M.isDoesNotApply(c) &&
-            !M.isForbidden(c.id) && !M.isForbidden(c.name)) {
-          report.unmatched.push({ id: c.id, label: c.label, tag: c.tag });
-        }
+        /* Report an unmatched radio ONCE per group, rather than not at all.
+           Hiding them made a rule that no longer matched look like a filled
+           field: the U.S. driver's licence question came back blank from the
+           live page with nothing in the report to say why.
+
+           Forbidden controls stay out - they are excluded on purpose, not
+           gaps in the rules, and listing them buried the real ones. */
+        const deliberate = M.isDoesNotApply(c) ||
+                           M.isForbidden(c.id) || M.isForbidden(c.name);
+        if (!deliberate) report.unmatched.push({ id: c.id, label: c.label, tag: c.tag });
+        if (c.type === 'radio') done.add(c.name);
         continue;
       }
       const value = valueFor(rec, m.key, c);

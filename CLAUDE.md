@@ -302,6 +302,16 @@ Running it against the real CEAC page found four things the fixture had not:
 4. **Forbidden controls were listed as "not recognised".** `ddlLanguage` was
    already in `FORBIDDEN`; the report just did not distinguish "excluded on
    purpose" from "no rule for it", which buried the real gaps.
+5. **An unmatched radio was invisible.** `fillPage` skipped radios when building
+   the unmatched list, so a Yes/No question no rule claimed came back blank with
+   nothing in the report to say why — that is how the U.S. driver's licence
+   question was lost. Unmatched radios are now reported **once per group**
+   (`done.add(c.name)` on the miss). Its id is `PREV_US_DRIVER_LIC_IND`, not
+   `..._LICENSE_IND`, and the label carries a typographic apostrophe.
+
+The lesson these five share: **a rule that stops matching must be loud.** Prefer
+reporting a control you cannot place over quietly leaving it alone. `usDriverLicense`
+comes from intake column N.
 
 `test/fake-prev-us-travel.html` now carries the live page's ids and reproduces
 its label for the Do-Not-Know box verbatim

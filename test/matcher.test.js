@@ -162,6 +162,15 @@ eq('cancellation is still its own',
 // "Have you ever been..." opens three questions here; only one is beenInUs.
 eq('refused is not beenInUs', radio('rblUnknownX', REFUSED), 'visaRefused');
 
+// CEAC abbreviates LICENSE to LIC, and renders a typographic apostrophe.
+// The live page left this blank with a required-field marker.
+const DL = 'Do you or did you ever hold a U.S. Driver’s License?';
+eq('driver licence abbreviated id', radio('rblPREV_US_DRIVER_LIC_IND', DL), 'usDriverLicense');
+eq('driver licence spelled-out id', radio('rblUS_DRIVER_LICENSE_IND', DL), 'usDriverLicense');
+eq('driver licence by curly-apostrophe label', radio('rblUnknownDL', DL), 'usDriverLicense');
+eq('driver licence by ascii-apostrophe label',
+   radio('rblUnknownDL2', "Do you or did you ever hold a U.S. Driver's License?"), 'usDriverLicense');
+
 // The trip's intended stay must not leak into the previous-visit boxes.
 eq('intended stay stays off the prev block',
    (M.matchKey({ id: P + PREV + 'ddlPREV_US_VISIT_LOS_CD', name: '',

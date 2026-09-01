@@ -236,7 +236,13 @@
       labels: [/^length of stay/i], must: /PREV|previous/i, not: /_CD\b|UNIT/i },
     { key: 'prevStayUnit',   kind: 'text', tag: 'select', ids: [/PREV_US_VISIT_LOS_CD/i],
       labels: [/^length of stay/i], must: /PREV|previous/i },
-    { key: 'usDriverLicense',kind: 'yesno', ids: [/US_DRIVER_LICENSE_IND/i], labels: [/driver.?s licen[cs]e/i] },
+    /* CEAC abbreviates this one: PREV_US_DRIVER_LIC_IND, not ..._LICENSE_IND.
+       The label carries a typographic apostrophe, hence .{0,2} rather than a
+       literal quote. The live page showed it unanswered with a required-field
+       marker, and an unmatched radio used to be invisible in the report. */
+    { key: 'usDriverLicense',kind: 'yesno',
+      ids: [/US_DRIVER_LIC(ENSE)?_IND/i, /DRIVER_LIC/i],
+      labels: [/driver.{0,2}s licen[cs]e/i] },
     { key: 'lastVisaNumber', kind: 'text',  ids: [/PREV_VISA_FOIL_NUMBER/i], labels: [/visa number/i] },
     /* CEAC is not consistent about the _DTE infix: the visit block uses
        PREV_US_VISIT_DTEDay, this one PREV_VISA_ISSUED_DTEDay. Accept both -
