@@ -321,6 +321,30 @@ changes:
 in `matcher.test.js`, which passes the block text explicitly — a fixture's
 `blockLabel()` does not necessarily reproduce the live nesting.
 
+## Family: Relatives (added 2026-09-01, at the user's instruction)
+Two constants -  and , both **NO**. A Yes makes CEAC ask
+for the parent's status, so check them per applicant.
+
+**All six Date-of-Birth parts came back unrecognised** while the names filled.
+CEAC writes the parents' controls in a PascalCase plural here -
+ and , not  and
+. Both spellings are accepted now, including 
+without the underscore. The spouse rules were widened the same way; that half is
+**not yet confirmed against a live page.**
+
+The applicant's own  rule matches any , and the only
+thing keeping it out of the parents' boxes is its  guard. That guard is load-bearing - without it the seafarer's own
+birthday goes into both parents' fields. A test asserts it.
+
+### FNU is a placeholder, not a name
+The live page filled the father as **Surnames FNU / Given Names SUROSO** - exactly
+backwards. The intake value was , and the splitter took the last
+token as the surname.  is the DS-160 placeholder for a name that does not
+exist; it arrives in already-processed intake data and is never a name itself.
+ and  now drop it before splitting, so ,
+ and  all give Surnames SUROSO / Given Names FNU. A value of
+ alone is left as it is - there is no name in there to recover.
+
 ## Passport (added 2026-09-01, at the user's instruction)
 The live page reported **ten** controls unrecognised and showed a bare `2023` /
 `2033` with the day and month dropdowns empty.
@@ -611,7 +635,7 @@ on the five Security and Background pages. Guards:
 
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
 `fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
-`fake-us-contact.html` and
+`fake-us-contact.html`, `fake-family.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

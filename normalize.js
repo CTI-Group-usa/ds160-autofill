@@ -112,7 +112,14 @@
      Given Names becomes FNU. Anything longer is a guess until someone
      checks it against the passport MRZ, so we always flag it. */
   function splitName(raw) {
-    const t = upper(raw).replace(/[^A-Z' -]/g, ' ').split(/\s+/).filter(Boolean);
+    let t = upper(raw).replace(/[^A-Z' -]/g, ' ').split(/\s+/).filter(Boolean);
+    /* "FNU" is the DS-160 placeholder for a name that does not exist - it is
+       never a name itself. It arrives in already-processed intake data, and
+       taking it as a real token put FNU in Surnames and the actual single
+       name in Given Names, exactly backwards: "SUROSO FNU" filled the live
+       page as Surnames FNU / Given Names SUROSO. Drop it and let the mononym
+       rule below put the real name where it belongs. */
+    if (t.length > 1) t = t.filter(x => x !== 'FNU');
     if (!t.length) return { surname: '', given: '', mononym: false, guessed: false };
     if (t.length === 1) return { surname: t[0], given: 'FNU', mononym: true, guessed: false };
     return { surname: t[t.length - 1], given: t.slice(0, -1).join(' '), mononym: false, guessed: true };
@@ -448,6 +455,7 @@
       ['usPocAddress','Address'], ['usPocPhone','Phone'], ['usPocEmail','Email'] ] },
     { title: 'Family - Relatives', fields: [
       ['fatherName',"Father's Full Name"], ['fatherDob',"Father's Date of Birth"],
+      ['fatherInUs','Is your father in the U.S.?'], ['motherInUs','Is your mother in the U.S.?'],
       ['motherName',"Mother's Full Name"], ['motherDob',"Mother's Date of Birth"] ] },
     { title: 'Family - Spouse', fields: [
       ['spouseName','Spouse Full Name'], ['spouseDob','Spouse Date of Birth'],

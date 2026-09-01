@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Family - Relatives</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2,h3{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}
+.hint{color:#666;font-size:12px}</style>
+</head>
+<body>
+<!-- The live page reported eight controls unrecognised: both parents' Date of
+     Birth in all three parts, and both "Is your parent in the U.S.?" radios.
+     The names filled, but on their LABELS - the ids here are PascalCase
+     plurals, ddlFathersDOBDay and tbxMothersGivenName, not FATHER_DOBDay and
+     FATHER_GIVEN_NAME. Both spellings are accepted now.
+
+     The applicant's own DOB rule matches any /DOB(Day|Month|Year)/, and the
+     only thing keeping it out of these boxes is its FATHER|MOTHER|SPOUSE
+     guard. That guard is load-bearing: without it the seafarer's birthday
+     would be written into both parents' fields.
+
+     Six "Do Not Know" boxes sit beside the names and dates. We have the
+     names, so they stay unticked and are reported under "Left blank on
+     purpose" with their ids. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Family Information: Relatives</h2>
+
+<h3>Father's Full Name and Date of Birth</h3>
+<fieldset>
+  <table>
+    <tr><td>Surnames</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxFathersSurname">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersSurnameUnknown">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersSurnameUnknown">Do Not Know</label>
+            <div class="hint">(e.g., Hernandez Garcia)</div></td></tr>
+    <tr><td>Given Names</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxFathersGivenName">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersGivenNameUnknown">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersGivenNameUnknown">Do Not Know</label>
+            <div class="hint">(e.g., Juan Miguel)</div></td></tr>
+    <tr><td>Date of Birth</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlFathersDOBDay">
+              <option value="">-</option><option>05</option></select>
+            <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlFathersDOBMonth">
+              <option value="">-</option><option value="MAR">MAR</option></select>
+            <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxFathersDOBYear" size="4">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersDOBUnknown">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersDOBUnknown">Do Not Know</label>
+            <div class="hint">(Format: DD-MMM-YYYY)</div></td></tr>
+    <tr><td>Q:</td><td>Is your father in the U.S.?</td></tr>
+    <tr><td>A:</td><td>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblFATHER_LIVE_IN_US_IND_0"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblFATHER_LIVE_IN_US_IND" value="Y"
+             onclick="javascript:setTimeout('__doPostBack(\'f\',\'\')', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblFATHER_LIVE_IN_US_IND_0">Yes</label>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblFATHER_LIVE_IN_US_IND_1"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblFATHER_LIVE_IN_US_IND" value="N"
+             onclick="javascript:setTimeout('__doPostBack(\'f\',\'\')', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblFATHER_LIVE_IN_US_IND_1">No</label>
+    </td></tr>
+  </table>
+</fieldset>
+
+<h3>Mother's Full Name and Date of Birth</h3>
+<fieldset>
+  <table>
+    <tr><td>Surnames</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxMothersSurname">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersSurnameUnknown">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersSurnameUnknown">Do Not Know</label>
+            <div class="hint">(e.g., Hernandez Garcia)</div></td></tr>
+    <tr><td>Given Names</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxMothersGivenName">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersGivenNameUnknown">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersGivenNameUnknown">Do Not Know</label>
+            <div class="hint">(e.g., Juanita Miguel)</div></td></tr>
+    <tr><td>Date of Birth</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlMothersDOBDay">
+              <option value="">-</option><option>12</option></select>
+            <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlMothersDOBMonth">
+              <option value="">-</option><option value="AUG">AUG</option></select>
+            <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxMothersDOBYear" size="4">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersDOBUnknown">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersDOBUnknown">Do Not Know</label>
+            <div class="hint">(Format: DD-MMM-YYYY)</div></td></tr>
+    <tr><td>Q:</td><td>Is your mother in the U.S.?</td></tr>
+    <tr><td>A:</td><td>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblMOTHER_LIVE_IN_US_IND_0"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblMOTHER_LIVE_IN_US_IND" value="Y"
+             onclick="javascript:setTimeout('__doPostBack(\'m\',\'\')', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblMOTHER_LIVE_IN_US_IND_0">Yes</label>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblMOTHER_LIVE_IN_US_IND_1"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblMOTHER_LIVE_IN_US_IND" value="N"
+             onclick="javascript:setTimeout('__doPostBack(\'m\',\'\')', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblMOTHER_LIVE_IN_US_IND_1">No</label>
+    </td></tr>
+  </table>
+</fieldset>
+
+<table>
+  <tr><td>Q:</td><td>Do you have any immediate relatives, not including parents, in the United States?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblUS_IMMED_RELATIVE_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblUS_IMMED_RELATIVE_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'r\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblUS_IMMED_RELATIVE_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblUS_IMMED_RELATIVE_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblUS_IMMED_RELATIVE_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'r\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblUS_IMMED_RELATIVE_IND_1">No</label>
+  </td></tr>
+</table>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

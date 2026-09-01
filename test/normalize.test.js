@@ -35,6 +35,18 @@ eq('mononym surname', D.splitName('Sukarno').surname, 'SUKARNO');
 eq('mononym given',   D.splitName('Sukarno').given, 'FNU');
 eq('multi surname',   D.splitName('Budi Santoso').surname, 'SANTOSO');
 eq('multi given',     D.splitName('I Wayan Putu Astra').given, 'I WAYAN PUTU');
+/* "FNU" is the DS-160 placeholder for a name that does not exist, and it
+   arrives in already-processed intake data. Kept as a token it became the
+   surname: the live Family page filled Surnames FNU / Given Names SUROSO
+   from a father's name of "SUROSO FNU". */
+eq('trailing FNU surname',  D.splitName('SUROSO FNU').surname, 'SUROSO');
+eq('trailing FNU given',    D.splitName('SUROSO FNU').given, 'FNU');
+eq('trailing FNU mononym',  D.splitName('SUROSO FNU').mononym, true);
+eq('leading FNU surname',   D.splitName('FNU SUROSO').surname, 'SUROSO');
+eq('FNU among real names',  D.splitName('FNU Budi Santoso').surname, 'SANTOSO');
+eq('FNU among real given',  D.splitName('FNU Budi Santoso').given, 'BUDI');
+// Nothing but the placeholder: no name to recover, so leave it alone.
+eq('FNU alone',             D.splitName('FNU').surname, 'FNU');
 
 // -- yes/no ----------------------------------------------------------
 eq('yn ya',    D.yn('Ya'), 'YES');

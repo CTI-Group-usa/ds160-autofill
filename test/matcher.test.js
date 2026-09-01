@@ -184,6 +184,33 @@ eq('driver licence by curly-apostrophe label', radio('rblUnknownDL', DL), 'usDri
 eq('driver licence by ascii-apostrophe label',
    radio('rblUnknownDL2', "Do you or did you ever hold a U.S. Driver's License?"), 'usDriverLicense');
 
+// -- Family: the parents' controls are PascalCase plurals -------------
+// The live page reported all six DOB parts unrecognised while the names
+// filled on their labels: the ids are ddlFathersDOBDay, not FATHER_DOBDay.
+eq('father DOB day',    key('ddlFathersDOBDay'), 'fatherDob');
+eq('father DOB month',  key('ddlFathersDOBMonth'), 'fatherDob');
+eq('father DOB year',   key('tbxFathersDOBYear'), 'fatherDob');
+eq('mother DOB day',    key('ddlMothersDOBDay'), 'motherDob');
+eq('mother DOB year',   key('tbxMothersDOBYear'), 'motherDob');
+eq('father DOB underscore form still works', key('ddlFATHER_DOBDay'), 'fatherDob');
+eq('father DOB year part',
+   M.matchKey({ id: P + 'tbxFathersDOBYear', name: '', label: '' }, {}).part, 'year');
+// GivenName has no underscore in this spelling either.
+eq('mother given name',  key('tbxMothersGivenName'), 'motherName');
+eq('mother surname',     key('tbxMothersSurname'), 'motherName');
+eq('father underscore name form still works', key('tbxFATHER_GIVEN_NAME'), 'fatherName');
+eq('name half from the plural id', M.nameHalf('tbxMothersSurname', 'WAYAN SARI DEWI'), 'DEWI');
+// The applicant's own DOB must keep standing clear of the parents' boxes -
+// its rule is only excluded from theirs by the FATHER|MOTHER guard.
+eq('applicant DOB unaffected', key('ddlDOBDay'), 'dob');
+eq('parents DOB never claimed by the applicant rule',
+   key('ddlFathersDOBDay') === 'dob' ? 'LEAKED' : 'clear', 'clear');
+// Both radios arrive with no question text - the label was just "Yes".
+eq('father in the US', radio('rblFATHER_LIVE_IN_US_IND_0', 'Yes'), 'fatherInUs');
+eq('mother in the US', radio('rblMOTHER_LIVE_IN_US_IND_1', 'Yes'), 'motherInUs');
+eq('father in the US by label',
+   radio('rblUnknownFatherUS', 'Yes Is your father in the U.S.?'), 'fatherInUs');
+
 // -- U.S. Contact: Organization Name is a TICK, not a typed value -----
 // A filed DS-160 prints "DO NOT KNOW" in that box because the checkbox is
 // ticked. Typing the words in leaves the box unticked.
@@ -467,6 +494,13 @@ eq('half given',    M.nameHalf('tbxFATHER_GIVEN_NAME', 'WAYAN SARI DEWI'), 'WAYA
 eq('half mononym surname', M.nameHalf('tbxMOTHER_SURNAME', 'SUKARNI'), 'SUKARNI');
 eq('half mononym given',   M.nameHalf('tbxMOTHER_GIVEN_NAME', 'SUKARNI'), 'FNU');
 eq('half passthrough',     M.nameHalf('tbxJobTitle', 'WAITER'), 'WAITER');
+/* "FNU" is the DS-160 placeholder, never a name. It reached the live Family
+   page as a token and became the surname: Surnames FNU / Given Names SUROSO
+   from an intake value of "SUROSO FNU". */
+eq('half FNU token surname', M.nameHalf('tbxFathersSurname', 'SUROSO FNU'), 'SUROSO');
+eq('half FNU token given',   M.nameHalf('tbxFathersGivenName', 'SUROSO FNU'), 'FNU');
+eq('half FNU leading',       M.nameHalf('tbxFathersSurname', 'FNU SUROSO'), 'SUROSO');
+eq('half FNU alone',         M.nameHalf('tbxFathersSurname', 'FNU'), 'FNU');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

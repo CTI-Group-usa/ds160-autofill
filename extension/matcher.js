@@ -271,13 +271,27 @@
     { key: 'usPocPhone',        kind: 'text', ids: [/POC_HOME_TEL/i], labels: [/phone number.*contact/i] },
     { key: 'usPocEmail',        kind: 'text', ids: [/POC_EMAIL_ADDR/i], labels: [/e-?mail address.*contact/i] },
 
-    { key: 'fatherName',   kind: 'text', ids: [/FATHER_(SURNAME|GIVEN_NAME)/i], labels: [/father.*(surname|given name)/i] },
-    { key: 'fatherDob',    kind: 'date', ids: [/FATHER_DOB(Day|Month|Year)/i], labels: [/father.*date of birth/i] },
-    { key: 'motherName',   kind: 'text', ids: [/MOTHER_(SURNAME|GIVEN_NAME)/i], labels: [/mother.*(surname|given name)/i] },
-    { key: 'motherDob',    kind: 'date', ids: [/MOTHER_DOB(Day|Month|Year)/i], labels: [/mother.*date of birth/i] },
+    /* CEAC writes the parents' controls in the PascalCase plural here -
+       ddlFathersDOBDay, not FATHER_DOBDay - so the DOB boxes came back
+       unrecognised while the names filled on their labels. Accept both
+       spellings; `dob` above still stands aside on its FATHER|MOTHER guard,
+       which is the only reason the applicant's own birthday was not written
+       into them. */
+    { key: 'fatherName',   kind: 'text', ids: [/FATHERS?_?(SURNAME|GIVEN_?NAME)/i],
+      labels: [/father.*(surname|given name)/i] },
+    { key: 'fatherDob',    kind: 'date', ids: [/FATHERS?_?DOB(Day|Month|Year)/i],
+      labels: [/father.*date of birth/i] },
+    { key: 'fatherInUs',   kind: 'yesno', ids: [/FATHERS?_?LIVE_IN_US/i],
+      labels: [/is your father in the u\.?s/i] },
+    { key: 'motherName',   kind: 'text', ids: [/MOTHERS?_?(SURNAME|GIVEN_?NAME)/i],
+      labels: [/mother.*(surname|given name)/i] },
+    { key: 'motherDob',    kind: 'date', ids: [/MOTHERS?_?DOB(Day|Month|Year)/i],
+      labels: [/mother.*date of birth/i] },
+    { key: 'motherInUs',   kind: 'yesno', ids: [/MOTHERS?_?LIVE_IN_US/i],
+      labels: [/is your mother in the u\.?s/i] },
 
-    { key: 'spouseName',        kind: 'text', ids: [/SPOUSE_(SURNAME|GIVEN_NAME)/i], labels: [/spouse.*(surname|given name)/i] },
-    { key: 'spouseDob',         kind: 'date', ids: [/SPOUSE_DOB(Day|Month|Year)/i], labels: [/spouse.*date of birth/i] },
+    { key: 'spouseName',        kind: 'text', ids: [/SPOUSES?_?(SURNAME|GIVEN_?NAME)/i], labels: [/spouse.*(surname|given name)/i] },
+    { key: 'spouseDob',         kind: 'date', ids: [/SPOUSES?_?DOB(Day|Month|Year)/i], labels: [/spouse.*date of birth/i] },
     { key: 'spouseNationality', kind: 'text', ids: [/SPOUSE_NATL/i], labels: [/spouse.*nationality/i] },
     { key: 'spousePob',         kind: 'text', ids: [/SPOUSE_POB_CITY/i], labels: [/spouse.*city of birth/i] },
 
@@ -455,7 +469,12 @@
   function nameHalf(id, value) {
     const isSur = /SURNAME/i.test(id), isGiven = /GIVEN/i.test(id);
     if (!isSur && !isGiven) return value;
-    const t = String(value || '').toUpperCase().replace(/[^A-Z' -]/g, ' ').split(/\s+/).filter(Boolean);
+    let t = String(value || '').toUpperCase().replace(/[^A-Z' -]/g, ' ').split(/\s+/).filter(Boolean);
+    /* "FNU" is the DS-160 placeholder for a name that does not exist, never a
+       name itself. Kept as a token it became the surname: the live Family page
+       filled Surnames FNU / Given Names SUROSO from an intake value of
+       "SUROSO FNU". Same rule as splitName() in normalize.js. */
+    if (t.length > 1) t = t.filter(x => x !== 'FNU');
     if (!t.length) return '';
     if (t.length === 1) return isSur ? t[0] : 'FNU';
     return isSur ? t[t.length - 1] : t.slice(0, -1).join(' ');

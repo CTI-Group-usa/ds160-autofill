@@ -150,6 +150,13 @@
     { key: 'usPocEmail', kind: 'text', page: 'U.S. Contact',
       label: 'U.S. contact - email', def: 'marcos@carnivaluk.com' },
 
+    { key: 'fatherInUs', kind: 'yesno', page: 'Family',
+      label: 'Is your father in the U.S.?',
+      def: 'NO', why: 'Parents of CTI seafarers live in Indonesia. A Yes here makes CEAC ask ' +
+                      'for his status, so check it for anyone whose father actually is in the U.S.' },
+    { key: 'motherInUs', kind: 'yesno', page: 'Family',
+      label: 'Is your mother in the U.S.?',
+      def: 'NO', why: 'Same as the father question above.' },
     { key: 'immediateRelativesUS', kind: 'yesno', page: 'Family',
       label: 'Do you have any immediate relatives in the U.S.?',
       def: 'NO', why: 'Spouse, child, parent or sibling living in the U.S. Check this per applicant.' },
