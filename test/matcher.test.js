@@ -189,6 +189,28 @@ eq('nationality still wins on Personal 2',
    'nationality');
 // No source on the sheet, but named so the gap reads as the sheet's, not
 // the matcher's. Id only - see the rule.
+// One street string, two boxes with a length limit. Line 1 breaks on a word.
+const STREET = 'DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING';   // 43 chars
+eq('line 1 takes what fits',
+   M.addressHalf(P + 'tbxAPP_ADDR_LN1', STREET, 40), 'DUSUN 2 RT 14 RW 04 BANGLARANGAN');
+eq('line 2 takes the rest',
+   M.addressHalf(P + 'tbxAPP_ADDR_LN2', STREET, 40), 'AMPELGADING');
+eq('halves rejoin',
+   M.addressHalf(P + 'tbxAPP_ADDR_LN1', STREET, 40) + ' ' +
+   M.addressHalf(P + 'tbxAPP_ADDR_LN2', STREET, 40), STREET);
+eq('short address: all in line 1',
+   M.addressHalf(P + 'tbxAPP_ADDR_LN1', 'JL MERDEKA 5', 40), 'JL MERDEKA 5');
+eq('short address: line 2 empty',
+   M.addressHalf(P + 'tbxAPP_ADDR_LN2', 'JL MERDEKA 5', 40), '');
+eq('one very long word is cut at the cap',
+   M.addressHalf(P + 'tbxAPP_ADDR_LN1', 'A'.repeat(50), 40), 'A'.repeat(40));
+eq('no cap given falls back to 40',
+   M.addressHalf(P + 'tbxAPP_ADDR_LN2', STREET, 0), 'AMPELGADING');
+eq('line 2 detected by label wording', M.addressHalf('someBox_Line2', STREET, 40), 'AMPELGADING');
+// Both lines map to the same record field.
+eq('line 1 maps to homeAddress', key('tbxAPP_ADDR_LN1', 'Street Address (Line 1)'), 'homeAddress');
+eq('line 2 maps to homeAddress', key('tbxAPP_ADDR_LN2', 'Street Address (Line 2) *Optional'), 'homeAddress');
+
 eq('home city by id',   key('tbxAPP_ADDR_CITY'), 'homeCity');
 eq('home state by id',  key('tbxAPP_ADDR_STATE'), 'homeState');
 eq('home postal by id', key('tbxAPP_ADDR_POSTAL'), 'homePostal');

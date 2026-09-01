@@ -315,6 +315,13 @@
       return parts[part];
     }
     if (M.FULLNAME_KEYS.indexOf(key) >= 0) v = M.nameHalf(ctl.id || ctl.name, v);
+    if (M.ADDRESS_KEYS.indexOf(key) >= 0) {
+      /* Split on Line 1's own maxlength, whichever box we are filling, so
+         the two halves always meet. Writing past maxlength would let the
+         browser clip it and lose the tail silently. */
+      const ln1 = document.querySelector('input[id*="ADDR_LN1"]');
+      v = M.addressHalf(ctl.id || ctl.name, v, ln1 && ln1.maxLength > 0 ? ln1.maxLength : 0);
+    }
     return v;
   }
 

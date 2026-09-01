@@ -75,25 +75,28 @@
     { key: 'otherRelativesUS',    kind: 'yesno', ids: [/US_OTHER_RELATIVE_IND/i],
       labels: [/other relatives in the united states/i] },
 
-    /* "Street Address (Line 1)" appears in at least four blocks. Each
-       address rule is pinned to its own block, so the seafarer's home
-       address can never land in the U.S. stay address again. */
-    { key: 'homeAddress', kind: 'text', ids: [/APP_ADDR_LN1/i], labels: [/street address/i],
+    /* "Street Address (Line 1)" appears in at least four blocks, so the
+       rule is pinned to its own block and the seafarer's home address can
+       never land in the U.S. stay address again.
+
+       Both address lines take the same record field; addressHalf() decides
+       which piece each one gets. Before this, Line 2 matched on the label
+       "Street Address (Line 2)" and received the whole address a second
+       time, while Line 1 was over CEAC's limit and clipped. */
+    { key: 'homeAddress', kind: 'text', ids: [/APP_ADDR_LN[12]/i], labels: [/street address/i],
       not: /will stay|contact|employer|school|paying|mailing/i },
-    /* The intake form has one free-text address column and no country field,
-       so the home country is a constant. The label is bare "Country/Region",
-       which several blocks reuse - the guard keeps it in Home Address, and
-       `nationality` sits earlier in this list so Personal 2 still wins. */
-    /* "Country/Region" is bare and reused by several blocks, so a label match
+    /* The home country is a constant - the intake form has no country field.
+       "Country/Region" is bare and reused by several blocks, so a label match
        has to see the Home Address heading. `must` gates the id too, which is
        the safe side of the trade: an unfilled dropdown is now reported, a
        wrongly filled one would not be. `nationality` sits earlier in this
        list, so Personal 2 still wins there. */
     { key: 'homeCountry', kind: 'text', ids: [/APP_ADDR_CNTRY/i],
       labels: [/^country\s*\/?\s*region$/i], must: /home address/i },
-    /* The intake form has one free-text address column, so these three have
-       no source. They are named anyway: "no value in record" tells the agent
-       the sheet is the gap, where "not recognised" blamed the rules.
+    /* City is recovered from the address text (see splitAddress in
+       normalize.js). State/Province and Postal are not in the sheet at all,
+       and are named here only so the report says "no value in record" and
+       points at the sheet, rather than "not recognised" and blames the rules.
 
        Id only, no label. "City" and "State/Province" are word-for-word the
        same in the U.S. stay block, and a bare one outside any block must
@@ -388,6 +391,22 @@
      (Surnames + Given Names). Same mononym convention as normalize.js. */
   const FULLNAME_KEYS = ['fatherName', 'motherName', 'spouseName', 'prevSupervisor'];
 
+  /* Same idea for the street address: one intake column, two CEAC boxes
+     with a length limit. Line 1 takes as much as fits, breaking on a word
+     so a street name is never cut mid-word; Line 2 takes the rest. `cap`
+     is the real maxlength read off the page, not a guess. */
+  const ADDRESS_KEYS = ['homeAddress'];
+
+  function addressHalf(id, value, cap) {
+    const s = String(value || '').trim();
+    const isLine2 = /_LN2\b|LINE.?2/i.test(String(id || ''));
+    const max = Number(cap) > 0 ? Number(cap) : 40;
+    if (s.length <= max) return isLine2 ? '' : s;
+    let cut = s.lastIndexOf(' ', max);
+    if (cut <= 0) cut = max;                     // one very long word
+    return isLine2 ? s.slice(cut).trim() : s.slice(0, cut).trim();
+  }
+
   function nameHalf(id, value) {
     const isSur = /SURNAME/i.test(id), isGiven = /GIVEN/i.test(id);
     if (!isSur && !isGiven) return value;
@@ -411,7 +430,8 @@
            /cbxDNA/i.test(String(ctl.id || ''));
   }
 
-  const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, matchKey, datePart, splitDate, isDoesNotApply,
+  const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, ADDRESS_KEYS, addressHalf,
+                matchKey, datePart, splitDate, isDoesNotApply,
                 isForbidden, nameHalf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160Matcher = api;

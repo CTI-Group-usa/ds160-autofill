@@ -312,13 +312,40 @@ right. The two phone rules carry `must: /secondary phone/i` and
 `must: /work phone/i`; `test/fake-address-phone.html` asserts the State and Postal
 boxes stay untouched.
 
-**`homeCity` / `homeState` / `homePostal` have no source** — the intake form has
-one free-text address column, so the whole address goes into Street Address Line 1
-and the agent types the rest. They are still given rules, **matched on id only**,
-so the report says "no value in record" rather than "not recognised": the gap is
-the sheet's, not the matcher's. No label rule, because *City* and *State/Province*
-are word-for-word identical in the U.S. stay block and a bare one must stay
-unclaimed. `homeCountry` does keep a label, gated by `must: /home address/i`.
+### One address column, four CEAC boxes
+The sheet has **only** column Z, `Address`. None of the 95 columns holds a city,
+province or postal code. The user was offered three columns in the sheet,
+per-applicant storage, or splitting the text, and chose **splitting the text**.
+
+`splitAddress()` in `normalize.js` takes the part after the **last comma** as the
+city, but only when it reads like a place name — no digits, under 30 characters,
+and none of `RT RW NO JL JALAN GG GANG DUSUN DESA KEL KEC BLOK KM PERUM KOMP`.
+Otherwise everything stays in the street and the city is left empty: no city beats
+a wrong city. **No administrative prefix is stripped** — "KOTA BARU" is a real
+place, so dropping a leading "KOTA" would turn it into "BARU".
+
+`addressHalf()` in `matcher.js` then wraps the street across the two CEAC boxes,
+breaking on a space so a street name is never cut mid-word. The cap is the
+**real `maxlength` read off Line 1**, not a guess, and it is used for both halves
+so they always rejoin exactly. Before this, both lines matched `homeAddress` on the
+label "Street Address", so Line 2 got the whole address a second time while Line 1
+was over the limit and silently clipped by the browser.
+
+```
+Address: DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING, PEMALANG
+  Line 1  DUSUN 2 RT 14 RW 04 BANGLARANGAN     (32 of 40)
+  Line 2  AMPELGADING
+  City    PEMALANG
+```
+
+**`homeState` and `homePostal` stay manual** — JAWA TENGAH is not in the address
+text and 52364 is nowhere in the sheet. Deriving a province would need a
+city→province table, and inventing one for a visa form is not on. Both keep
+id-only rules so the report says "no value in record" and points at the sheet
+rather than "not recognised" and blames the matcher. No label rule for them, or
+for `homeCity`: *City* and *State/Province* are word-for-word identical in the
+U.S. stay block and a bare one must stay unclaimed. `homeCountry` does keep a
+label, gated by `must: /home address/i`.
 
 ### What the live page corrected (2026-09-01)
 Running it against the real CEAC page found four things the fixture had not:
