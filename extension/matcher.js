@@ -246,8 +246,17 @@
        "Do Not Know" also appears beside the previous visa number. */
     { key: 'usPocOrg',          kind: 'text', ids: [/POC_ORGANIZATION/i],
       labels: [/organization name/i], not: /_NA\b/ },
-    { key: 'usPocOrgNA',        kind: 'checkbox', ids: [/POC_ORGANIZATION.*_NA/i],
-      labels: [/do not know/i], must: /organization/i },
+    /* Id ONLY. There are two "Do Not Know" boxes in this block - one for the
+       contact person's name, one for the organisation - and the block is
+       titled "Contact Person or Organization in the United States", so the
+       word "Organization" is in the context of BOTH. A label rule guarded by
+       `must: /organization/i` therefore ticked the person's box too and
+       greyed out the Surnames and Given Names we do fill.
+
+       If CEAC renames this control the box goes unticked and the report says
+       so, which is the right way round: a wrongly ticked box is a wrong sworn
+       answer, a missed one is a visible gap. */
+    { key: 'usPocOrgNA',        kind: 'checkbox', ids: [/POC_ORGANIZATION.*_NA/i] },
     { key: 'usPocRelationship', kind: 'text', ids: [/POC_REL_TO_APP/i] },
     { key: 'usPocAddr1',        kind: 'text', ids: [/POC_ADDR_LN1/i],
       labels: [/street address \(line ?1\)|u\.?s\.? contact.*address/i], must: /contact/i },

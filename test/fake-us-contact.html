@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 U.S. Point of Contact</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- Two regressions, one after the other, both on the same two checkboxes.
+
+     1. usPocOrg was the TEXT "DO NOT KNOW", read off a filed DS-160. Those
+        words print because the checkbox is ticked; typing them left the box
+        unticked and put a literal string where an organisation name goes.
+
+     2. The fix then ticked BOTH boxes. CEAC titles this block "Contact
+        Person or Organization in the United States", so the word
+        "Organization" is in the context of the contact person's Do-Not-Know
+        box as well - a label rule guarded on that word claimed it and greyed
+        out the Surnames and Given Names that DO get filled.
+
+     The organisation box is now matched on its id alone. The nesting here is
+     what makes the trap: the person's box sits in an inner fieldset whose
+     block text also carries the outer heading. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">U.S. Point of Contact Information</h2>
+
+<fieldset>
+  <legend>Contact Person or Organization in the United States</legend>
+
+  <fieldset>
+    <legend>Contact Person</legend>
+    <table>
+      <tr><td>Surnames</td>
+          <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_SURNAME"></td></tr>
+      <tr><td>Given Names</td>
+          <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_GIVEN_NAME"></td></tr>
+      <tr><td></td>
+          <td><input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexUS_POC_NAME_NA">
+              <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexUS_POC_NAME_NA">Do Not Know</label>
+          </td></tr>
+    </table>
+  </fieldset>
+
+  <table>
+    <tr><td>Organization Name</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_ORGANIZATION" size="40"></td></tr>
+    <tr><td></td>
+        <td><input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexUS_POC_ORGANIZATION_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexUS_POC_ORGANIZATION_NA">Do Not Know</label>
+        </td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>U.S. Point of Contact Address</legend>
+  <table>
+    <tr><td>Relationship to You</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUS_POC_REL_TO_APP">
+              <option>- SELECT ONE -</option><option>BUSINESS ASSOCIATE</option>
+              <option>RELATIVE</option></select></td></tr>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_ADDR_LN1" size="40"></td></tr>
+    <tr><td>Street Address (Line 2) <i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_ADDR_LN2" size="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_ADDR_CITY"></td></tr>
+    <tr><td>State</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUS_POC_ADDR_STATE">
+              <option>- SELECT ONE -</option><option>FLORIDA</option></select></td></tr>
+    <tr><td>ZIP Code (if known)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_ADDR_POSTAL_CD"></td></tr>
+    <tr><td>Phone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_HOME_TEL"></td></tr>
+    <tr><td>Email Address</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_EMAIL_ADDR" size="40"></td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

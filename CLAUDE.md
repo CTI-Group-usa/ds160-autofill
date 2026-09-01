@@ -295,6 +295,20 @@ no constant now, and `usPocOrgNA` ticks the box instead.
 produced it.** Where a printed field could be either a typed value or a ticked
 box, check the live page before turning it into a constant.
 
+Then the fix ticked **both** boxes. This block has two "Do Not Know" checkboxes —
+one for the contact person's name, one for the organisation — and CEAC titles the
+block *"Contact Person or Organization in the United States"*, so the word
+"Organization" is in the context of both. A label rule guarded by
+`must: /organization/i` claimed the person's box too and greyed out the Surnames
+and Given Names that do get filled. `usPocOrgNA` is therefore matched on its
+**id alone**. If CEAC renames that control the box goes unticked and the report
+says so, which is the right way round: a wrongly ticked box is a wrong sworn
+answer, a missed one is a visible gap.
+
+`test/fake-us-contact.html` proves the end state; the regression itself is pinned
+in `matcher.test.js`, which passes the block text explicitly — a fixture's
+`blockLabel()` does not necessarily reproduce the live nesting.
+
 ## Passport (added 2026-09-01, at the user's instruction)
 The live page reported **ten** controls unrecognised and showed a bare `2023` /
 `2033` with the day and month dropdowns empty.
@@ -584,7 +598,8 @@ on the five Security and Background pages. Guards:
   so the agent reads them before clicking Next.
 
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
-`fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html` and
+`fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
+`fake-us-contact.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

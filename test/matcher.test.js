@@ -194,6 +194,30 @@ eq('org name text box',
 eq('org name Do Not Know box',
    (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
                  section: pocBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key, 'usPocOrgNA');
+/* There are TWO "Do Not Know" boxes in this block, and CEAC titles the block
+   "Contact Person or Organization in the United States" - so the word
+   "Organization" sits in the context of both. A label rule guarded on that
+   word ticked the contact person's box as well, greying out the Surnames and
+   Given Names that do get filled. The organisation box is matched on its id
+   alone; the person's box must stay unclaimed. */
+const pocPersonBlk = 'Contact Person or Organization in the United States Contact Person ' +
+                     'Surnames Given Names Do Not Know Organization Name Do Not Know';
+eq('person Do Not Know stays unclaimed',
+   (M.matchKey({ id: P + 'cbexUS_POC_NAME_NA', name: '', label: 'Do Not Know',
+                 section: pocPersonBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key,
+   undefined);
+eq('organisation box still claimed inside the same block',
+   (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
+                 section: pocPersonBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key,
+   'usPocOrgNA');
+eq('the person box is a deliberate blank, not a gap',
+   M.isDoesNotApply({ type: 'checkbox', id: P + 'cbexUS_POC_NAME_NA',
+                      label: 'Do Not Know' }), true);
+eq('contact surnames still fill',
+   (M.matchKey({ id: P + 'tbxUS_POC_SURNAME', name: '', label: 'Surnames of contact',
+                 section: pocPersonBlk, type: 'text', tag: 'input' }, {}) || {}).key,
+   'usPocSurname');
+
 // The text rule must not claim the checkbox's id, and the checkbox rule must
 // not wander onto the other "Do Not Know" box on the Passport pages.
 eq('text rule stays off the _NA id',
