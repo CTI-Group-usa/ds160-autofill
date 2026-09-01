@@ -298,6 +298,66 @@ eq('and its Do Not Know box too',
    (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
                  section: pocOrgBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key, 'usPocOrgNA');
 
+// -- Family Information: Spouse ---------------------------------------
+/* THE SPOUSE'S DATE OF BIRTH USES THE APPLICANT'S OWN CONTROL IDS - ddlDOBDay,
+   ddlDOBMonth, tbxDOBYear, byte for byte what Personal 1 uses. On the live page
+   those three carry NO label and NO block text either, so nothing inside the
+   block says whose birthday it is. The applicant's `dob` rule stood aside
+   correctly (not: /SPOUSE/i) and then nothing claimed them at all.
+
+   What separates them is the PAGE: content.js appends the heading and the
+   ?node= value to every section, so "Family Information: Spouse" is in context
+   even where the block is silent. */
+const spouseBlk = "Spouse's Full Name Spouse's Surnames Spouse's Given Names " +
+                  "Spouse's Date of Birth Family Information: Spouse";
+const spousePobBlk = 'Family Information: Spouse';   // the POB div has no reachable text
+const sp = (id, label, section, type) =>
+  (M.matchKey({ id: P + id, name: '', label, section: section || spouseBlk,
+                type: type || 'text', tag: type === 'select' ? 'select' : 'input' }, {}) || {}).key;
+eq('spouse surname', sp('tbxSpouseSurname', "Spouse's Surnames"), 'spouseName');
+eq('spouse given names', sp('tbxSpouseGivenName', "Spouse's Given Names"), 'spouseName');
+eq('the spouse DOB day, on the applicant own id', sp('ddlDOBDay', ''), 'spouseDob');
+eq('the spouse DOB month, no label at all', sp('ddlDOBMonth', ''), 'spouseDob');
+eq('the spouse DOB year, no label at all', sp('tbxDOBYear', ''), 'spouseDob');
+eq('the year part is a year',
+   M.matchKey({ id: P + 'tbxDOBYear', name: '', label: '', section: spouseBlk }, {}).part, 'year');
+eq('spouse nationality by id', sp('ddlSpouseNationality', "Spouse's Country/Region of Origin (Nationality)"),
+   'spouseNationality');
+/* The applicant's own `nationality` rule claimed that box on the live page and
+   reported `nationality -> INDONESIA`. Both are Indonesian almost always, which
+   is why it looked fine - a foreign spouse would have been sworn to the wrong
+   nationality. */
+eq('the applicant nationality does not claim the spouse box',
+   sp('ddlUnknownNatl', "Spouse's Country/Region of Origin (Nationality)"), 'spouseNationality');
+/* The Place of Birth block is a bare <div> whose text blockLabel() does not
+   reach - it came back with NO SECTION on the live page. So these ids carry no
+   `must`, which would have gated the id path too. */
+eq('spouse POB city by id alone, no section',
+   sp('tbxSpousePOBCity', 'City', spousePobBlk), 'spousePob');
+eq('spouse POB country by id alone, no section',
+   sp('ddlSpousePOBCountry', 'Country/Region', spousePobBlk, 'select'), 'spousePobCountry');
+eq('the POB city Do-Not-Know box is not the city',
+   sp('cbexSPOUSE_POB_CITY_NA', 'Do Not Know', spousePobBlk, 'checkbox') === 'spousePob'
+     ? 'LEAKED' : 'clear', 'clear');
+eq('spouse address type', sp('ddlSpouseAddressType', "Spouse's Address", spouseBlk, 'select'),
+   'spouseAddressType');
+
+/* CROSS-PAGE: nothing above may reach back onto Personal 1, where the SAME ids
+   carry the applicant's own answers. This is the assertion the browser fixture
+   cannot make, because CEAC never puts both on one page. */
+const p1 = 'Personal Information 1 Date of Birth and Place of Birth PersonalInfo1';
+eq('Personal 1 DOB is still the applicant',
+   (M.matchKey({ id: P + 'ddlDOBDay', name: '', label: 'Date of Birth', section: p1,
+                 type: 'text', tag: 'select' }, {}) || {}).key, 'dob');
+eq('Personal 1 nationality is still the applicant',
+   (M.matchKey({ id: P + 'ddlAPP_NATL', name: '',
+                 label: 'Country/Region of Origin (Nationality)', section: p1,
+                 type: 'text', tag: 'select' }, {}) || {}).key, 'nationality');
+eq('a bare City on Personal 1 is not the spouse POB',
+   (M.matchKey({ id: P + 'tbxAPP_POB_CITY', name: '', label: 'City', section: p1,
+                 type: 'text', tag: 'input' }, {}) || {}).key === 'spousePob'
+     ? 'LEAKED' : 'clear', 'clear');
+
 // -- Sign and Submit --------------------------------------------------
 /* Three answers on this page and nothing else. The ids carry no FormView1
    segment - two are ctl00_SiteContentPlaceHolder_* directly - so the rules

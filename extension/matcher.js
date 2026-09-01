@@ -47,7 +47,13 @@
       not: /FATHER|MOTHER|SPOUSE|POC|CHILD/i },
     { key: 'pobCity',        kind: 'text',  ids: [/APP_POB_CITY/i], labels: [/city.*birth|birth.*city/i] },
     { key: 'pobProvince',    kind: 'text',  ids: [/APP_POB_ST_PROVINCE/i], labels: [/state.*province.*birth/i] },
-    { key: 'nationality',    kind: 'text',  ids: [/APP_POB_CNTRY/i, /APP_NATL/i], labels: [/country.*region of (birth|origin)|nationality/i] },
+    /* `not: /spouse/i`. On a live Spouse page this rule claimed "Spouse's
+       Country/Region of Origin (Nationality)" and reported `nationality ->
+       INDONESIA`. Both are Indonesian almost always, which is exactly why it
+       looked fine - but the spouse's nationality is column AO, a different
+       answer, and a foreign spouse would have been sworn to the wrong one. */
+    { key: 'nationality',    kind: 'text',  ids: [/APP_POB_CNTRY/i, /APP_NATL/i],
+      labels: [/country.*region of (birth|origin)|nationality/i], not: /spouse/i },
     { key: 'nationalId',     kind: 'text',  ids: [/APP_NATIONAL_ID/i], labels: [/national identification/i] },
 
     // Constant answers (see constants.js) - questions the intake form
@@ -390,10 +396,43 @@
     { key: 'motherInUs',   kind: 'yesno', ids: [/MOTHERS?_?LIVE_IN_US/i],
       labels: [/is your mother in the u\.?s/i] },
 
-    { key: 'spouseName',        kind: 'text', ids: [/SPOUSES?_?(SURNAME|GIVEN_?NAME)/i], labels: [/spouse.*(surname|given name)/i] },
-    { key: 'spouseDob',         kind: 'date', ids: [/SPOUSES?_?DOB(Day|Month|Year)/i], labels: [/spouse.*date of birth/i] },
-    { key: 'spouseNationality', kind: 'text', ids: [/SPOUSE_NATL/i], labels: [/spouse.*nationality/i] },
-    { key: 'spousePob',         kind: 'text', ids: [/SPOUSE_POB_CITY/i], labels: [/spouse.*city of birth/i] },
+    /* Family Information: Spouse. Six of its controls came back unrecognised
+       from a live page, and three of them are the reason this block needs its
+       own `must`: the spouse's date of birth is `ddlDOBDay` / `ddlDOBMonth` /
+       `tbxDOBYear` - BYTE FOR BYTE THE APPLICANT'S OWN IDS. The applicant's
+       `dob` rule stands aside correctly (its `not: /SPOUSE/i` guard), and then
+       nothing claimed them at all. Only the block text separates the two, so
+       the second rule below is `must: /spouse/i` on a bare DOB id. */
+    { key: 'spouseName',        kind: 'text',
+      ids: [/SPOUSES?_?(SURNAME|GIVEN_?NAME)/i, /Spouse(Surname|GivenName)/i],
+      labels: [/spouse.*(surname|given name)/i] },
+    { key: 'spouseDob',         kind: 'date', ids: [/SPOUSES?_?DOB(Day|Month|Year)/i],
+      labels: [/spouse.*date of birth/i] },
+    { key: 'spouseDob',         kind: 'date', ids: [/DOB(Day|Month|Year)/i],
+      labels: [], must: /spouse/i, not: /APP_DOB/i },
+    { key: 'spouseNationality', kind: 'text',
+      ids: [/SPOUSE_NATL/i, /Spouse.*Nationality/i],
+      labels: [/spouse.*nationality/i, /country\s*\/?\s*region of origin/i],
+      must: /spouse/i, not: /place of birth|POB/i },
+    /* TWO RULES PER KEY, and the id one carries no `must`. A `must` gates the
+       id path as well as the label path, and CEAC's Place of Birth block is a
+       bare <div> whose text `blockLabel()` does not reach - it came back with
+       NO SECTION AT ALL on the live page, so a guarded rule could never fire
+       and both boxes were reported unrecognised. The ids say "spouse" and
+       "POB" themselves, so they need no guard; the bare labels "City" and
+       "Country/Region" absolutely do. Same arrangement as `eduCountry`. */
+    { key: 'spousePob',         kind: 'text', ids: [/SPOUSE_?POB_?CITY(?!.*NA)/i] },
+    { key: 'spousePob',         kind: 'text', ids: [],
+      labels: [/spouse.*city of birth/i, /^city$/i],
+      must: /spouse/i, not: /_NA\b|country/i },
+    /* Column AO answers this AND the spouse's nationality - see normalize.js. */
+    { key: 'spousePobCountry',  kind: 'text', ids: [/SPOUSE_?POB_?(CNTRY|COUNTRY)/i] },
+    { key: 'spousePobCountry',  kind: 'text', ids: [],
+      labels: [/^country\s*\/?\s*region$/i],
+      must: /spouse/i, not: /_IND|city/i },
+    { key: 'spouseAddressType', kind: 'text',
+      ids: [/Spouse.*Address.*Type/i, /SPOUSE_ADDR_TYPE/i],
+      labels: [/^spouse.s address$/i] },
 
     { key: 'employerName',    kind: 'text', ids: [/EmpSchName/i, /PRES_EMPL_NAME/i], labels: [/present employer|school name/i] },
     /* Both lines take the same field; addressHalf() splits it on a word at

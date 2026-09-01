@@ -319,6 +319,13 @@
        the Yes branch anyway. */
     rec.tenPrinted = rec.priorUsVisa === 'YES' ? 'YES' : 'NO';
 
+    /* Spouse's Place of Birth has a Country/Region box and the sheet has no
+       column for it. At the user's instruction it comes from column AO, which
+       is headed "Husband/Wife Country (Nationality)" - so one cell answers two
+       DS-160 questions, the way column V answers two and column X answers two.
+       validate() flags a non-Indonesian value, where the two really can differ. */
+    rec.spousePobCountry = rec.spouseNationality || '';
+
     /* CEAC's education block is ONE set of fields - Name of Institution,
        Address, Course of Study, Date of Attendance From / To - and the sheet
        carries two candidate blocks. Column BI picks which, at the user's
@@ -477,6 +484,15 @@
       if (!rec.spouseName) E('spouseName', 'Married - spouse name is required');
       if (!rec.spouseDob) E('spouseDob', 'Married - spouse date of birth is required');
       if (!rec.spouseNationality) W('spouseNationality', 'Married - DS-160 asks for the spouse nationality');
+      /* Column AO is headed "Husband/Wife Country (Nationality)" and now
+         answers TWO DS-160 questions: the spouse's nationality and the country
+         in the spouse's Place of Birth block, at the user's instruction. The
+         two coincide for an Indonesian spouse and part company for anyone born
+         abroad, so a foreign value is flagged rather than quietly sworn to. */
+      if (rec.spousePobCountry && !/INDONESIA/i.test(rec.spousePobCountry))
+        W('spousePobCountry', 'Spouse place of birth country is taken from column AO, the ' +
+          'nationality column (' + rec.spousePobCountry + '). Confirm the spouse was born ' +
+          'there - a naturalised or foreign-born spouse makes these two different answers');
     }
     if (/DIVORC|WIDOW|CERAI|JANDA|DUDA/.test(rec.maritalStatus) && !rec.marriageEnded)
       W('marriageEnded', 'Previously married - DS-160 asks when and how the marriage ended');
@@ -610,7 +626,9 @@
       ['motherName',"Mother's Full Name"], ['motherDob',"Mother's Date of Birth"] ] },
     { title: 'Family - Spouse', fields: [
       ['spouseName','Spouse Full Name'], ['spouseDob','Spouse Date of Birth'],
-      ['spouseNationality','Spouse Nationality'], ['spousePob','Spouse Place of Birth'],
+      ['spouseNationality','Spouse Nationality (column AO)'],
+      ['spousePob','Spouse Place of Birth - city (column AP)'],
+      ['spousePobCountry','Spouse Place of Birth - country (column AO, the nationality column)'],
       ['marriageDate','Date of Marriage'], ['marriageEnded','Date Marriage Ended'],
       ['marriageEndHow','How the Marriage Ended'], ['marriageEndCountry','Country Terminated'] ] },
     { title: 'Present Work / Education', fields: [

@@ -678,6 +678,67 @@ The live ids for these six boxes are still unknown — they are silenced by
 so one Fill report settles it. Both plausible spellings (`...GivenNameUnknown`
 and `..._GIVEN_NAME_NA`) are accepted meanwhile.
 
+## Family: Spouse (2026-09-01, at the user's instruction)
+Six controls came back unrecognised, and one box was quietly filled from the
+wrong source.
+
+| Box | Source |
+|---|---|
+| Spouse's Surnames / Given Names | column AM |
+| Spouse's Date of Birth | column AN |
+| Spouse's Country/Region of Origin (Nationality) | column **AO** |
+| Spouse's Place of Birth - City | column **AP** |
+| Spouse's Place of Birth - Country/Region | column **AO** |
+| Spouse's Address | constant SAME AS HOME ADDRESS |
+
+**Column AO answers two DS-160 questions.** It is headed *"Husband/Wife Country
+(Nationality)"* and now also fills the country in the Place of Birth block, at
+the user's instruction. Like column V and column X, one cell swears to two
+things. They coincide for an Indonesian spouse and part company for anyone born
+abroad, so `validate()` flags a non-Indonesian value rather than passing it
+through silently. Both worksheet lines name column AO.
+
+### The applicant's nationality was filling the spouse's box
+The report read `nationality -> INDONESIA` on the Spouse page: the applicant's
+own rule had claimed *Spouse's Country/Region of Origin (Nationality)* on its
+label. Both are Indonesian almost always, **which is exactly why it looked
+fine** - and a foreign spouse would have been sworn to the wrong nationality.
+`nationality` now carries `not: /spouse/i`.
+
+### THE PAGE IS PART OF A CONTROL'S CONTEXT
+The spouse's date of birth is `ddlDOBDay` / `ddlDOBMonth` / `tbxDOBYear` -
+**byte for byte the applicant's own ids from Personal 1** - and on the live page
+those three carry no label and no block text either. Nothing inside the block
+says whose birthday it is. The applicant's `dob` rule stood aside correctly (its
+`not: /SPOUSE/i` guard) and then nothing claimed them at all, so the page could
+not be completed.
+
+`content.js -> pageTag()` therefore appends the page heading and the `?node=`
+value to every control's `section`: "Family Information: Spouse". `must` and
+`not` read that; `labels` never do, so it can only rule a match in or out, never
+invent one. Both junk filters matter - CSS declarations are stripped and the
+string is capped - because this text is now read by every guard on the page, and
+a stylesheet swept into it is a coincidence waiting to happen.
+
+Verified against all fourteen fixtures before and after: the unmatched count per
+page is identical, so no rule started or stopped matching anywhere else.
+
+### `pageMap()` was hiding the one field that explains a guard
+It reported id, name, tag, type, label and the match - **but not `section`**,
+which is the only context a `must` or `not` is judged on beyond those. This file
+told you to check it there. Two hours of this page went into rediscovering that
+the Place of Birth block has no reachable text at all; the map would have said
+so immediately. It is reported now.
+
+### Two rules per key when a block has no text
+CEAC's Place of Birth block is a bare `<div>`; `blockLabel()` returns nothing for
+it. A `must` gates the **id path** as well as the label path, so a guarded rule
+could never fire there and both boxes were reported unrecognised even though
+their ids say `SpousePOBCity` and `SpousePOBCountry` outright. Split it: an
+id-only rule with no guard, plus a label-only rule that keeps the guard for the
+bare "City" and "Country/Region" labels. Same arrangement as `eduCountry`, and
+the third time this shape has been needed.
+
 ### The applicant's name rules carry the relative guard
 "Surnames" and "Given Names" label the relatives' boxes too, and `surname` /
 `givenNames` sit first in `RULES`. The id pass saves it today — `FathersSurname`
@@ -1069,7 +1130,7 @@ on the five Security and Background pages. Guards:
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
 `fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
 `fake-us-contact.html`, `fake-family.html`,
-`fake-crew-visa.html`, `fake-sign.html`, `fake-work-education.html`, `fake-prev-work-education.html`, `fake-additional-work.html` and
+`fake-crew-visa.html`, `fake-family-spouse.html`, `fake-sign.html`, `fake-work-education.html`, `fake-prev-work-education.html`, `fake-additional-work.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

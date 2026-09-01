@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Family Information: Spouse</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} h3{color:#26418f} fieldset{margin:10px 0;padding:10px}
+.pob{background:#eef2fb;padding:10px;margin:8px 0}</style>
+</head>
+<body>
+<!-- Live ids from complete_family2.aspx?node=Spouse on 2026-09-01. Six of these
+     came back unrecognised, and three are the whole reason this page needs a
+     fixture of its own:
+
+       ddlDOBDay / ddlDOBMonth / tbxDOBYear
+
+     are the SPOUSE's date of birth and are byte for byte the applicant's own
+     control ids from Personal 1. The applicant's `dob` rule stands aside
+     correctly - its not: /SPOUSE/i guard - and then nothing claimed them at
+     all, so the page could not be completed. Only the block text separates the
+     two, which is what must: /spouse/i is for.
+
+     The second block below is the applicant's own DOB, present to prove the
+     spouse rule does not reach back onto Personal 1. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Family Information: Spouse</h2>
+<p>NOTE: Enter current spouse information.</p>
+
+<fieldset>
+<h3>Spouse's Full Name (include Maiden Name)</h3>
+<table>
+  <tr><td>Spouse's Surnames</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSpouseSurname" size="40"></td></tr>
+  <tr><td>Spouse's Given Names</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSpouseGivenName" size="40"></td></tr>
+  <tr><td>Spouse's Date of Birth</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlDOBDay">
+            <option></option><option>01</option><option>14</option><option>28</option></select>
+          <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlDOBMonth">
+            <option></option><option>JAN</option><option>MAY</option><option>JUL</option></select>
+          <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxDOBYear" size="4">
+          <div>(Format: DD-MMM-YYYY)</div></td></tr>
+  <tr><td>Spouse's Country/Region of Origin (Nationality)</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSpouseNationality">
+            <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option>
+            <option>PHILIPPINES</option></select></td></tr>
+</table>
+
+<div class="pob">
+  <div>Spouse's Place of Birth</div>
+  <table>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSpousePOBCity" size="40"></td></tr>
+    <tr><td></td>
+        <td><input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexSPOUSE_POB_CITY_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexSPOUSE_POB_CITY_NA">Do Not Know</label></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSpousePOBCountry">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+  </table>
+</div>
+
+<table>
+  <tr><td>Spouse's Address</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSpouseAddressType">
+            <option>- SELECT ONE -</option><option>SAME AS HOME ADDRESS</option>
+            <option>SAME AS U.S. CONTACT ADDRESS</option><option>OTHER (SPECIFY ADDRESS)</option>
+            <option>DO NOT KNOW</option></select></td></tr>
+</table>
+</fieldset>
+
+<!-- The applicant's OWN date of birth and nationality are deliberately NOT on
+     this page. CEAC never puts them here, and a fixture that did would be
+     testing a layout that cannot happen: the page tag now carries "Spouse" into
+     every control's section, so the applicant's own `dob` rule stands aside
+     across the whole page - correctly. That no spouse rule reaches back onto
+     Personal 1 is asserted in matcher.test.js, where a Personal 1 section can
+     be passed explicitly. -->
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

@@ -59,6 +59,10 @@
       label: 'Passport/Travel Document Type', def: 'REGULAR',
       why: 'An ordinary Indonesian passport. Change it for an official, diplomatic or ' +
            'emergency travel document.' },
+    { key: 'spouseAddressType', kind: 'text', page: 'Family - Spouse',
+      label: "Spouse's Address", def: 'SAME AS HOME ADDRESS',
+      why: 'The intake form collects one address and the spouse lives at it. Change it ' +
+           'if the spouse lives elsewhere - CEAC then asks for that address in full.' },
     { key: 'fgmcFactSheet', kind: 'checkbox', page: 'Sign and Submit',
       label: 'Certify you have read the FGM/C Fact Sheet - tick',
       def: 'YES', why: 'CEAC will not accept the signature without it. The fact sheet is ' +

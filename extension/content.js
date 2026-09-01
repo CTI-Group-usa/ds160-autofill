@@ -122,7 +122,11 @@
         while (prev && !prev.textContent.trim()) prev = prev.previousElementSibling;
         if (prev) lead = prev.textContent;
       }
-      const tidy = s => s.replace(/\s+/g, ' ').trim().slice(0, 240);
+      /* `{...}` goes first: climbing can sweep up a <style> element's text, and
+         this string is read by every `must` and `not` guard on the page, so
+         stylesheet words sitting in it are a coincidence waiting to happen. */
+      const tidy = s => s.replace(/\{[^}]*\}/g, ' ')
+                         .replace(/\s+/g, ' ').trim().slice(0, 240);
 
       /* Over the cap this is more than one block, so its own text would drag
          half the page in and weaken every guard that reads it. The HEADING
@@ -139,7 +143,32 @@
     return '';
   }
 
+  /* THE PAGE ITSELF IS PART OF A CONTROL'S CONTEXT, and sometimes the only
+     part. On complete_family2.aspx?node=Spouse the spouse's date of birth is
+     `ddlDOBDay` / `ddlDOBMonth` / `tbxDOBYear` - the applicant's own control
+     ids from Personal 1 - and on the live page those three carry NO LABEL and
+     NO BLOCK TEXT at all. Nothing inside the block distinguishes whose
+     birthday it is. The page heading does: "Family Information: Spouse".
+
+     So the heading and the `?node=` value are appended to every control's
+     section. `must` and `not` read that string, `labels` never do, so this can
+     only ever rule a match in or out - it can never invent one. Keep it to the
+     heading and the node: the full URL would drag in words like "General" and
+     "complete" that a guard could trip over. */
+  function pageTag() {
+    const h = document.querySelector(
+      '#ctl00_SiteContentPlaceHolder_FormView1_lblTitle, h1, h2, .h1');
+    const node = (location.search.match(/node=([\w.-]+)/i) || [, ''])[1];
+    /* Strip CSS declarations and cap the length. A heading that swept up a
+       stylesheet put `legend{font-weight:600}` into every guard's context on
+       one fixture - harmless there, but this string is read by every `must` and
+       `not` on the page, so junk in it is a bug waiting for a coincidence. */
+    return ((h ? h.textContent || '' : '') + ' ' + node)
+      .replace(/\{[^}]*\}/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120);
+  }
+
   function controls() {
+    const tag = pageTag();
     return Array.from(document.querySelectorAll(FILLABLE))
       .filter(visible)
       .map(el => ({
@@ -151,7 +180,7 @@
         label: (el.type === 'radio' || el.type === 'checkbox')
           ? (deriveLabel(el) + ' ' + questionText(el)).trim()
           : deriveLabel(el),
-        section: blockLabel(el),
+        section: (blockLabel(el) + ' ' + tag).trim(),
       }));
   }
 
@@ -451,7 +480,12 @@
 
   function pageMap() {
     return controls().map(c => ({
+      /* `section` is the ONLY thing a must/not guard is judged on beyond the
+         id, name and label, so a map without it cannot explain why a guarded
+         rule did not fire - which is the main reason to reach for this map at
+         all. It was missing here while CLAUDE.md said it was reported. */
       id: c.id, name: c.name, tag: c.tag, type: c.type, label: c.label,
+      section: c.section,
       matched: (M.matchKey(c, {}) || {}).key || null,
       forbidden: M.isForbidden(c.id) || M.isForbidden(c.name),
     }));
