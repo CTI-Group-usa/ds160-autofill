@@ -85,6 +85,40 @@ eq('length of stay unit',
    (M.matchKey({ id: P + 'ddlTRAVEL_LOS_CD', name: '', label: LOS, tag: 'select' }, {}) || {}).key,
    'lengthOfStayUnit');
 
+// -- Previous U.S. Travel is a different block asking the same things --
+// Regression: one key answered both "Have you ever been in the U.S.?" and
+// "Have you ever been issued a U.S. Visa?", and /LOS_CD/ claimed the
+// previous-visit unit dropdown for the intended stay on this trip.
+const PREV = 'dtlPREV_US_VISIT_ctl00_';
+eq('been in the US radio',
+   (M.matchKey({ id: P + 'rblPREV_US_TRAVEL_IND', name: '',
+                 label: 'Have you ever been in the U.S.?',
+                 type: 'radio', tag: 'input' }, {}) || {}).key, 'beenInUs');
+eq('issued a US visa radio',
+   (M.matchKey({ id: P + 'rblPREV_VISA_IND', name: '',
+                 label: 'Have you ever been issued a U.S. Visa?',
+                 type: 'radio', tag: 'input' }, {}) || {}).key, 'priorUsVisa');
+eq('prev visit date arrived',
+   (M.matchKey({ id: P + PREV + 'ddlPREV_US_VISIT_DTEDay', name: '',
+                 label: 'Date Arrived', tag: 'select' }, {}) || {}).key, 'lastUsArrival');
+eq('prev visit date part',
+   M.matchKey({ id: P + PREV + 'tbxPREV_US_VISIT_DTEYear', name: '',
+                label: 'Date Arrived', tag: 'input', type: 'text' }, {}).part, 'year');
+eq('prev visit stay unit',
+   (M.matchKey({ id: P + PREV + 'ddlPREV_US_VISIT_LOS_CD', name: '',
+                 label: 'Length of Stay', tag: 'select' }, {}) || {}).key, 'prevStayUnit');
+eq('prev visit stay number',
+   (M.matchKey({ id: P + PREV + 'tbxPREV_US_VISIT_LOS', name: '',
+                 label: 'Length of Stay', type: 'text', tag: 'input' }, {}) || {}).key, 'prevStayLength');
+// The trip's intended stay must not leak into the previous-visit boxes.
+eq('intended stay stays off the prev block',
+   (M.matchKey({ id: P + PREV + 'ddlPREV_US_VISIT_LOS_CD', name: '',
+                 label: LOS, tag: 'select' }, {}) || {}).key, 'prevStayUnit');
+// ...and the Travel page must still resolve when the label is bare.
+eq('travel page unit by id',
+   (M.matchKey({ id: P + 'ddlUnknownLOSCD', name: '', label: LOS, tag: 'select' }, {}) || {}).key,
+   'lengthOfStayUnit');
+
 // -- "Street Address (Line 1)" appears in four different blocks -------
 // Regression: the seafarer's Indonesian home address was written into
 // "Address Where You Will Stay in the U.S." because the label alone is

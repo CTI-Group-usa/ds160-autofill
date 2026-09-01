@@ -118,3 +118,25 @@ Read live from the sheet on 2026-08-31.
 - Other countries' passports / lost-passport details beyond the single free-text
 - **Security & Background: all Part 1-5 yes/no questions** (none are asked)
 - Present a "Person who completed this application" (preparer) block
+
+## Previous U.S. Travel - how columns O, P, Q, R are used
+`Have you ever been in the U.S.?` is **not** a column. It is derived from
+column P: an arrival date means Yes, an empty cell means No. Column O
+(`Have you ever been issued U.S. Visa?`) answers a different DS-160
+question and must not be reused for it.
+
+| Column | Field | Filled into CEAC? |
+|---|---|---|
+| O | `priorUsVisa` | yes - *Have you ever been issued a U.S. Visa?* |
+| P | `lastUsArrival` | yes - *Date Arrived*, and it derives `beenInUs` |
+| Q | `stayUnit` | yes - *Length of Stay* period, via `prevStayUnit` |
+| R | `stayLength` | yes - *Length of Stay* number, via `prevStayLength` |
+
+Column Q holds the CEAC period and column R the number beside it, as the
+headers read. `stayUnit()` accepts loose English and Indonesian wording
+("months", "2 minggu", "kurang dari 24 jam", "<24 hrs") and maps it onto the
+closed option set (`YEAR(S)`, `MONTH(S)`, `WEEK(S)`, `DAY(S)`,
+`LESS THAN 24 HOURS`). For `LESS THAN 24 HOURS` the number is cleared - CEAC
+greys that box out. `validate()` warns when the period cannot be placed on an
+option, when it is missing, when it turns up in column R instead of Q, and
+when a period has no number.

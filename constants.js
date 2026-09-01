@@ -114,6 +114,11 @@
       label: 'Do you have any other relatives in the U.S.?',
       def: 'NO', why: 'Check this per applicant.' },
 
+    /* No constant for the previous visit's Length of Stay. It looked like one
+       - crew transits are same-day - but the user corrected it on 2026-09-01:
+       it is the seafarer's own answer and comes from the intake form. See
+       `prevStayUnit` / `prevStayLength` in normalize.js. */
+
     /* Not a single control - a sweep across five pages. It has no matcher
        rule; content.js reads it straight off the record. It lives here so
        it sits alongside every other answer the agent is making on the

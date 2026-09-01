@@ -72,6 +72,26 @@
       + (b.getUTCDate() >= a.getUTCDate() ? 0 : -1);
   }
 
+  /* Previous U.S. Travel asks Length of Stay as a number plus a period
+     dropdown. CEAC's options are a closed set, so a loose intake answer
+     ("3 months", "kurang dari 24 jam", "1 day") has to land on one of them
+     exactly or the select stays on -SELECT ONE-. */
+  const STAY_UNITS = ['YEAR(S)', 'MONTH(S)', 'WEEK(S)', 'DAY(S)', 'LESS THAN 24 HOURS'];
+  function stayUnit(raw) {
+    const s = upper(raw).replace(/[().]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!s) return '';
+    if (/24\s*(HOURS?|HRS?|JAM)|LESS THAN A DAY|KURANG DARI/.test(s)) return 'LESS THAN 24 HOURS';
+    if (/\bYEARS?\b|\bTAHUN\b/.test(s)) return 'YEAR(S)';
+    if (/\bMONTHS?\b|\bBULAN\b/.test(s)) return 'MONTH(S)';
+    if (/\bWEEKS?\b|\bMINGGU\b/.test(s)) return 'WEEK(S)';
+    if (/\bDAYS?\b|\bHARI\b/.test(s)) return 'DAY(S)';
+    return '';
+  }
+  const stayCount = raw => {
+    const m = clean(raw).match(/\d+/);
+    return m ? m[0] : '';
+  };
+
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
     let s = clean(raw).replace(/[^\d+]/g, '').replace(/^\+/, '');
@@ -214,6 +234,23 @@
     // C1/D crew are employed by the cruise line, not the manning agent.
     if (!rec.employerName && rec.cruiseLine) rec.employerName = upper(rec.cruiseLine);
 
+    /* DS-160 asks "Have you ever been in the U.S.?" - not the same question
+       as column O, "Have you ever been issued U.S. Visa?". A seafarer can
+       hold a C1/D and never have entered. The intake form has no yes/no for
+       it; the only evidence is column P, so the arrival date IS the answer:
+       filled means he has been, empty means he has not. */
+    rec.beenInUs = rec.lastUsArrival ? 'YES' : 'NO';
+
+    /* Length of Stay is the seafarer's own answer, not a constant. It reads
+       the way the headers do: column Q ("Period Type of Stay in the US") is
+       the CEAC period, column R ("How long did you stay in the US?") is the
+       number beside it. */
+    rec.prevStayUnit   = stayUnit(rec.stayUnit);
+    rec.prevStayLength = stayCount(rec.stayLength);
+    /* CEAC greys the number box out for this option, so writing a count
+       there would either fail silently or contradict the dropdown. */
+    if (rec.prevStayUnit === 'LESS THAN 24 HOURS') rec.prevStayLength = '';
+
     // The vessel name and IMO number live in the supporting letter, not
     // in any column - carry the link through so the agent can open it.
     /* A filed application shows the Latin full name here, not a ticked
@@ -305,6 +342,26 @@
       if (!rec.lastVisaNumber) W('lastVisaNumber', 'Held a US visa before - DS-160 asks for the previous visa number');
       if (!rec.lastVisaIssued) W('lastVisaIssued', 'Held a US visa before - DS-160 asks when it was issued');
     }
+    /* Length of Stay is a required pair on CEAC once the visit block opens. */
+    if (rec.beenInUs === 'YES') {
+      if (!rec.prevStayUnit)
+        W('prevStayUnit', rec.stayUnit
+            ? 'Period of stay "' + rec.stayUnit + '" does not match a CEAC option ' +
+              '(YEAR(S) / MONTH(S) / WEEK(S) / DAY(S) / LESS THAN 24 HOURS) - set it by hand'
+            : stayUnit(rec.stayLength)
+              /* The period comes from column Q. One sitting in R instead would
+                 otherwise leave a required CEAC field silently blank. */
+              ? 'Period of stay is read from "Period Type of Stay in the US" (column Q), ' +
+                'which is empty - "' + rec.stayLength + '" is in column R instead. ' +
+                'Move it to column Q or set the period by hand'
+              : 'Arrived in the U.S. but no length of stay on the intake form - CEAC requires it');
+      else if (rec.prevStayUnit !== 'LESS THAN 24 HOURS' && !rec.prevStayLength)
+        W('prevStayLength', 'Length of stay is "' + rec.prevStayUnit +
+                            '" with no number - CEAC needs both');
+    }
+    if (rec.beenInUs === 'NO' && rec.priorUsVisa === 'YES')
+      W('lastUsArrival', 'Held a US visa but no arrival date on the intake form, so ' +
+                         '"Have you ever been in the U.S.?" is answered No - confirm he never entered');
     if (rec.visaLostStolen === 'YES' && !rec.lostDetails)
       E('lostDetails', 'Visa or passport reported lost/stolen with no explanation');
     if (rec.visaRevoked === 'YES' && !rec.revokedDetails)
@@ -370,9 +427,11 @@
       ['uniName','University Name'], ['uniAddress','University Address'],
       ['uniCourse','Course of Study'], ['uniFrom','From'], ['uniTo','To'] ] },
     { title: 'Previous U.S. Travel', fields: [
-      ['priorUsVisa','Have you ever been in the U.S.?'],
-      ['lastUsArrival','Date of Arrival'], ['stayLength','Length of Stay'],
-      ['stayUnit','Length of Stay (unit)'], ['usDriverLicense','Do you hold a U.S. driver licence?'],
+      ['beenInUs','Have you ever been in the U.S.?'],
+      ['lastUsArrival','Date Arrived'],
+      ['prevStayLength','Length of Stay'], ['prevStayUnit','Length of Stay (period)'],
+      ['priorUsVisa','Have you ever been issued a U.S. visa?'],
+      ['usDriverLicense','Do you hold a U.S. driver licence?'],
       ['lastVisaIssued','Date Last Visa Was Issued'], ['lastVisaNumber','Visa Number'],
       ['sameVisaType','Applying for the same visa type?'],
       ['visaRevoked','Visa ever cancelled or revoked?'], ['revokedDetails','Explain'],
@@ -384,7 +443,7 @@
       ['paymentStatus','Payment Status'], ['notes','Notes'] ] },
   ];
 
-  const api = { toRecord, validate, SECTIONS, MAP, MISSING_FROM_INTAKE,
+  const api = { toRecord, validate, SECTIONS, MAP, MISSING_FROM_INTAKE, stayUnit, stayCount, STAY_UNITS,
                 parseDate, fmtDate, dateStr, normPhone, splitName, yn, monthsBetween, toJs };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

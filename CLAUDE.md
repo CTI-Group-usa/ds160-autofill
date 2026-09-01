@@ -211,7 +211,52 @@ before it was seen were wrong, and the user confirmed both changes:
 
 The length-of-stay number and its unit dropdown share one label, so the rules
 carry `tag: 'input'` / `tag: 'select'` to tell them apart; `kindAllows()`
-enforces it.
+enforces it. They also carry `not: /PREV/i`, because Previous U.S. Travel has
+its own length of stay and `/LOS_CD/` matches `PREV_US_VISIT_LOS_CD` too — the
+intended stay for this trip was landing in a visit years in the past.
+
+## Previous U.S. Travel (added 2026-09-01, at the user's instruction)
+Two questions on this page read alike and are not the same thing:
+
+- **"Have you ever been in the U.S.?"** — about entries. The intake form has no
+  column for it, so it is **derived**: `rec.beenInUs = lastUsArrival ? YES : NO`.
+  If the seafarer filled *When did you arrive in the US?* (column P) the answer
+  is Yes. This is the user's rule, stated as how CTI has always filled it.
+- **"Have you ever been issued a U.S. Visa?"** — column O, `priorUsVisa`.
+
+They shared one key until 2026-09-01, which put Yes on the entry question for
+anyone holding a C1/D who had never actually landed, and then left the arrival
+dates CEAC demands empty. Do not merge them again.
+
+Splitting them exposed a bug in `fillPage`: only `deferred[0]` was ever applied,
+so on a page with **two** postback questions the second was never filled and
+never reported - it only showed up as a number in `remaining`. The deferred queue
+is now walked until something actually changes, because an answer already correct
+reloads nothing and must not consume the pass. Drive
+`test/fake-prev-us-travel.html` twice: pass 1 answers "been in the U.S.", pass 2
+answers "issued a U.S. Visa", and `remaining` reaches 0.
+
+**Length of Stay comes from the intake form, not a constant.** It was briefly
+built as a constant (`LESS THAN 24 HOURS` — crew transits are same-day) and the
+user corrected that the same day: it is the seafarer's own answer. `prevStayUnit`
+and `prevStayLength` are derived from columns Q and R. Do not reintroduce a
+constant for it.
+
+**Column Q** (*Period Type of Stay in the US*) is the period; **column R**
+(*How long did you stay in the US?*) is the number beside it — the headers read
+that way. The two are near-synonyms and easy to transpose, so if a period turns
+up in R with Q empty, `validate()` names the column rather than quietly using it:
+a blank here is a required CEAC field left unanswered.
+
+The CEAC dropdown is a closed set — `-SELECT ONE-`, `YEAR(S)`, `MONTH(S)`,
+`WEEK(S)`, `DAY(S)`, `LESS THAN 24 HOURS` — so a loose intake answer has to land
+on an option exactly or the select stays unset. `stayUnit()` maps English and
+Indonesian wording ("3 months", "2 minggu", "kurang dari 24 jam", "<24 hrs") onto
+it and returns `''` for anything it cannot place, which `validate()` reports
+rather than guessing.
+
+For `LESS THAN 24 HOURS` the count is cleared: CEAC greys the number box out for
+that option, so writing there would fail silently or contradict the dropdown.
 
 **Still not implemented from that sample:** the Crew Visa manning-agency block
 (constant: CTI INDONESIA / OKTAVIANIA, DORKAS / JL. HANG TUAH NO.14B RENON,
@@ -349,7 +394,8 @@ on the five Security and Background pages. Guards:
 - outlines every answer in amber and lists the question text in the popup report,
   so the agent reads them before clicking Next.
 
-`test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html` and
+`test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
+`fake-prev-us-travel.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

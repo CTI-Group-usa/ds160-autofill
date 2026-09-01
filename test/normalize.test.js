@@ -93,5 +93,64 @@ const fb = D.toRecord({ 'Name': 'Sukarno', 'Cruise Line': 'Carnival', "Current W
 eq('employer fallback', fb.employerName, 'CARNIVAL');
 none('employer fallback: no error', D.validate(fb, { today: '2026-08-31' }).errors.filter(e => e.field === 'employerName'), 'employerName');
 
+// -- "Have you ever been in the U.S.?" comes from the arrival date ------
+// It is not column O. A seafarer can hold a C1/D and never have entered.
+const been = D.toRecord({ 'Name': 'Sukarno', 'When did you arrive in the US?': '12/06/2024' });
+eq('been in US: date given',  been.beenInUs, 'YES');
+eq('been in US: date kept',   been.lastUsArrival, '12-JUN-2024');
+
+const notBeen = D.toRecord({ 'Name': 'Sukarno', 'Have you ever been issued U.S. Visa?': 'Yes' });
+eq('been in US: no date',     notBeen.beenInUs, 'NO');
+eq('been in US: visa is separate', notBeen.priorUsVisa, 'YES');
+has('visa but never entered', D.validate(notBeen, { today: '2026-08-31' }).warnings,
+    'lastUsArrival', 'never entered');
+
+// -- Length of Stay comes from the intake form, not a constant ---------
+// CEAC's period dropdown is a closed set, so loose answers must land on
+// one of its options exactly or the select stays on -SELECT ONE-.
+eq('unit months',   D.stayUnit('3 months'), 'MONTH(S)');
+eq('unit already',  D.stayUnit('MONTH(S)'), 'MONTH(S)');
+eq('unit days',     D.stayUnit('day'), 'DAY(S)');
+eq('unit weeks id', D.stayUnit('2 minggu'), 'WEEK(S)');
+eq('unit years',    D.stayUnit('1 tahun'), 'YEAR(S)');
+eq('unit 24h',      D.stayUnit('less than 24 hours'), 'LESS THAN 24 HOURS');
+eq('unit 24h id',   D.stayUnit('kurang dari 24 jam'), 'LESS THAN 24 HOURS');
+eq('unit 24h short',D.stayUnit('<24 hrs'), 'LESS THAN 24 HOURS');
+eq('unit junk',     D.stayUnit('a while'), '');
+eq('unit empty',    D.stayUnit(''), '');
+
+// The headers say what they mean: column Q is the CEAC period, column R is
+// the number beside it.
+const arrived = { 'Name': 'Sukarno', 'When did you arrive in the US?': '12/06/2024' };
+const QR = (q, r) => D.toRecord(Object.assign({}, arrived,
+  { 'Period Type of Stay in the US': q, 'How long did you stay in the US?': r }));
+
+const m3 = QR('MONTH(S)', '3');
+eq('period from Q', m3.prevStayUnit, 'MONTH(S)');
+eq('count from R',  m3.prevStayLength, '3');
+none('complete stay is quiet', D.validate(m3, { today: '2026-08-31' }).warnings, 'prevStayUnit');
+eq('loose period from Q', QR('months', '3').prevStayUnit, 'MONTH(S)');
+
+// CEAC greys the number box out for a same-day transit, so the count goes.
+const transit = QR('LESS THAN 24 HOURS', '1');
+eq('transit unit',     transit.prevStayUnit, 'LESS THAN 24 HOURS');
+eq('transit no count', transit.prevStayLength, '');
+none('transit is quiet', D.validate(transit, { today: '2026-08-31' }).warnings, 'prevStayUnit');
+eq('transit in Indonesian', QR('kurang dari 24 jam', '').prevStayUnit, 'LESS THAN 24 HOURS');
+
+// A period typed into R instead of Q would leave a required CEAC field
+// blank, so it is named rather than silently used.
+const inR = QR('', 'MONTH(S)');
+eq('R is not the period source', inR.prevStayUnit, '');
+has('period in the wrong column', D.validate(inR, { today: '2026-08-31' }).warnings,
+    'prevStayUnit', 'column R instead');
+
+has('unrecognised period', D.validate(QR('a while', '3'), { today: '2026-08-31' }).warnings,
+    'prevStayUnit', 'does not match a CEAC option');
+has('arrived but no stay', D.validate(D.toRecord(arrived), { today: '2026-08-31' }).warnings,
+    'prevStayUnit', 'no length of stay');
+has('period without number', D.validate(QR('MONTH(S)', ''), { today: '2026-08-31' }).warnings,
+    'prevStayLength', 'needs both');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

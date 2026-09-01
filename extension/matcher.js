@@ -103,12 +103,16 @@
     // With travel plans answered No, CEAC replaces the itinerary with an
     // intended date plus a length of stay: a number and a unit dropdown
     // that share one label, told apart by the control being a <select>.
+    // The `PREV` guard matters: Previous U.S. Travel has its own length of
+    // stay, and /LOS_CD/ below matches PREV_US_VISIT_LOS_CD just as happily.
+    // Without it the intended stay for this trip (8 MONTH(S)) lands in the
+    // box describing a visit that happened years ago.
     { key: 'lengthOfStay',     kind: 'text', tag: 'input',
       ids: [/TRAVEL_LOS\b/i, /STAY_LENGTH\b/i],
-      labels: [/intended length of stay/i], not: /_CD\b|UNIT/i },
+      labels: [/intended length of stay/i], not: /_CD\b|UNIT|PREV/i },
     { key: 'lengthOfStayUnit', kind: 'text', tag: 'select',
       ids: [/TRAVEL_LOS_CD/i, /LOS_CD/i, /STAY_LENGTH_UNIT/i],
-      labels: [/intended length of stay/i] },
+      labels: [/intended length of stay/i], not: /PREV/i },
     { key: 'arrivalFlight',  kind: 'text',  ids: [/ARRIVAL_FLIGHT/i], labels: [/arrival flight/i] },
     { key: 'arrivalCity',    kind: 'text',  ids: [/ArriveCity/i, /ARRIVAL_CITY/i], labels: [/^arrival city/i] },
     { key: 'departureDate',  kind: 'date',
@@ -214,7 +218,24 @@
     { key: 'hsAddress', kind: 'text', ids: [/SchoolAddr1/i], labels: [/institution.*street address/i] },
     { key: 'hsCourse',  kind: 'text', ids: [/SchoolCourseOfStudy/i], labels: [/course of study/i] },
 
-    { key: 'priorUsVisa',    kind: 'yesno', ids: [/PREV_US_TRAVEL_IND/i, /rblPREV_US_VISIT/i], labels: [/have you ever been in the u\.?s/i] },
+    /* Two different questions that used to share one key. "Have you ever
+       been in the U.S.?" is about entries; "Have you ever been issued a
+       U.S. Visa?" is about the visa. A seafarer can hold a C1/D and never
+       have set foot ashore, so answering the first from the second put
+       Yes on the form and then left the arrival dates it demands empty. */
+    { key: 'beenInUs',       kind: 'yesno', ids: [/PREV_US_TRAVEL_IND/i, /rblPREV_US_VISIT\b/i],
+      labels: [/have you ever been in the u\.?s/i] },
+    { key: 'priorUsVisa',    kind: 'yesno', ids: [/PREV_VISA_IND/i],
+      labels: [/ever been issued a u\.?s\.? visa/i] },
+    /* The visit block CEAC opens once "been in the U.S." is Yes. `must`
+       keeps these off the Travel page, which asks the same two things
+       about the trip being applied for. */
+    { key: 'lastUsArrival',  kind: 'date', ids: [/PREV_US_VISIT_DTE(Day|Month|Year)/i],
+      labels: [/^date arrived/i], must: /PREV|previous/i },
+    { key: 'prevStayLength', kind: 'text', tag: 'input', ids: [/PREV_US_VISIT_LOS\b/i],
+      labels: [/^length of stay/i], must: /PREV|previous/i, not: /_CD\b|UNIT/i },
+    { key: 'prevStayUnit',   kind: 'text', tag: 'select', ids: [/PREV_US_VISIT_LOS_CD/i],
+      labels: [/^length of stay/i], must: /PREV|previous/i },
     { key: 'usDriverLicense',kind: 'yesno', ids: [/US_DRIVER_LICENSE_IND/i], labels: [/driver.?s licen[cs]e/i] },
     { key: 'lastVisaNumber', kind: 'text',  ids: [/PREV_VISA_FOIL_NUMBER/i], labels: [/visa number/i] },
     { key: 'lastVisaIssued', kind: 'date',  ids: [/PREV_VISA_ISSUED(Day|Month|Year)/i], labels: [/date last visa was issued/i] },

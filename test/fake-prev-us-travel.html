@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Previous U.S. Travel</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- Two regressions live on this page.
+
+     1. "Have you ever been in the U.S.?" and "Have you ever been issued a
+        U.S. Visa?" are different questions that shared one key, so a
+        seafarer holding a C1/D who had never entered was answered Yes and
+        then left the arrival dates CEAC demands empty. They now come from
+        `beenInUs` (derived from the intake arrival date) and `priorUsVisa`
+        (intake column O) respectively.
+
+     2. The visit block has its own "Length of Stay" number and unit. The
+        Travel page rule matched /LOS_CD/, which also matches
+        PREV_US_VISIT_LOS_CD, so the intended stay for this trip
+        (8 MONTH(S)) was written into a visit that happened years ago.
+        The Travel rules now carry `not: /PREV/i`.
+
+     The dropdown carries the full CEAC option set. It is NOT a constant:
+     `prevStayUnit` / `prevStayLength` come from intake columns Q and R.
+     For LESS THAN 24 HOURS the number box is left empty, because CEAC
+     disables it for that option. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Previous U.S. Travel Information</h2>
+
+<table>
+  <tr><td>Q:</td><td>Have you ever been in the U.S.?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_TRAVEL_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPREV_US_TRAVEL_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'a\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_TRAVEL_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_TRAVEL_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPREV_US_TRAVEL_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'a\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_TRAVEL_IND_1">No</label>
+  </td></tr>
+</table>
+
+<fieldset>
+  <legend>Provide information on your last five U.S. visits</legend>
+  <table>
+    <tr><td>Date Arrived</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEDay">
+        <option value="">-</option><option>12</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_DTEMonth">
+        <option value="">-</option><option value="JUN">JUN</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_DTEYear" size="4">
+      <br><span>(Format: DD-MMM-YYYY)</span>
+    </td></tr>
+    <tr><td>Length of Stay</td><td>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_LOS" size="3">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_LOS_CD">
+        <option value="">-</option><option>YEAR(S)</option><option>MONTH(S)</option>
+        <option>WEEK(S)</option><option>DAY(S)</option><option>LESS THAN 24 HOURS</option></select>
+    </td></tr>
+  </table>
+</fieldset>
+
+<table>
+  <tr><td>Q:</td><td>Do you or did you ever hold a U.S. Driver's License?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_DRIVER_LICENSE_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPREV_US_DRIVER_LICENSE_IND" value="Y">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_DRIVER_LICENSE_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_DRIVER_LICENSE_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPREV_US_DRIVER_LICENSE_IND" value="N">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_US_DRIVER_LICENSE_IND_1">No</label>
+  </td></tr>
+
+  <tr><td>Q:</td><td>Have you ever been issued a U.S. Visa?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_VISA_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPREV_VISA_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'b\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_VISA_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_VISA_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPREV_VISA_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'b\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPREV_VISA_IND_1">No</label>
+  </td></tr>
+</table>
+
+<fieldset>
+  <legend>Last visa issued</legend>
+  <table>
+    <tr><td>Date Last Visa Was Issued</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPREV_VISA_ISSUEDDay">
+        <option value="">-</option><option>15</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPREV_VISA_ISSUEDMonth">
+        <option value="">-</option><option value="SEP">SEP</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPREV_VISA_ISSUEDYear" size="4">
+    </td></tr>
+    <tr><td>Visa Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPREV_VISA_FOIL_NUMBER"></td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>
