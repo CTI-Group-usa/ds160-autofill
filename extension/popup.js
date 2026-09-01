@@ -10,28 +10,24 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
 
-  const RECORD_V = 6;
-  // Kept in step with constants.js; used only to show a count.
-  const CONST_KEYS = ['otherNamesUsed', 'telecode', 'otherNationality', 'otherCountryPermRes',
-                      'ssnNA', 'taxIdNA', 'travelCompanions', 'lengthOfStay', 'lengthOfStayUnit',
-                      'stayAddr1', 'stayAddr2', 'stayCity', 'stayState', 'stayZip', 'tripPayer', 'payerCompany', 'payerPhone', 'payerRelationship',
-                      'payerAddr1', 'payerCity', 'payerState', 'payerZip', 'payerCountry',
-                      'usPocSurname', 'usPocGiven', 'usPocOrg', 'usPocRelationship', 'usPocAddr1',
-                      'usPocAddr2', 'usPocCity', 'usPocState', 'usPocZip', 'usPocPhone', 'usPocEmail',
-                      'mailingSameAsHome', 'immediateRelativesUS', 'otherRelativesUS', 'securityAllNo'];
+  const RECORD_V = 7;
 
+  /* No count of "constant answers included" here. That number came from
+     a key list kept by hand, it went stale the moment a constant was
+     added, and it then told the agent the record was current when it was
+     not. When the record is behind, the fill report says so per field -
+     that cannot drift. */
   function showWho(rec) {
     if (!rec) { $('who').innerHTML = 'No applicant loaded.'; return; }
-    const answered = CONST_KEYS.filter(k => rec[k]).length;
+    let when = '';
+    try { when = rec._sentAt ? new Date(rec._sentAt).toLocaleTimeString() : ''; } catch (e) { /* ignore */ }
     let h = '<b>' + esc(rec.surname + ', ' + rec.givenNames) + '</b>' +
       '<span>' + esc(rec.passportNumber || 'no passport no.') + ' &middot; ' +
-      esc(rec.dob || '') + ' &middot; ' + esc(rec.cruiseLine || '') + '</span>';
+      esc(rec.dob || '') + ' &middot; ' + esc(rec.cruiseLine || '') + '</span>' +
+      (when ? '<span>sent ' + esc(when) + '</span>' : '');
     if ((rec._v || 0) < RECORD_V) {
       h += '<div class="stale">This applicant was sent by an older version of the ' +
-           'worksheet, so it carries no constant answers. Open the worksheet and press ' +
-           '<b>Send to extension</b> again.</div>';
-    } else {
-      h += '<span>' + answered + ' constant answer' + (answered === 1 ? '' : 's') + ' included</span>';
+           'worksheet. Open it and press <b>Send to extension</b> again.</div>';
     }
     $('who').innerHTML = h;
   }
@@ -57,6 +53,17 @@
       h += '<div class="warn">The page reloads after <code>' + esc(p.key) + '</code>' +
            (p.remaining ? ' (' + p.remaining + ' more like it)' : '') +
            '. Auto-continue picks up where it left off; otherwise press Fill again.</div>';
+    }
+    /* "no value in record" almost always means the record predates a
+       constant that has since been added or edited. Saying so beats any
+       version number, which is only as good as the last time someone
+       remembered to bump it. */
+    const empty = rep.skipped.filter(x => x.why === 'no value in record');
+    if (empty.length) {
+      h += '<div class="stale">' + empty.length + ' field(s) on this page have no value in the ' +
+           'loaded record: <code>' + empty.slice(0, 6).map(x => esc(x.key)).join(', ') + '</code>. ' +
+           'If you have changed the Constant answers or Trip details since sending this applicant, ' +
+           'press <b>Send to extension</b> again in the worksheet.</div>';
     }
     h += list('Skipped', rep.skipped, 'warn', x => esc(x.key) + ' &ndash; ' + esc(x.why));
     // Both the label and the id: the id is what a new matcher rule needs.

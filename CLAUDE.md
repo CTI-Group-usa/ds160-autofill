@@ -241,6 +241,20 @@ every rule — it is load-bearing, not documentation.
 "Does Not Apply" box is named by the first cell beside it ("U.S. Taxpayer ID
 Number"), and looking upward first ticked the previous field's box.
 
+## Do not reintroduce a hand-maintained key list
+The popup used to show "N constant answers included" from a `CONST_KEYS`
+array copied by hand from `constants.js`, and staleness was judged by a
+`RECORD_V` number bumped by hand. Both drifted: five stay-address constants
+were added without touching either, so the popup reported a record as current
+while five fields on the Travel page silently had nothing to fill, and the
+agent was left staring at empty boxes with no explanation.
+
+Staleness is now read off the fill report itself — a skipped field whose reason
+is `no value in record` is the ground truth, and the popup says plainly that the
+applicant needs re-sending. That cannot drift, because it is measured rather
+than declared. `RECORD_V` survives only as a coarse check for records that
+predate the field entirely.
+
 ## Record versioning
 Records handed to the extension carry `_v` (`RECORD_V`, currently 2 = includes
 constant answers) and `_sentAt`. The popup shows a red banner when `_v` is

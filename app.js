@@ -6,7 +6,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const STORE = 'ds160.rows';
-  const RECORD_V = 6;          // 6 = US contact + paying company as constants
+  const RECORD_V = 7;          // coarse check; _knownConsts is the exact one
 
   let rows = [];      // raw sheet rows (header -> value)
   let people = [];    // { rec, val }
