@@ -14,7 +14,7 @@
   // Kept in step with constants.js; used only to show a count.
   const CONST_KEYS = ['otherNamesUsed', 'telecode', 'otherNationality', 'otherCountryPermRes',
                       'ssnNA', 'taxIdNA', 'travelCompanions', 'lengthOfStay', 'lengthOfStayUnit',
-                      'stayAddress', 'tripPayer', 'payerCompany', 'payerPhone', 'payerRelationship',
+                      'stayAddr1', 'stayAddr2', 'stayCity', 'stayState', 'stayZip', 'tripPayer', 'payerCompany', 'payerPhone', 'payerRelationship',
                       'payerAddr1', 'payerCity', 'payerState', 'payerZip', 'payerCountry',
                       'usPocSurname', 'usPocGiven', 'usPocOrg', 'usPocRelationship', 'usPocAddr1',
                       'usPocAddr2', 'usPocCity', 'usPocState', 'usPocZip', 'usPocPhone', 'usPocEmail',

@@ -206,6 +206,28 @@ clan/tribe NO, languages ENGLISH, military NO, Primary Occupation OTHER +
 SAILOR OS, US contact relationship BUSINESS ASSOCIATE, …). The user has not
 asked for these yet.
 
+## Address rules are pinned to their block
+DS-160 repeats **"Street Address (Line 1)"** word for word in at least four
+places: the home address, the address where you will stay, the U.S. contact,
+and the paying company. A rule keyed on that label alone wrote the seafarer's
+Indonesian home address into *Address Where You Will Stay in the U.S.* on a live
+application - the worst class of bug this project can produce, because it fills
+something wrong rather than leaving it empty.
+
+`content.js -> blockLabel()` gives every control the heading of the block it
+sits in. Two details matter:
+
+- The heading is usually **outside** the block's own table (a `<legend>`, or the
+  element just before it), so taking only the block's own text misses the very
+  words that identify it.
+- The search stops at an ancestor holding 3-14 controls. Any wider and the
+  "block" is the whole page, which would start excluding everything.
+
+`matchKey()` tests `not` and `must` against id + name + label + **section**, but
+`labels` against the label only. Context may rule a match out or in; it may
+never be the thing that finds one. Broad text can then only ever cost a match,
+not invent one.
+
 ## Rules are type-aware
 `matchKey()` only applies a rule to the kind of control it describes
 (`yesno` -> radio, `checkbox` -> checkbox, `text`/`date` -> everything else).
@@ -280,7 +302,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # normalize 36 + matcher 42 + xlsx 12 + constants 26 + trip 26 + letter 28 + pdftext 17 + background 9
+npm test   # 8 suites, ~204 assertions + background 9
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

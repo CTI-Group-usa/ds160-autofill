@@ -82,6 +82,37 @@
     return '';
   }
 
+  /* The heading of the block a control sits in - "Address Where You Will
+     Stay in the U.S.", "U.S. Contact Address". DS-160 repeats "Street
+     Address (Line 1)" verbatim in several blocks, so the label alone
+     cannot tell the applicant's home address from the address of the
+     ship's agent. This is only ever used to RESTRICT a match, never to
+     cause one: the text is broad, and letting it match positively would
+     trade one wrong fill for another. */
+  function blockLabel(el) {
+    let n = el.parentElement;
+    for (let i = 0; i < 10 && n; i++, n = n.parentElement) {
+      const count = n.querySelectorAll('input, select, textarea').length;
+      if (count < 3) continue;
+      if (count > 14) break;          // too big to be one block; stop guessing
+
+      /* The heading usually sits OUTSIDE the block's own table - as a
+         legend, or as the element just before it - so taking only the
+         block's text misses the very words that identify it. */
+      let lead = '';
+      const fs = n.closest('fieldset');
+      const legend = fs && fs.querySelector('legend');
+      if (legend) lead = legend.textContent;
+      if (!lead) {
+        let prev = n.previousElementSibling;
+        while (prev && !prev.textContent.trim()) prev = prev.previousElementSibling;
+        if (prev) lead = prev.textContent;
+      }
+      return (lead + ' ' + n.textContent).replace(/\s+/g, ' ').trim().slice(0, 240);
+    }
+    return '';
+  }
+
   function controls() {
     return Array.from(document.querySelectorAll(FILLABLE))
       .filter(visible)
@@ -94,6 +125,7 @@
         label: (el.type === 'radio' || el.type === 'checkbox')
           ? (deriveLabel(el) + ' ' + questionText(el)).trim()
           : deriveLabel(el),
+        section: blockLabel(el),
       }));
   }
 

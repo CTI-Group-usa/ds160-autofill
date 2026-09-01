@@ -85,6 +85,31 @@ eq('length of stay unit',
    (M.matchKey({ id: P + 'ddlTRAVEL_LOS_CD', name: '', label: LOS, tag: 'select' }, {}) || {}).key,
    'lengthOfStayUnit');
 
+// -- "Street Address (Line 1)" appears in four different blocks -------
+// Regression: the seafarer's Indonesian home address was written into
+// "Address Where You Will Stay in the U.S." because the label alone is
+// identical. Only the block heading separates them, and it may only
+// restrict a match - never cause one.
+const stayBlock = 'Address Where You Will Stay in the U.S. Street Address (Line 1) ' +
+                  'Street Address (Line 2) Optional City State ZIP Code';
+const homeBlock = 'Home Address Street Address (Line 1) City State Postal Zone';
+const pocBlock  = 'U.S. Point of Contact Address Street Address (Line 1) City State';
+
+const inBlock = (label, section, id) =>
+  (M.matchKey({ id: P + (id || 'tbxUnknown'), name: '', label, section, type: 'text', tag: 'input' }, {}) || {}).key;
+
+eq('stay line 1',  inBlock('Street Address (Line 1)', stayBlock), 'stayAddr1');
+eq('stay line 2',  inBlock('Street Address (Line 2) Optional', stayBlock), 'stayAddr2');
+eq('stay city',    inBlock('City', stayBlock), 'stayCity');
+eq('stay zip',     inBlock('ZIP Code (if known)', stayBlock), 'stayZip');
+eq('home line 1',  inBlock('Street Address (Line 1)', homeBlock), 'homeAddress');
+eq('contact line 1', inBlock('Street Address (Line 1)', pocBlock), 'usPocAddr1');
+eq('home address never lands in the stay block',
+   inBlock('Street Address (Line 1)', stayBlock) === 'homeAddress', false);
+eq('a city with no block is left alone', inBlock('City', ''), undefined);
+
+console.log('  (block pinning covered)');
+
 // -- overrides beat everything --------------------------------------
 eq('override wins',
   (M.matchKey({ id: 'weird_control_7', name: '', label: '' }, { weird_control_7: 'vesselName' }) || {}).key,

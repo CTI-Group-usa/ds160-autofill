@@ -71,7 +71,11 @@
     { key: 'otherRelativesUS',    kind: 'yesno', ids: [/US_OTHER_RELATIVE_IND/i],
       labels: [/other relatives in the united states/i] },
 
-    { key: 'homeAddress',    kind: 'text',  ids: [/APP_ADDR_LN1/i], labels: [/street address/i] },
+    /* "Street Address (Line 1)" appears in at least four blocks. Each
+       address rule is pinned to its own block, so the seafarer's home
+       address can never land in the U.S. stay address again. */
+    { key: 'homeAddress', kind: 'text', ids: [/APP_ADDR_LN1/i], labels: [/street address/i],
+      not: /will stay|contact|employer|school|paying|mailing/i },
     { key: 'phone',          kind: 'text',  ids: [/APP_HOME_TEL/i, /PRIMARY.*PHONE/i], labels: [/primary phone/i] },
     { key: 'email',          kind: 'text',  ids: [/APP_EMAIL_ADDR/i], labels: [/^e-?mail address/i] },
     { key: 'socialPlatform', kind: 'text',  ids: [/SOCIAL_MEDIA_PROVIDER/i, /ddlSocialMedia/i], labels: [/social media platform/i] },
@@ -109,7 +113,13 @@
       labels: [/date of departure from u\.?s/i] },
     { key: 'departureFlight', kind: 'text', ids: [/DEPARTURE_FLIGHT/i], labels: [/departure flight/i] },
     { key: 'departureCity',  kind: 'text',  ids: [/DepartCity/i, /DEPARTURE_CITY/i], labels: [/^departure city/i] },
-    { key: 'stayAddress',    kind: 'text',  ids: [/STAY_ADDR_LN1/i], labels: [/address where you will stay/i] },
+    { key: 'stayAddr1', kind: 'text', ids: [/STAY_ADDR_LN1/i],
+      labels: [/street address \(line ?1\)|^street address$/i], must: /will stay/i },
+    { key: 'stayAddr2', kind: 'text', ids: [/STAY_ADDR_LN2/i],
+      labels: [/street address \(line ?2\)/i], must: /will stay/i },
+    { key: 'stayCity',  kind: 'text', ids: [/STAY_ADDR_CITY/i], labels: [/^city$/i], must: /will stay/i },
+    { key: 'stayState', kind: 'text', ids: [/STAY_ADDR_STATE/i], labels: [/^state$/i], must: /will stay/i },
+    { key: 'stayZip',   kind: 'text', ids: [/STAY_ADDR_POSTAL/i], labels: [/zip code|postal/i], must: /will stay/i },
     { key: 'vesselName',     kind: 'text',  ids: [/SEAGOING.*NAME/i, /tbxSHIP/i],
       labels: [/seagoing ship.*vessel name|^vessel name/i], not: /IDENT|IMO|NUMBER/i },
     { key: 'vesselImo',      kind: 'text',  ids: [/SEAGOING.*(IDENT|NUM)/i, /VESSEL_ID/i],
@@ -140,11 +150,16 @@
     { key: 'usPocGiven',        kind: 'text', ids: [/POC_GIVEN_NAME/i], labels: [/given names of contact/i] },
     { key: 'usPocOrg',          kind: 'text', ids: [/POC_ORGANIZATION/i], labels: [/organization name/i] },
     { key: 'usPocRelationship', kind: 'text', ids: [/POC_REL_TO_APP/i] },
-    { key: 'usPocAddr1',        kind: 'text', ids: [/POC_ADDR_LN1/i], labels: [/u\.?s\.? contact.*address/i] },
-    { key: 'usPocAddr2',        kind: 'text', ids: [/POC_ADDR_LN2/i] },
-    { key: 'usPocCity',         kind: 'text', ids: [/POC_ADDR_CITY/i] },
-    { key: 'usPocState',        kind: 'text', ids: [/POC_ADDR_STATE/i] },
-    { key: 'usPocZip',          kind: 'text', ids: [/POC_ADDR_POSTAL/i] },
+    { key: 'usPocAddr1',        kind: 'text', ids: [/POC_ADDR_LN1/i],
+      labels: [/street address \(line ?1\)|u\.?s\.? contact.*address/i], must: /contact/i },
+    { key: 'usPocAddr2',        kind: 'text', ids: [/POC_ADDR_LN2/i],
+      labels: [/street address \(line ?2\)/i], must: /contact/i },
+    { key: 'usPocCity',         kind: 'text', ids: [/POC_ADDR_CITY/i],
+      labels: [/^city$/i], must: /contact/i },
+    { key: 'usPocState',        kind: 'text', ids: [/POC_ADDR_STATE/i],
+      labels: [/^state$/i], must: /contact/i },
+    { key: 'usPocZip',          kind: 'text', ids: [/POC_ADDR_POSTAL/i],
+      labels: [/zip code|postal/i], must: /contact/i },
     { key: 'usPocPhone',        kind: 'text', ids: [/POC_HOME_TEL/i], labels: [/phone number.*contact/i] },
     { key: 'usPocEmail',        kind: 'text', ids: [/POC_EMAIL_ADDR/i], labels: [/e-?mail address.*contact/i] },
 
@@ -216,22 +231,31 @@
      `part` is 'day' | 'month' | 'year' for the split date controls. */
   function matchKey(ctl, overrides) {
     const id = String(ctl.id || ''), name = String(ctl.name || ''), label = String(ctl.label || '');
+    const section = String(ctl.section || '');
     if (isForbidden(id) || isForbidden(name)) return null;
 
     const ov = overrides && (overrides[id] || overrides[name]);
     if (ov) return { key: ov, via: 'override', part: datePart(id) };
 
+    /* `not` and `must` see the block heading as well as the control's own
+       label; `labels` never does. Context may rule a match out or in, but
+       may not be the thing that finds it. */
+    const context = [id, name, label, section].join(' ');
+    const allowed = r => {
+      if (r.not && r.not.test(context)) return false;
+      if (r.must && !r.must.test(context)) return false;
+      return kindAllows(r, ctl);
+    };
+
     for (const r of RULES) {
-      if (r.not && (r.not.test(id) || r.not.test(name))) continue;
-      if (!kindAllows(r, ctl)) continue;
+      if (!allowed(r)) continue;
       for (const re of r.ids) {
         if (re.test(id) || re.test(name)) return { key: r.key, via: 'id', part: datePart(id) };
       }
     }
     if (label) {
       for (const r of RULES) {
-        if (r.not && (r.not.test(id) || r.not.test(name) || r.not.test(label))) continue;
-        if (!kindAllows(r, ctl)) continue;
+        if (!allowed(r)) continue;
         for (const re of r.labels || []) {
           if (re.test(label)) return { key: r.key, via: 'label', part: datePart(id) };
         }

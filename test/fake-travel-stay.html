@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fake DS-160 Travel Information (stay address)</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style></head>
+<body>
+<!-- Reproduces the reported wrong-fill: "Street Address (Line 1)" here is
+     word-for-word the label on the Address and Phone page, so a rule
+     keyed on that label alone put the seafarer's Indonesian home address
+     into the U.S. stay address. Only the block heading tells them apart.
+
+     The control ids are deliberately NOT the ones the rules guess, so
+     the match has to come from label plus block. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Travel Information</h2>
+
+<table>
+  <tr><td>Intended Date of Arrival</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownArrDay"><option value="">-</option><option>17</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownArrMonth"><option value="">-</option><option value="DEC">DEC</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownArrYear" size="4">
+    <br><span>(Format: DD-MMM-YYYY)</span>
+  </td></tr>
+  <tr><td>Intended Length of Stay in U.S.</td><td>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownLOS" size="3">
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownLOSCD">
+      <option value="">-</option><option>DAY(S)</option><option>MONTH(S)</option></select>
+  </td></tr>
+</table>
+
+<fieldset>
+  <legend>Address Where You Will Stay in the U.S.</legend>
+  <table>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownStayLn1"></td></tr>
+    <tr><td>Street Address (Line 2) <i>Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownStayLn2"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownStayCity"></td></tr>
+    <tr><td>State</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnknownStayState">
+              <option value="">- SELECT ONE -</option><option>FLORIDA</option></select></td></tr>
+    <tr><td>ZIP Code (if known)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnknownStayZip"></td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Home Address</legend>
+  <table>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_LN1"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_CITY"></td></tr>
+    <tr><td>Postal Zone</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxAPP_ADDR_POSTAL"></td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

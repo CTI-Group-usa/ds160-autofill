@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fake DS-160 Travel Information (initial state)</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}</style></head>
+<body>
+<!-- The Travel page as it first appears: only two dropdowns and the
+     travel-plans question. Both dropdowns carry __doPostBack, because
+     choosing them reveals further fields. This is the page the agent
+     reported as "nothing filled". -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Travel Information</h2>
+<table>
+  <tr><td>Purpose of Trip to the U.S.</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip"
+            name="ctl00$SiteContentPlaceHolder$FormView1$dlPrincipalAppTravel$ctl00$ddlPurposeOfTrip"
+            onchange="javascript:setTimeout('__doPostBack(\'purpose\',\'\')', 0)">
+      <option value="">PLEASE SELECT A VISA CLASS</option>
+      <option value="C">ALIEN IN TRANSIT (C)</option>
+      <option value="B">BUSINESS OR TOURISM (TEMPORARY VISITOR) (B)</option>
+    </select></td></tr>
+  <tr><td>Q:</td><td>Have you made specific travel plans?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_0"
+           name="ctl00$x$rblSpecificTravel" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'plans\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_1"
+           name="ctl00$x$rblSpecificTravel" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'plans\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSpecificTravel_1">No</label>
+  </td></tr>
+  <tr><td>Person/Entity Paying for Your Trip</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlWHO_IS_PAYING"
+            onchange="javascript:setTimeout('__doPostBack(\'payer\',\'\')', 0)">
+      <option value="">-SELECT ONE-</option>
+      <option>SELF</option>
+      <option>COMPANY/ORGANIZATION</option>
+    </select></td></tr>
+</table>
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>
