@@ -312,40 +312,45 @@ right. The two phone rules carry `must: /secondary phone/i` and
 `must: /work phone/i`; `test/fake-address-phone.html` asserts the State and Postal
 boxes stay untouched.
 
-### One address column, four CEAC boxes
-The sheet has **only** column Z, `Address`. None of the 95 columns holds a city,
-province or postal code. The user was offered three columns in the sheet,
-per-applicant storage, or splitting the text, and chose **splitting the text**.
+### The address stays one string
+The sheet has **only** column Z, `Address` - none of the 95 columns holds a city,
+province or postal code. A parser that pulled the city out of the text was built
+and **reverted the same day at the user's request**: they arrange City,
+State/Province and Postal Zone by hand in CEAC. Do not reintroduce it.
 
-`splitAddress()` in `normalize.js` takes the part after the **last comma** as the
-city, but only when it reads like a place name — no digits, under 30 characters,
-and none of `RT RW NO JL JALAN GG GANG DUSUN DESA KEL KEC BLOK KM PERUM KOMP`.
-Otherwise everything stays in the street and the city is left empty: no city beats
-a wrong city. **No administrative prefix is stripped** — "KOTA BARU" is a real
-place, so dropping a leading "KOTA" would turn it into "BARU".
-
-`addressHalf()` in `matcher.js` then wraps the street across the two CEAC boxes,
-breaking on a space so a street name is never cut mid-word. The cap is the
-**real `maxlength` read off Line 1**, not a guess, and it is used for both halves
-so they always rejoin exactly. Before this, both lines matched `homeAddress` on the
-label "Street Address", so Line 2 got the whole address a second time while Line 1
-was over the limit and silently clipped by the browser.
+What is kept is `addressHalf()` in `matcher.js`, which wraps the whole address
+across CEAC's two street boxes, breaking on a space so nothing is cut mid-word.
+The cap is the **real `maxlength` read off Line 1**, and the same cap is used for
+both halves so they rejoin exactly. Without it Line 1 went over the limit and the
+browser clipped the tail silently - text gone, not merely misplaced. Before that,
+both lines also matched `homeAddress` on the label "Street Address", so Line 2
+received the whole address a second time.
 
 ```
 Address: DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING, PEMALANG
   Line 1  DUSUN 2 RT 14 RW 04 BANGLARANGAN     (32 of 40)
-  Line 2  AMPELGADING
-  City    PEMALANG
+  Line 2  AMPELGADING, PEMALANG
 ```
 
-**`homeState` and `homePostal` stay manual** — JAWA TENGAH is not in the address
-text and 52364 is nowhere in the sheet. Deriving a province would need a
-city→province table, and inventing one for a visa form is not on. Both keep
-id-only rules so the report says "no value in record" and points at the sheet
-rather than "not recognised" and blames the matcher. No label rule for them, or
-for `homeCity`: *City* and *State/Province* are word-for-word identical in the
-U.S. stay block and a bare one must stay unclaimed. `homeCountry` does keep a
-label, gated by `must: /home address/i`.
+`homeCity`, `homeState` and `homePostal` keep **id-only** rules with no source, so
+the report names them instead of leaving three boxes silently unexplained. No
+label rule: *City* and *State/Province* are word-for-word identical in the U.S.
+stay block, and a bare one must stay unclaimed. `homeCountry` does keep a label,
+gated by `must: /home address/i`.
+
+### Two reasons a field is empty, and only one is fixable
+The popup used to tell the agent to press **Send to extension** again whenever two
+or more fields had no value - including `homeCity`/`homeState`/`homePostal`, which
+no amount of re-sending will fill. That nags forever and teaches them to ignore
+the banner. `popup.js` now splits the list on `MISSING_FROM_INTAKE`: a calm grey
+note for what the intake form never collects, the red re-send banner only for the
+rest. `popup.html` loads `normalize.js` for that list.
+
+### `` does not work after a CEAC id fragment
+`/rblAddPhone/i` never matches `..._rblAddPhone_0`: the ids end in `_0` / `_1`
+and an underscore **is** a word character, so there is no boundary there. Three
+rules were written that way and still came back "Not recognised" from the live
+page. Use a bare fragment, or `(?=_|$)` if an anchor is genuinely needed.
 
 ### What the live page corrected (2026-09-01)
 Running it against the real CEAC page found four things the fixture had not:

@@ -157,10 +157,9 @@ The remaining questions on the page are not from the sheet: `sameCountryResidenc
 `priorUsVisa` (column O).
 
 ### Column Z is the only address column
-No column among the 95 holds a city, province or postal code. `splitAddress()`
-takes the part after the last comma as the **City** when it reads like a place
-name; the rest becomes the street and is wrapped across CEAC's Street Address
-Line 1 / Line 2 at the real `maxlength`. **State/Province and Postal Zone cannot
-be derived** - the province is not in the text and the postal code is nowhere in
-the sheet, so the agent still types those two. Adding City, State/Province and
-Postal Code columns to the sheet would remove the last of the manual typing.
+No column among the 95 holds a city, province or postal code. The whole of
+column Z goes to CEAC's Street Address, wrapped across Line 1 and Line 2 at the
+real `maxlength` so nothing is clipped. **City, State/Province and Postal Zone
+are typed by hand** - a parser that took the city out of the address text was
+built and reverted at the user's request on 2026-09-01. Adding City,
+State/Province and Postal Code columns to the sheet would remove that typing.

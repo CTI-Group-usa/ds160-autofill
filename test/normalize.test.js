@@ -99,30 +99,15 @@ const been = D.toRecord({ 'Name': 'Sukarno', 'When did you arrive in the US?': '
 eq('been in US: date given',  been.beenInUs, 'YES');
 eq('been in US: date kept',   been.lastUsArrival, '12-JUN-2024');
 
-// -- one address column, four CEAC boxes ------------------------------
-// The city is the part after the last comma, but only when it reads like a
-// place name. State/Province and Postal are not in the sheet at all.
-const addr = v => D.toRecord({ 'Name': 'Sukarno', 'Address': v });
-const real = addr('DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING, PEMALANG');
-eq('city out of the address', real.homeCity, 'PEMALANG');
-eq('street keeps the rest',   real.homeAddress, 'DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING');
-eq('state is not derivable',  real.homeState, '');
-eq('postal is not derivable', real.homePostal, '');
-
-eq('several commas: last one is the city',
-   addr('JL MERDEKA NO 5, DESA SUKAMAJU, BANDUNG').homeCity, 'BANDUNG');
-eq('several commas: street keeps the middle',
-   addr('JL MERDEKA NO 5, DESA SUKAMAJU, BANDUNG').homeAddress, 'JL MERDEKA NO 5, DESA SUKAMAJU');
-// A trailing street fragment is not a city - better no city than a wrong one.
-eq('tail with a number is not a city',
-   addr('DESA SUKAMAJU, RT 04 RW 02').homeCity, '');
-eq('tail with a street word is not a city',
-   addr('BANDUNG, JL MERDEKA').homeCity, '');
-eq('no comma at all', addr('DUSUN 2 BANGLARANGAN').homeCity, '');
-eq('no comma keeps the street', addr('DUSUN 2 BANGLARANGAN').homeAddress, 'DUSUN 2 BANGLARANGAN');
-eq('empty address', addr('').homeAddress, '');
-// "KOTA BARU" is a real place: stripping the prefix would leave "BARU".
-eq('administrative prefix is kept', addr('JL ANGGREK 12, KOTA BARU').homeCity, 'KOTA BARU');
+// The address stays one string - the user arranges City / State / Postal by
+// hand. Column Z goes to Street Address untouched.
+const oneAddr = D.toRecord({ 'Name': 'Sukarno',
+  'Address': 'DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING, PEMALANG' });
+eq('address kept whole', oneAddr.homeAddress,
+   'DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING, PEMALANG');
+eq('city not derived',   oneAddr.homeCity, '');
+eq('state not derived',  oneAddr.homeState, '');
+eq('postal not derived', oneAddr.homePostal, '');
 
 // Ten-printing follows from having held a U.S. visa before.
 eq('ten-printed with a prior visa',

@@ -115,11 +115,18 @@
     { key: 'workPhoneNA', kind: 'checkbox',
       ids: [/APP_BUS_TEL_NA/i, /WORK.*TEL.*_NA/i],
       labels: [/does not apply/i], must: /work phone/i },
-    { key: 'otherPhones5y', kind: 'yesno', ids: [/ADD_PHONE_IND/i, /OTHER_PHONE/i],
+    /* The live page reports these three with an EMPTY question text - the
+       label came back as just "Yes" - so the label regexes never fire and the
+       id is the only signal. CEAC names them in short PascalCase here
+       (rblAddPhone), not the APP_*_IND style used elsewhere.
+
+       No  after the name: the ids end in _0 / _1 and an underscore IS a
+       word character, so  never matches there. */
+    { key: 'otherPhones5y', kind: 'yesno', ids: [/rblAddPhone/i, /ADD_PHONE_IND/i, /OTHER_PHONE/i],
       labels: [/other phone numbers in the last five years/i] },
-    { key: 'otherEmails5y', kind: 'yesno', ids: [/ADD_EMAIL_IND/i, /OTHER_EMAIL/i],
+    { key: 'otherEmails5y', kind: 'yesno', ids: [/rblAddEmail/i, /ADD_EMAIL_IND/i, /OTHER_EMAIL/i],
       labels: [/other email addresses in the last five years/i] },
-    { key: 'otherWebsites5y', kind: 'yesno', ids: [/ADD_SOCIAL_IND/i, /OTHER_WEBSITE/i],
+    { key: 'otherWebsites5y', kind: 'yesno', ids: [/rblAddSocial/i, /ADD_SOCIAL_IND/i, /OTHER_WEBSITE/i],
       labels: [/presence on any other websites/i, /other websites or applications/i] },
     { key: 'email',          kind: 'text',  ids: [/APP_EMAIL_ADDR/i], labels: [/^e-?mail address/i] },
     { key: 'socialPlatform', kind: 'text',  ids: [/SOCIAL_MEDIA_PROVIDER/i, /ddlSocialMedia/i], labels: [/social media platform/i] },

@@ -244,6 +244,15 @@ eq('other websites 5y',
    other('rblAddSocial_0', 'Yes Do you wish to provide information about your presence on any ' +
          'other websites or applications you have used within the last five years?'),
    'otherWebsites5y');
+/* The live page gives these three no question text at all - the label came
+   back as just "Yes" - so the id has to carry them on its own. And no \b
+   after the name: the ids end in _0 / _1 and an underscore is a word
+   character, so \b never matches there. That is why the first attempt at
+   these rules still came back "Not recognised". */
+eq('other phones by id alone',   other('rblAddPhone_0', 'Yes'), 'otherPhones5y');
+eq('other phones, No button',    other('rblAddPhone_1', 'Yes'), 'otherPhones5y');
+eq('other emails by id alone',   other('rblAddEmail_0', 'Yes'), 'otherEmails5y');
+eq('other websites by id alone', other('rblAddSocial_0', 'Yes'), 'otherWebsites5y');
 
 // The trip's intended stay must not leak into the previous-visit boxes.
 eq('intended stay stays off the prev block',

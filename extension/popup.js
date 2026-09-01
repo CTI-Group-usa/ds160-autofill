@@ -65,10 +65,24 @@
       h = '<div class="ok"><b>This page is already complete.</b> ' + rep.already.length +
           ' field(s) hold the right values.</div>' + h;
     }
+    /* Two different reasons a field is empty, and only one of them is
+       fixable by re-sending. Telling the agent to press Send again for a
+       column the intake form has never collected nags forever and trains
+       them to ignore the banner. */
+    const noSource = new Set(((window.DS160 && window.DS160.MISSING_FROM_INTAKE) || [])
+                               .map(x => x[0]));
     const empty = rep.skipped.filter(x => x.why === 'no value in record');
-    if (empty.length >= 2) {
-      h += '<div class="stale">' + empty.length + ' field(s) on this page have no value in the ' +
-           'loaded record: <code>' + empty.slice(0, 6).map(x => esc(x.key)).join(', ') + '</code>. ' +
+    const absent = empty.filter(x => noSource.has(x.key));
+    const stale  = empty.filter(x => !noSource.has(x.key));
+    if (absent.length) {
+      h += '<div class="note">The intake form does not collect ' +
+           '<code>' + absent.slice(0, 6).map(x => esc(x.key)).join(', ') + '</code>' +
+           (absent.length > 6 ? ' and ' + (absent.length - 6) + ' more' : '') +
+           '. Fill these by hand - re-sending the applicant will not help.</div>';
+    }
+    if (stale.length >= 2) {
+      h += '<div class="stale">' + stale.length + ' field(s) on this page have no value in the ' +
+           'loaded record: <code>' + stale.slice(0, 6).map(x => esc(x.key)).join(', ') + '</code>. ' +
            'If you have changed the Constant answers or Trip details since sending this applicant, ' +
            'press <b>Send to extension</b> again in the worksheet.</div>';
     }

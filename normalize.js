@@ -92,24 +92,12 @@
     return m ? m[0] : '';
   };
 
-  /* CEAC splits the home address into Street, City, State/Province and
-     Postal Zone. The intake form has ONE free-text column, so the city is
-     recovered from it: the part after the last comma, but only when it
-     reads like a place name. State/Province and Postal are not in the text
-     at all and stay with the agent - see MISSING_FROM_INTAKE.
-
-     No administrative prefix is stripped: "KOTA BARU" is a real place, so
-     removing a leading "KOTA" would turn it into "BARU". */
-  const STREET_WORDS = /\b(RT|RW|NO|JL|JALAN|GG|GANG|DUSUN|DESA|KEL|KELURAHAN|KEC|KECAMATAN|BLOK|KM|PERUM|KOMP)\b/i;
-  function splitAddress(raw) {
-    const s = clean(raw).replace(/\s*,\s*/g, ', ').replace(/,+$/, '');
-    if (!s) return { street: '', city: '' };
-    const i = s.lastIndexOf(',');
-    if (i < 0) return { street: s, city: '' };
-    const tail = s.slice(i + 1).trim();
-    const placeLike = tail && tail.length <= 30 && !/\d/.test(tail) && !STREET_WORDS.test(tail);
-    return placeLike ? { street: s.slice(0, i).trim(), city: tail } : { street: s, city: '' };
-  }
+  /* The address stays ONE string. Splitting the city out of it was built
+     and then reverted on 2026-09-01 at the user's request: they arrange
+     City, State/Province and Postal Zone by hand in CEAC. The whole of
+     column Z goes to Street Address, wrapped across Line 1 and Line 2 by
+     addressHalf() so nothing is clipped and lost. Do not reintroduce a
+     parser here. */
 
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
@@ -283,13 +271,6 @@
        constant. CEAC only asks it inside the previous-visa block, which is
        the Yes branch anyway. */
     rec.tenPrinted = rec.priorUsVisa === 'YES' ? 'YES' : 'NO';
-
-    /* One address column, four CEAC boxes. The city comes out of the text;
-       the street keeps whatever is left, and content.js wraps it across
-       Street Address Line 1 / Line 2 at the length CEAC allows. */
-    const addr = splitAddress(rec.homeAddress);
-    rec.homeAddress = addr.street;
-    rec.homeCity = addr.city;
     /* CEAC greys the number box out for this option, so writing a count
        there would either fail silently or contradict the dropdown. */
     if (rec.prevStayUnit === 'LESS THAN 24 HOURS') rec.prevStayLength = '';
