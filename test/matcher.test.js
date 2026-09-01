@@ -500,6 +500,53 @@ eq('visa-number Do Not Know is not the org box',
 // and the page showed a bare 2023 / 2033.
 eq('passport type',        key('ddlPPT_TYPE'), 'passportType');
 eq('issuing authority',    key('ddlPPT_ISSUED_CNTRY'), 'passportIssuedCountry');
+/* "Passport Book Number" satisfies /passport.*number/ too, so passportNumber
+   copied E3291557 into it on a live page - a document number sworn to that
+   does not exist. An Indonesian passport has no book number: the box stays
+   empty and the tick beside it goes on. */
+const bookBlk = 'Passport Passport/Travel Document Number Passport Book Number Does Not Apply';
+eq('the passport number stays out of the book box',
+   (M.matchKey({ id: P + 'tbxPPT_BOOK_NUM', name: '', label: 'Passport Book Number',
+                 section: bookBlk, type: 'text', tag: 'input' }, {}) || {}).key, undefined);
+eq('...and by label alone with an unknown id',
+   (M.matchKey({ id: P + 'tbxAnything', name: '', label: 'Passport Book Number',
+                 section: bookBlk, type: 'text', tag: 'input' }, {}) || {}).key, undefined);
+eq('the book box is left blank on purpose, not reported as a gap',
+   M.isLeftBlank({ id: P + 'tbxPPT_BOOK_NUM', name: '', label: 'Passport Book Number',
+                   type: 'text' }), true);
+eq('the passport number box itself is not',
+   M.isLeftBlank({ id: P + 'tbxPPT_NUM', name: '',
+                   label: 'Passport/Travel Document Number', type: 'text' }), false);
+eq('the book number Does Not Apply is ticked',
+   (M.matchKey({ id: P + 'cbexPPT_BOOK_NUM_NA', name: '', label: 'Does Not Apply',
+                 section: bookBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key,
+   'passportBookNumberNA');
+eq('...and by label alone with an unknown id',
+   (M.matchKey({ id: P + 'cbexUnknown', name: '', label: 'Does Not Apply',
+                 section: bookBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key,
+   'passportBookNumberNA');
+/* The other four "Does Not Apply" boxes on this form hold real values beside
+   them - ticking one of those wipes an answer that is right. */
+eq('the monthly income box is still its own',
+   (M.matchKey({ id: P + 'cbexMonthlySalary_NA', name: '', label: 'Does Not Apply',
+                 section: 'Monthly Income in Local Currency (if employed) Does Not Apply',
+                 type: 'checkbox', tag: 'input' }, {}) || {}).key, 'monthlyIncomeNA');
+eq('a Postal Zone Does Not Apply stays unclaimed',
+   (M.matchKey({ id: P + 'cbexAPP_POSTAL_CD_NA', name: '', label: 'Does Not Apply',
+                 section: 'Home Address Postal Zone/ZIP Code Does Not Apply',
+                 type: 'checkbox', tag: 'input' }, {}) || {}).key, undefined);
+/* PASS THE SECTION. `key('tbxPPT_NUM')` with no section passed while the live
+   page left the box unfilled: the first fix used `not: /book/i`, and this
+   block's text contains "Passport Book Number", so the rule excluded itself.
+   A guard can only be tested by a context that actually contains the words. */
+eq('the passport number still fills its own box',
+   (M.matchKey({ id: P + 'tbxPPT_NUM', name: '',
+                 label: 'Passport/Travel Document Number', section: bookBlk,
+                 type: 'text', tag: 'input' }, {}) || {}).key, 'passportNumber');
+eq('...and by label alone, in the same block as the book number',
+   (M.matchKey({ id: P + 'tbxAnything2', name: '',
+                 label: 'Passport/Travel Document Number', section: bookBlk,
+                 type: 'text', tag: 'input' }, {}) || {}).key, 'passportNumber');
 eq('city where issued',    key('tbxPPT_ISSUED_IN_CITY'), 'passportIssuePlace');
 eq('state where issued',   key('tbxPPT_ISSUED_IN_STATE'), 'passportIssuedState');
 eq('issuance day',         key('ddlPPT_ISSUED_DTEDay'), 'passportIssued');

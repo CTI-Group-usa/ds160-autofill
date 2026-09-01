@@ -729,6 +729,39 @@ Apply": the passport has an expiry, so it stays unticked and
 `passportIssuedState` has no source - column AF is one free-text place - so it
 keeps an id-only rule and lands in `MISSING_FROM_INTAKE`.
 
+### Passport Book Number is a TICK, and the passport number must stay out of it
+The live page filled *Passport Book Number* with `E3291557` - the passport number
+copied into a second box. The filed sample reads **DOES NOT APPLY** there: an
+Indonesian passport has no separate book number, so the box is left empty and
+`passportBookNumberNA` ticks the checkbox beside it. Typing the passport number
+there swears to a document number that does not exist.
+
+The cause was a loose label - `/passport.*number/i` matches "Passport Book
+Number" perfectly well. The fix is an **anchored label** plus a lookahead on the
+id.
+
+**The first fix was `not: /book/i`, and it broke the rule outright** - `not` is
+tested against the section, this block's text contains "Passport Book Number", so
+`passportNumber` excluded **itself** and the box came back empty on the fixture.
+That is the second time in one day, after `vesselName`. It is the single easiest
+mistake to make in this file:
+
+> A `not` guard is for **other blocks**. Never name a neighbour in the same one.
+> Neighbours are separated by anchored labels, ids, ordering, or a lookahead.
+
+**The node test did not catch it, because it passed no `section`.** `key('tbxPPT_NUM')`
+was green the whole time. A guard can only be exercised by a context that
+actually contains the words it names - so a rule with `must` or `not` needs a
+test that passes the real block text, and the browser fixture is what finds the
+rest.
+
+### `LEAVE_BLANK` - boxes we empty on purpose
+Once the tick goes on, CEAC greys the text box out. Nothing matches it, so it
+would land in "Not recognised" on every Fill and bury the real gaps.
+`LEAVE_BLANK` in `matcher.js` names those boxes and `isLeftBlank()` routes them
+to **"Left blank on purpose"** alongside the does-not-apply checkboxes - quiet,
+but with the id, the same arrangement as `report.deliberate`.
+
 ## Address and Phone (added 2026-09-01, at the user's instruction)
 Seven answers, all constants except where noted. The live page came back with
 Country/Region on `- SELECT ONE -` and the mailing question unanswered, while

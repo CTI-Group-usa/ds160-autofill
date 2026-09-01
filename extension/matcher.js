@@ -141,7 +141,22 @@
 
     { key: 'passportType',       kind: 'text', ids: [/PPT_TYPE/i],
       labels: [/passport.*travel document type/i] },
-    { key: 'passportNumber',     kind: 'text', ids: [/PPT_NUM/i], labels: [/passport.*number/i] },
+    /* "Passport Book Number" satisfies a loose /passport.*number/ too, so this
+       rule copied the passport number into it on a live page - a document
+       number sworn to that does not exist. The box is left empty and the tick
+       beside it goes on (`passportBookNumberNA`); LEAVE_BLANK keeps it out of
+       the unrecognised list.
+
+       The fix is an ANCHORED LABEL plus a lookahead on the id - NOT a
+       `not: /book/i`, which was tried first and broke the rule outright: `not`
+       is tested against the section, and this block's text contains "Passport
+       Book Number", so passportNumber excluded ITSELF. Second time in one day
+       - a `not` guard is for other blocks, never for a neighbour. */
+    { key: 'passportNumber',     kind: 'text', ids: [/PPT_NUM(?!.*BOOK)/i],
+      labels: [/^passport\s*\/?\s*travel document number/i, /^passport number$/i] },
+    { key: 'passportBookNumberNA', kind: 'checkbox',
+      ids: [/PPT_BOOK.*NA/i, /PassportBookNum.*(NA|Unknown)/i],
+      labels: [/^does not apply/i], must: /book number/i },
     /* Two different countries: the authority that issued the document, and
        the place it was physically issued. Both Indonesia here. */
     { key: 'passportIssuedCountry',   kind: 'text', ids: [/PPT_ISSUED_CNTRY/i],
@@ -705,6 +720,17 @@
      or "No Expiration" (beside the passport expiry date). Classified on the label, never on an _NA suffix
      in the id: APP_SSN_NA and APP_TAX_ID_NA end that way too and are boxes
      we deliberately tick. */
+  /* Boxes deliberately left EMPTY because the "Does Not Apply" beside them is
+     ticked. CEAC greys them out, so a value would be lost or would contradict
+     the tick - leaving them alone is the correct action, not a gap, and
+     listing them as unrecognised buries the real ones. Checkboxes are excluded:
+     a "Does Not Apply" box is judged by isDoesNotApply() instead. */
+  const LEAVE_BLANK = [/PPT_BOOK_NUM/i, /PassportBookNum/i, /passport book number/i];
+  function isLeftBlank(ctl) {
+    if (String(ctl.type || '').toLowerCase() === 'checkbox') return false;
+    return LEAVE_BLANK.some(re => re.test([ctl.id, ctl.name, ctl.label].join(' ')));
+  }
+
   function isDoesNotApply(ctl) {
     if (String(ctl.type || '').toLowerCase() !== 'checkbox') return false;
     return /does not apply|do not know|no expiration/i.test(String(ctl.label || '')) ||
@@ -713,7 +739,7 @@
 
   const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, MONONYM_NA_KEYS,
                 ADDRESS_KEYS, addressHalf,
-                matchKey, datePart, splitDate, isDoesNotApply,
+                matchKey, datePart, splitDate, isDoesNotApply, isLeftBlank, LEAVE_BLANK,
                 isForbidden, nameHalf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160Matcher = api;

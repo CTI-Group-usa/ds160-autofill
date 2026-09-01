@@ -59,6 +59,11 @@
       label: 'Passport/Travel Document Type', def: 'REGULAR',
       why: 'An ordinary Indonesian passport. Change it for an official, diplomatic or ' +
            'emergency travel document.' },
+    { key: 'passportBookNumberNA', kind: 'checkbox', page: 'Passport',
+      label: 'Passport Book Number - tick "Does Not Apply"',
+      def: 'YES', why: 'An Indonesian passport has no separate book number, and the filed ' +
+                       'sample reads DOES NOT APPLY. It is NOT the passport number - ' +
+                       'copying that in there swears to a document number that does not exist.' },
     { key: 'passportIssuedCountry', kind: 'text', page: 'Passport',
       label: 'Country/Authority that issued the passport', def: 'INDONESIA',
       why: 'Imigrasi issues every passport CTI files with.' },
