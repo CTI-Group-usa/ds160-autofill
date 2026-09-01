@@ -133,16 +133,27 @@
 
     // Person/entity paying for the trip - a whole block appears once the
     // answer is COMPANY/ORGANIZATION.
+    /* Every one of these carries a label rule as well as an id, pinned to
+       the payer block. Six of them used to be id-only, on ids that were
+       guessed - if CEAC spells them differently the whole block fills
+       nothing and says nothing. "City" and "State/Province" are far too
+       common to match on their own, which is what `must` is for. */
     { key: 'payerCompany',      kind: 'text', ids: [/PAYER_NAME/i, /PayerCompany/i],
-      labels: [/company.*organization paying/i] },
-    { key: 'payerPhone',        kind: 'text', ids: [/PAYER_TEL/i, /PAYER_PHONE/i] },
-    { key: 'payerRelationship', kind: 'text', ids: [/PAYER_REL/i] },
+      labels: [/company.*organization paying/i], must: /pay/i },
+    { key: 'payerPhone',        kind: 'text', ids: [/PAYER_TEL/i, /PAYER_PHONE/i],
+      labels: [/^telephone number$/i], must: /pay/i },
+    { key: 'payerRelationship', kind: 'text', ids: [/PAYER_REL/i],
+      labels: [/^relationship to you$/i], must: /pay/i },
     { key: 'payerAddr1',        kind: 'text', ids: [/PAYER_ADDR_LN1/i],
-      labels: [/address of company.*paying/i] },
-    { key: 'payerCity',         kind: 'text', ids: [/PAYER_ADDR_CITY/i] },
-    { key: 'payerState',        kind: 'text', ids: [/PAYER_ADDR_STATE/i] },
-    { key: 'payerZip',          kind: 'text', ids: [/PAYER_ADDR_POSTAL/i] },
-    { key: 'payerCountry',      kind: 'text', ids: [/PAYER_ADDR_CNTRY/i] },
+      labels: [/address of company.*paying|^street address/i], must: /pay/i },
+    { key: 'payerCity',         kind: 'text', ids: [/PAYER_ADDR_CITY/i],
+      labels: [/^city$/i], must: /pay/i },
+    { key: 'payerState',        kind: 'text', ids: [/PAYER_ADDR_STATE/i],
+      labels: [/^state\/?province$|^state$/i], must: /pay/i },
+    { key: 'payerZip',          kind: 'text', ids: [/PAYER_ADDR_POSTAL/i],
+      labels: [/postal zone|zip code/i], must: /pay/i },
+    { key: 'payerCountry',      kind: 'text', ids: [/PAYER_ADDR_CNTRY/i],
+      labels: [/country\/?region/i], must: /pay/i },
     { key: 'travelCompanions',  kind: 'yesno', ids: [/OTHER_PERS_TRAVELING/i, /TravelingWith/i],
       labels: [/other persons traveling with you/i] },
 

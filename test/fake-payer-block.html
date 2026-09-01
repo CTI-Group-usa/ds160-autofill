@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fake DS-160 paying-company block</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:5px} fieldset{margin:10px 0}
+legend{font-weight:600}</style></head>
+<body>
+<!-- The block CEAC reveals once the payer is COMPANY/ORGANIZATION. Ids
+     here are deliberately NOT the ones the rules guess, so the match has
+     to come from the label plus the block heading. "City", "State" and
+     "Country/Region" also appear in the U.S. contact block below, which
+     is exactly the collision the block pinning has to survive. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Travel Information</h2>
+
+<fieldset>
+  <legend>Person/Entity Paying for Your Trip</legend>
+  <table>
+    <tr><td>Company/Organization Paying for the Trip</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPayerName"></td></tr>
+    <tr><td>Telephone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPayerTel"></td></tr>
+    <tr><td>Relationship to You</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnkPayerRel">
+              <option value="">- SELECT ONE -</option><option>EMPLOYER</option></select></td></tr>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPayerLn1"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPayerCity"></td></tr>
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPayerState"></td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPayerZip"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnkPayerCntry">
+              <option value="">- SELECT ONE -</option><option>UNITED KINGDOM</option></select></td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>U.S. Point of Contact Address</legend>
+  <table>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPocLn1"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUnkPocCity"></td></tr>
+    <tr><td>State</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUnkPocState">
+              <option value="">- SELECT ONE -</option><option>FLORIDA</option></select></td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

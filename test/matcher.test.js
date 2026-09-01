@@ -108,6 +108,23 @@ eq('home address never lands in the stay block',
    inBlock('Street Address (Line 1)', stayBlock) === 'homeAddress', false);
 eq('a city with no block is left alone', inBlock('City', ''), undefined);
 
+// The paying-company block repeats City / State / Country/Region, which
+// the U.S. contact block also uses. Six of these rules were id-only on
+// guessed ids, so the whole block would have filled nothing in silence.
+const payBlock = 'Person/Entity Paying for Your Trip Company/Organization Paying for the Trip ' +
+                 'Telephone Number Relationship to You Street Address (Line 1) City State/Province ' +
+                 'Postal Zone/ZIP Code Country/Region';
+eq('payer company',   inBlock('Company/Organization Paying for the Trip', payBlock), 'payerCompany');
+eq('payer telephone', inBlock('Telephone Number', payBlock), 'payerPhone');
+eq('payer relation',  inBlock('Relationship to You', payBlock), 'payerRelationship');
+eq('payer street',    inBlock('Street Address (Line 1)', payBlock), 'payerAddr1');
+eq('payer city',      inBlock('City', payBlock), 'payerCity');
+eq('payer state',     inBlock('State/Province', payBlock), 'payerState');
+eq('payer zip',       inBlock('Postal Zone/ZIP Code', payBlock), 'payerZip');
+eq('payer country',   inBlock('Country/Region', payBlock), 'payerCountry');
+eq('a bare "City" outside any block stays unmatched', inBlock('City', ''), undefined);
+eq('the contact block keeps its own city', inBlock('City', pocBlock), 'usPocCity');
+
 console.log('  (block pinning covered)');
 
 // -- overrides beat everything --------------------------------------
