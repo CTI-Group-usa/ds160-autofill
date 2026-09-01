@@ -342,10 +342,15 @@ carries which branch ran and is shown on the worksheet, and the pre-existing
 cruise-line fallback still catches a row where both blocks are empty. AU–AX are
 no longer read for this block.
 
-**A bare year is not a date.** Column BR holds a *year* of university entry, and
-feeding `2019` to the date parser produced `01-JAN-2019` — a day and month nobody
-stated, on a sworn form. `employerStart` is left empty for a bare year and
-`validate()` asks for the real date.
+**Column BR is headed "Year of College/University Entry" but holds full dates.**
+The live sheet shows `28 Aug 2015`, `06 Apr 2017`, `16 Jul 2019` — the parser
+takes those straight through, so the header is misleading, not the data. Tests
+pin that format.
+
+A row that really is year-only still gets caught: feeding `2019` to the date
+parser produced `01-JAN-2019`, a day and month nobody stated, on a sworn form.
+`employerStart` is left empty there. An empty cell is reported too — CEAC
+requires Start Date, so a blank one has to be visible rather than silent.
 
 ### The agency block is constants
 `usedAgency` = YES plus `agencyName`, `agencyContactSurname` /

@@ -409,10 +409,14 @@
       E('prevEmployerName', 'Marked as previously employed but no previous employer given');
     /* The Present Employer block is sourced on column AZ, so say which branch
        ran and what it could not supply. */
-    if (rec.prevEmployed !== 'YES' && rec.uniFrom && !rec.employerStart)
-      W('employerStart', 'Start Date comes from the year of university entry (' +
-                         clean(rec.uniFrom) + '), and CEAC wants a full date - ' +
-                         'enter the day and month by hand');
+    if (!rec.employerStart)
+      W('employerStart', clean(rec.uniFrom) && rec.prevEmployed !== 'YES'
+          /* Column BR is headed "Year of ... Entry" but holds full dates in
+             practice; this only fires on a row that really is year-only. */
+          ? 'Start Date reads "' + clean(rec.uniFrom) + '", which is not a full ' +
+            'date - CEAC wants DD-MMM-YYYY, so enter the day and month by hand'
+          : 'No Start Date for the present employer or school, which CEAC ' +
+            'requires: taken from ' + (rec._employerSource || 'the intake form'));
     if (!rec.employerAddress)
       W('employerAddress', 'No address for the present employer or school: ' +
                            'taken from ' + (rec._employerSource || 'the intake form'));

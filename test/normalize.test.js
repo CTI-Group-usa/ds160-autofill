@@ -132,11 +132,21 @@ eq('AZ no: no school phone', student.employerPhone, '');
 eq('AZ no: bare year is not a start date', student.employerStart, '');
 has('AZ no: asks for the full date', D.validate(student, { today: '2026-08-31' }).warnings,
     'employerStart', 'enter the day and month');
-// A real date in that column is still used.
-eq('AZ no: a full date is kept',
-   D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'No',
-                'Name of College/University': 'U', 'Year of College/University Entry': '15/08/2019' })
-     .employerStart, '15-AUG-2019');
+/* Column BR is headed "Year of College/University Entry" but holds full dates
+   in practice - the live sheet shows "28 Aug 2015", "06 Apr 2017". Those must
+   pass straight through; the year-only guard above is only a safety net. */
+const uniStart = v => D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'No',
+  'Name of College/University': 'U', 'Year of College/University Entry': v }).employerStart;
+eq('BR real format, Aug 2015', uniStart('28 Aug 2015'), '28-AUG-2015');
+eq('BR real format, Apr 2017', uniStart('06 Apr 2017'), '06-APR-2017');
+eq('BR real format, 1999',     uniStart('28 Aug 1999'), '28-AUG-1999');
+eq('BR slash format',          uniStart('15/08/2019'), '15-AUG-2019');
+// An empty cell leaves a CEAC-required field blank, so say so.
+eq('BR empty', uniStart(''), '');
+has('empty start date is reported',
+    D.validate(D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'No',
+                            'Name of College/University': 'U' }), { today: '2026-08-31' }).warnings,
+    'employerStart', 'which CEAC');
 
 // -- employer falls back to the cruise line ---------------------------
 const fb = D.toRecord({ 'Name': 'Sukarno', 'Cruise Line': 'Carnival', "Current Workplace's Name": '' });
