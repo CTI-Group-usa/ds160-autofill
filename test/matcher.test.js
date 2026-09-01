@@ -8,6 +8,19 @@ function eq(label, got, want) {
   if (got === want) pass++;
   else { fail++; console.log('FAIL ' + label + '\n  got  ' + JSON.stringify(got) + '\n  want ' + JSON.stringify(want)); }
 }
+/* A word-boundary escape in a rule was once written as a literal backspace
+   byte (0x08) instead of the two characters backslash-b. The regex then
+   matched nothing, silently: ssnNA and taxIdNA stopped matching by id and
+   survived only on their label fallback for weeks. Control characters have
+   no business in this file, so fail loudly on any of them. */
+const src = require('fs').readFileSync(__dirname + '/../extension/matcher.js', 'latin1');
+const ctrl = [];
+for (let i = 0; i < src.length; i++) {
+  const c = src.charCodeAt(i);
+  if (c < 32 && c !== 9 && c !== 10 && c !== 13) ctrl.push(c);
+}
+eq('matcher.js holds no control characters', ctrl.join(',') || 'none', 'none');
+
 const P = 'ctl00_SiteContentPlaceHolder_FormView1_';
 const key = (id, label) => (M.matchKey({ id: P + id, name: '', label: label || '' }, {}) || {}).key || null;
 
@@ -170,6 +183,26 @@ eq('driver licence spelled-out id', radio('rblUS_DRIVER_LICENSE_IND', DL), 'usDr
 eq('driver licence by curly-apostrophe label', radio('rblUnknownDL', DL), 'usDriverLicense');
 eq('driver licence by ascii-apostrophe label',
    radio('rblUnknownDL2', "Do you or did you ever hold a U.S. Driver's License?"), 'usDriverLicense');
+
+// -- U.S. Contact: Organization Name is a TICK, not a typed value -----
+// A filed DS-160 prints "DO NOT KNOW" in that box because the checkbox is
+// ticked. Typing the words in leaves the box unticked.
+const pocBlk = 'U.S. Point of Contact Organization Name Do Not Know Relationship to You';
+eq('org name text box',
+   (M.matchKey({ id: P + 'tbxUS_POC_ORGANIZATION', name: '', label: 'Organization Name',
+                 section: pocBlk, type: 'text', tag: 'input' }, {}) || {}).key, 'usPocOrg');
+eq('org name Do Not Know box',
+   (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
+                 section: pocBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key, 'usPocOrgNA');
+// The text rule must not claim the checkbox's id, and the checkbox rule must
+// not wander onto the other "Do Not Know" box on the Passport pages.
+eq('text rule stays off the _NA id',
+   (M.matchKey({ id: P + 'tbxUS_POC_ORGANIZATION_NA', name: '', label: 'Organization Name',
+                 section: pocBlk, type: 'text', tag: 'input' }, {}) || {}).key, undefined);
+eq('visa-number Do Not Know is not the org box',
+   (M.matchKey({ id: P + 'cbxPREV_VISA_FOIL_NUMBER_NA', name: '',
+                 label: 'Do Not Know Visa Number', section: 'Last visa issued Visa Number',
+                 type: 'checkbox', tag: 'input' }, {}) || {}).key, undefined);
 
 // -- Passport ---------------------------------------------------------
 // The live page reported ten controls unrecognised; six were the same _DTE

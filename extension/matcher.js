@@ -61,9 +61,9 @@
       labels: [/permanent resident of a country/i] },
     // Both boxes just say "Does Not Apply", so they are told apart by the
     // field name that questionText() picks up from the row above.
-    { key: 'ssnNA',   kind: 'checkbox', ids: [/APP_SSN_NA/i, /SSN.*_NA/i],
+    { key: 'ssnNA',   kind: 'checkbox', ids: [/APP_SSN_NA\b/i, /SSN.*_NA\b/i],
       labels: [/social security number/i] },
-    { key: 'taxIdNA', kind: 'checkbox', ids: [/APP_TAX_ID_NA/i, /TAX_ID.*_NA/i],
+    { key: 'taxIdNA', kind: 'checkbox', ids: [/APP_TAX_ID_NA\b/i, /TAX_ID.*_NA\b/i],
       labels: [/taxpayer id/i] },
     /* The live page left this unanswered. The label matches, so widen the
        id: CEAC also writes it without underscores (rblMailingAddrSame). */
@@ -120,8 +120,8 @@
        id is the only signal. CEAC names them in short PascalCase here
        (rblAddPhone), not the APP_*_IND style used elsewhere.
 
-       No  after the name: the ids end in _0 / _1 and an underscore IS a
-       word character, so  never matches there. */
+       No \b after the name: the ids end in _0 / _1 and an underscore IS a
+       word character, so \b never matches there. */
     { key: 'otherPhones5y', kind: 'yesno', ids: [/rblAddPhone/i, /ADD_PHONE_IND/i, /OTHER_PHONE/i],
       labels: [/other phone numbers in the last five years/i] },
     { key: 'otherEmails5y', kind: 'yesno', ids: [/rblAddEmail/i, /ADD_EMAIL_IND/i, /OTHER_EMAIL/i],
@@ -151,7 +151,7 @@
     { key: 'passportIssued',     kind: 'date', ids: [/PPT_ISSUED_?(DTE)?(Day|Month|Year)/i],
       labels: [/issuance date/i] },
     { key: 'passportExpiry',     kind: 'date', ids: [/PPT_EXPIRE_?(DTE)?(Day|Month|Year)/i],
-      labels: [/expiration date/i], not: /_NA/ },
+      labels: [/expiration date/i], not: /_NA\b/ },
 
     // Travel page. The visible labels here are clean and distinct, so
     // they carry more weight than the id guesses.
@@ -240,7 +240,14 @@
     // by guessing where the surname ends.
     { key: 'usPocSurname',      kind: 'text', ids: [/POC_SURNAME/i], labels: [/surnames of contact/i] },
     { key: 'usPocGiven',        kind: 'text', ids: [/POC_GIVEN_NAME/i], labels: [/given names of contact/i] },
-    { key: 'usPocOrg',          kind: 'text', ids: [/POC_ORGANIZATION/i], labels: [/organization name/i] },
+    /* The text box is left EMPTY and the box beside it ticked - see
+       usPocOrgNA in constants.js. `not: /_NA\b/` keeps the text rule off the
+       checkbox's id, and the checkbox rule is pinned to this row because
+       "Do Not Know" also appears beside the previous visa number. */
+    { key: 'usPocOrg',          kind: 'text', ids: [/POC_ORGANIZATION/i],
+      labels: [/organization name/i], not: /_NA\b/ },
+    { key: 'usPocOrgNA',        kind: 'checkbox', ids: [/POC_ORGANIZATION.*_NA/i],
+      labels: [/do not know/i], must: /organization/i },
     { key: 'usPocRelationship', kind: 'text', ids: [/POC_REL_TO_APP/i] },
     { key: 'usPocAddr1',        kind: 'text', ids: [/POC_ADDR_LN1/i],
       labels: [/street address \(line ?1\)|u\.?s\.? contact.*address/i], must: /contact/i },

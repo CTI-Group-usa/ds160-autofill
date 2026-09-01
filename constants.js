@@ -124,8 +124,15 @@
       label: 'Contact person - surnames', def: 'XAVIER' },
     { key: 'usPocGiven', kind: 'text', page: 'U.S. Contact',
       label: 'Contact person - given names', def: 'MARCOS' },
-    { key: 'usPocOrg', kind: 'text', page: 'U.S. Contact',
-      label: 'Organization name in the U.S.', def: 'DO NOT KNOW' },
+    /* NOT the text "DO NOT KNOW" in the Organization Name box. The printed
+       DS-160 renders those words BECAUSE the checkbox beside the box is
+       ticked - reading them off a filed sample and typing them back in was
+       the wrong inference, corrected by the user on 2026-09-01. Ticking the
+       box is also what disables the text box in CEAC. */
+    { key: 'usPocOrgNA', kind: 'checkbox', page: 'U.S. Contact',
+      label: 'Organization Name - tick "Do Not Know"',
+      def: 'YES', why: 'CTI files against a named contact person, not an organisation. ' +
+                       'Untick it and fill the box if the organisation is known.' },
     { key: 'usPocRelationship', kind: 'text', page: 'U.S. Contact',
       label: 'Relationship to you', def: 'BUSINESS ASSOCIATE' },
     { key: 'usPocAddr1', kind: 'text', page: 'U.S. Contact',

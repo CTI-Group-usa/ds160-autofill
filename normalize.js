@@ -215,7 +215,6 @@
   const MISSING_FROM_INTAKE = [
     ['vesselName',    'Vessel / ship name (DS-160 crew section)'],
     ['usPocName',     'US point of contact - name'],
-    ['usPocOrg',      'US point of contact - organisation'],
     ['usPocAddress',  'US point of contact - address'],
     ['usPocPhone',    'US point of contact - phone'],
     ['usPocEmail',    'US point of contact - email'],
@@ -444,7 +443,8 @@
       ['employerName','Principal / Employer'], ['arrivalDate','Intended Date of Arrival'],
       ['stayAddress','Address Where You Will Stay'], ['tripPayer','Person Paying for Trip'] ] },
     { title: 'U.S. Point of Contact', fields: [
-      ['usPocName','Contact Name'], ['usPocOrg','Organization'],
+      ['usPocName','Contact Name'],
+      ['usPocOrgNA','Organization Name - Do Not Know'],
       ['usPocAddress','Address'], ['usPocPhone','Phone'], ['usPocEmail','Email'] ] },
     { title: 'Family - Relatives', fields: [
       ['fatherName',"Father's Full Name"], ['fatherDob',"Father's Date of Birth"],

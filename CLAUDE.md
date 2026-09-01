@@ -101,8 +101,8 @@ the intake form never asks, plus (added 2026-08-31 from the filed sample, at the
 user's instruction) two whole blocks that describe the **cruise line, not the
 seafarer**: the *Person/Entity Paying for Your Trip* block (COMPANY/ORGANIZATION,
 CARNIVAL UK, its phone, EMPLOYER, and its Southampton address) and the *U.S.
-Contact* block (XAVIER / MARCOS, DO NOT KNOW, BUSINESS ASSOCIATE, the Plantation
-FL address, phone and email). Also `travelCompanions` = NO and the intended
+Contact* block (XAVIER / MARCOS, BUSINESS ASSOCIATE, the Plantation FL address,
+phone and email). Also `travelCompanions` = NO and the intended
 length of stay. These are Carnival UK values - a different principal means
 editing them in the panel, which is why they are text fields rather than
 hardcoded.
@@ -283,6 +283,18 @@ separate explanation for a refusal (column Y explains the cancellation). If a
 refusal column is ever added to the sheet, point `visaRefused` at it and delete
 the derivation.
 
+## A printed DS-160 is not a filled DS-160
+`usPocOrg` was set to the text **"DO NOT KNOW"** because those words appear in the
+Organization Name box of a filed sample. They appear there **because the checkbox
+beside the box is ticked** - CEAC renders the tick as that phrase when it prints.
+Typing the words in leaves the checkbox unticked and puts a literal string where
+an organisation name belongs. The user corrected it on 2026-09-01: `usPocOrg` has
+no constant now, and `usPocOrgNA` ticks the box instead.
+
+**Reading a value off a printed application is a guess about the control that
+produced it.** Where a printed field could be either a typed value or a ticked
+box, check the live page before turning it into a constant.
+
 ## Passport (added 2026-09-01, at the user's instruction)
 The live page reported **ten** controls unrecognised and showed a bare `2023` /
 `2033` with the day and month dropdowns empty.
@@ -383,11 +395,23 @@ the banner. `popup.js` now splits the list on `MISSING_FROM_INTAKE`: a calm grey
 note for what the intake form never collects, the red re-send banner only for the
 rest. `popup.html` loads `normalize.js` for that list.
 
-### `` does not work after a CEAC id fragment
-`/rblAddPhone/i` never matches `..._rblAddPhone_0`: the ids end in `_0` / `_1`
+### `\b` does not work after a CEAC id fragment
+`/rblAddPhone\b/i` never matches `..._rblAddPhone_0`: the ids end in `_0` / `_1`
 and an underscore **is** a word character, so there is no boundary there. Three
 rules were written that way and still came back "Not recognised" from the live
 page. Use a bare fragment, or `(?=_|$)` if an anchor is genuinely needed.
+
+### A word-boundary escape was once a literal backspace byte
+Four rules in `matcher.js` held **0x08** where they should have held the two
+characters backslash-b — written that way by an earlier session, because this
+machine's shell strips backslashes out of a heredoc even when the delimiter is
+quoted, so the escape reached Python as a control character. The regexes then
+matched nothing, silently: `ssnNA` and `taxIdNA` had stopped matching by id and
+were surviving on their label fallback alone.
+
+`matcher.test.js` now fails on **any** control character in `matcher.js`. When
+editing rules from a shell, keep backslashes out of the command entirely —
+build them from character codes, or use the file-editing tools.
 
 ### What the live page corrected (2026-09-01)
 Running it against the real CEAC page found four things the fixture had not:
