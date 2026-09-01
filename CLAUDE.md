@@ -258,6 +258,30 @@ rather than guessing.
 For `LESS THAN 24 HOURS` the count is cleared: CEAC greys the number box out for
 that option, so writing there would fail silently or contradict the dropdown.
 
+### What the live page corrected (2026-09-01)
+Running it against the real CEAC page found four things the fixture had not:
+
+1. **`prevStayUnit` skipped as "already has a value".** The Length of Stay
+   placeholder is `<option>- SELECT ONE -</option>` with **no `value=""`**, so
+   `el.value` returns its own text and the field read as answered. `hasRealValue()`
+   now treats a placeholder selection as empty — a genuine prior selection still
+   skips, so an agent's own choice is never overwritten.
+2. **`PREV_VISA_ISSUED_DTEDay` did not match.** CEAC is inconsistent about the
+   `_DTE` infix: the visit block is `PREV_US_VISIT_DTEDay`, the visa date
+   `PREV_VISA_ISSUED_DTEDay`. The rule accepts both, so Date Last Visa Was Issued
+   was never being filled at all.
+3. **"Do Not Know" beside the visa number** was reported as a gap.
+   `isDoesNotApply()` now reads that wording too — but on the **label only**,
+   never on an `_NA` id suffix: `APP_SSN_NA` and `APP_TAX_ID_NA` end that way and
+   are boxes we deliberately tick.
+4. **Forbidden controls were listed as "not recognised".** `ddlLanguage` was
+   already in `FORBIDDEN`; the report just did not distinguish "excluded on
+   purpose" from "no rule for it", which buried the real gaps.
+
+`test/fake-prev-us-travel.html` now carries the live page's ids and reproduces
+its label for the Do-Not-Know box verbatim
+(`Do Not Know Visa Number Do Not Know`), so these do not regress.
+
 **Still not implemented from that sample:** the Crew Visa manning-agency block
 (constant: CTI INDONESIA / OKTAVIANIA, DORKAS / JL. HANG TUAH NO.14B RENON,
 DENPASAR, BALI 80239 / 085333735407) and roughly 25 further constants

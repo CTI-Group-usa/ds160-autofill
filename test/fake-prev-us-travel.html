@@ -26,6 +26,8 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
      `prevStayUnit` / `prevStayLength` come from intake columns Q and R.
      For LESS THAN 24 HOURS the number box is left empty, because CEAC
      disables it for that option. -->
+<div>Select Tooltip Language
+  <select id="ctl00_ddlLanguage"><option>English</option><option>Bahasa Indonesia</option></select></div>
 <h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Previous U.S. Travel Information</h2>
 
 <table>
@@ -55,8 +57,10 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
     </td></tr>
     <tr><td>Length of Stay</td><td>
       <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPREV_US_VISIT_ctl00_tbxPREV_US_VISIT_LOS" size="3">
+      <!-- No value="" on the placeholder: el.value then returns "- SELECT ONE -"
+           and the field read as already answered. -->
       <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPREV_US_VISIT_ctl00_ddlPREV_US_VISIT_LOS_CD">
-        <option value="">-</option><option>YEAR(S)</option><option>MONTH(S)</option>
+        <option>- SELECT ONE -</option><option>YEAR(S)</option><option>MONTH(S)</option>
         <option>WEEK(S)</option><option>DAY(S)</option><option>LESS THAN 24 HOURS</option></select>
     </td></tr>
   </table>
@@ -90,14 +94,21 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
   <legend>Last visa issued</legend>
   <table>
     <tr><td>Date Last Visa Was Issued</td><td>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPREV_VISA_ISSUEDDay">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPREV_VISA_ISSUED_DTEDay">
         <option value="">-</option><option>15</option></select>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPREV_VISA_ISSUEDMonth">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPREV_VISA_ISSUED_DTEMonth">
         <option value="">-</option><option value="SEP">SEP</option></select>
-      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPREV_VISA_ISSUEDYear" size="4">
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPREV_VISA_ISSUED_DTEYear" size="4">
     </td></tr>
     <tr><td>Visa Number</td>
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPREV_VISA_FOIL_NUMBER"></td></tr>
+    <!-- Reproduces the label the live page reports for this box,
+         "Do Not Know Visa Number Do Not Know": deriveLabel() takes the
+         label[for], questionText() the other cell of its own row. -->
+    <tr><td>Visa Number Do Not Know</td>
+        <td><input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxPREV_VISA_FOIL_NUMBER_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxPREV_VISA_FOIL_NUMBER_NA">Do Not Know</label>
+        </td></tr>
   </table>
 </fieldset>
 

@@ -110,6 +110,28 @@ eq('prev visit stay unit',
 eq('prev visit stay number',
    (M.matchKey({ id: P + PREV + 'tbxPREV_US_VISIT_LOS', name: '',
                  label: 'Length of Stay', type: 'text', tag: 'input' }, {}) || {}).key, 'prevStayLength');
+// CEAC is inconsistent about the _DTE infix: the visit block is
+// PREV_US_VISIT_DTEDay, the visa date PREV_VISA_ISSUED_DTEDay. The live
+// page reported all three parts of the second as unrecognised.
+eq('visa issued _DTE day',   key('ddlPREV_VISA_ISSUED_DTEDay'), 'lastVisaIssued');
+eq('visa issued _DTE month', key('ddlPREV_VISA_ISSUED_DTEMonth'), 'lastVisaIssued');
+eq('visa issued _DTE year',  key('tbxPREV_VISA_ISSUED_DTEYear'), 'lastVisaIssued');
+eq('visa issued no infix',   key('ddlPREV_VISA_ISSUEDDay'), 'lastVisaIssued');
+eq('visa issued year part',
+   M.matchKey({ id: P + 'tbxPREV_VISA_ISSUED_DTEYear', name: '', label: '' }, {}).part, 'year');
+
+// "Do Not Know" beside the visa number is the same thing as "Does Not
+// Apply": left unticked on purpose, so not a gap in the rules.
+eq('do-not-know is not a gap',
+   M.isDoesNotApply({ type: 'checkbox', id: P + 'cbxPREV_VISA_FOIL_NUMBER_NA',
+                      label: 'Do Not Know Visa Number Do Not Know' }), true);
+eq('a real checkbox still counts',
+   M.isDoesNotApply({ type: 'checkbox', id: P + 'cbxSomething', label: 'I agree' }), false);
+// Not on the _NA suffix: SSN and Tax ID end that way and we tick those.
+eq('_NA suffix alone is not enough',
+   M.isDoesNotApply({ type: 'checkbox', id: P + 'cbexAPP_TAX_ID_NA', label: 'Taxpayer ID' }), false);
+eq('tooltip language forbidden', M.isForbidden('ctl00_ddlLanguage'), true);
+
 // The trip's intended stay must not leak into the previous-visit boxes.
 eq('intended stay stays off the prev block',
    (M.matchKey({ id: P + PREV + 'ddlPREV_US_VISIT_LOS_CD', name: '',

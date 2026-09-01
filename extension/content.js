@@ -162,6 +162,23 @@
     return SET;
   }
 
+  /* "Already has a value" must mean somebody answered it, not that the
+     browser is showing the first option. A <select> with nothing chosen
+     still reports a value, and CEAC's placeholder is not always
+     value="" - "- SELECT ONE -" can carry its own text as the value.
+     Reading that as an answer skipped the Length of Stay dropdown on the
+     live page. A real prior selection still skips, so an agent's own
+     choice is never overwritten. */
+  function hasRealValue(c) {
+    const v = String(c.el.value || '').trim();
+    if (!v) return false;
+    if (String(c.tag || '').toLowerCase() !== 'select') return true;
+    const opt = c.el.selectedOptions && c.el.selectedOptions[0];
+    const text = String(opt ? opt.text : '').trim().toUpperCase()
+                   .replace(/^-+|-+$/g, '').trim();
+    return text !== '' && !/^SELECT\b/.test(text);
+  }
+
   function setSelect(el, value) {
     const want = String(value).trim().toUpperCase();
     if (!want) return NOMATCH;
@@ -317,7 +334,11 @@
 
       const m = M.matchKey(c, overrides);
       if (!m) {
-        if (c.type !== 'radio' && !M.isDoesNotApply(c)) {
+        /* Forbidden controls are excluded on purpose, not gaps in the
+           rules. Listing them as unrecognised is noise that hides the
+           real gaps - the tooltip language picker was showing up as one. */
+        if (c.type !== 'radio' && !M.isDoesNotApply(c) &&
+            !M.isForbidden(c.id) && !M.isForbidden(c.name)) {
           report.unmatched.push({ id: c.id, label: c.label, tag: c.tag });
         }
         continue;
@@ -325,7 +346,7 @@
       const value = valueFor(rec, m.key, c);
       if (!value) { report.skipped.push({ id: c.id, key: m.key, why: 'no value in record' }); continue; }
       if (!opts.overwrite && c.type !== 'radio' && c.type !== 'checkbox' &&
-          c.el.value && c.el.value.trim() && !c.el.hasAttribute(MARK)) {
+          hasRealValue(c) && !c.el.hasAttribute(MARK)) {
         report.skipped.push({ id: c.id, key: m.key, why: 'already has a value' });
         continue;
       }

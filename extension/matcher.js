@@ -238,7 +238,11 @@
       labels: [/^length of stay/i], must: /PREV|previous/i },
     { key: 'usDriverLicense',kind: 'yesno', ids: [/US_DRIVER_LICENSE_IND/i], labels: [/driver.?s licen[cs]e/i] },
     { key: 'lastVisaNumber', kind: 'text',  ids: [/PREV_VISA_FOIL_NUMBER/i], labels: [/visa number/i] },
-    { key: 'lastVisaIssued', kind: 'date',  ids: [/PREV_VISA_ISSUED(Day|Month|Year)/i], labels: [/date last visa was issued/i] },
+    /* CEAC is not consistent about the _DTE infix: the visit block uses
+       PREV_US_VISIT_DTEDay, this one PREV_VISA_ISSUED_DTEDay. Accept both -
+       the live page reported all three parts as unrecognised. */
+    { key: 'lastVisaIssued', kind: 'date',  ids: [/PREV_VISA_ISSUED_?(DTE)?(Day|Month|Year)/i],
+      labels: [/date last visa was issued/i] },
     { key: 'sameVisaType',   kind: 'yesno', ids: [/PREV_VISA_SAME_TYPE_IND/i], labels: [/same type of visa/i] },
     { key: 'visaLostStolen', kind: 'yesno', ids: [/PREV_VISA_LOST_IND/i], labels: [/lost or stolen/i] },
     { key: 'lostDetails',    kind: 'text',  ids: [/PREV_VISA_LOST_EXPL/i], labels: [/explain.*lost/i] },
@@ -335,10 +339,16 @@
 
   /* A "Does Not Apply" checkbox that no rule claims is being left
      unticked on purpose - we have a real value for the field beside it.
-     Reporting it as unrecognised suggests a gap that is not there. */
+     Reporting it as unrecognised suggests a gap that is not there.
+
+     CEAC words some of them "Do Not Know" instead - the one beside the
+     previous visa number. Classified on the label, never on an _NA suffix
+     in the id: APP_SSN_NA and APP_TAX_ID_NA end that way too and are boxes
+     we deliberately tick. */
   function isDoesNotApply(ctl) {
     if (String(ctl.type || '').toLowerCase() !== 'checkbox') return false;
-    return /does not apply/i.test(String(ctl.label || '')) || /^.*cbxDNA/i.test(String(ctl.id || ''));
+    return /does not apply|do not know/i.test(String(ctl.label || '')) ||
+           /cbxDNA/i.test(String(ctl.id || ''));
   }
 
   const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, matchKey, datePart, splitDate, isDoesNotApply,
