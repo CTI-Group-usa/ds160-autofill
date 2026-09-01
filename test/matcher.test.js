@@ -501,6 +501,43 @@ eq('half FNU token surname', M.nameHalf('tbxFathersSurname', 'SUROSO FNU'), 'SUR
 eq('half FNU token given',   M.nameHalf('tbxFathersGivenName', 'SUROSO FNU'), 'FNU');
 eq('half FNU leading',       M.nameHalf('tbxFathersSurname', 'FNU SUROSO'), 'SUROSO');
 eq('half FNU alone',         M.nameHalf('tbxFathersSurname', 'FNU'), 'FNU');
+/* A relative with one name is Surnames + a ticked "Do Not Know", not the
+   literal FNU - CEAC prints those letters because the box is ticked. The
+   applicant's own Given Names on Personal 1 has no such box, so it keeps FNU. */
+eq('parent mononym surname',
+   M.nameHalf('tbxFathersSurname', 'Suroso', { blankGiven: true }), 'SUROSO');
+eq('parent mononym given left empty',
+   M.nameHalf('tbxFathersGivenName', 'Suroso', { blankGiven: true }), '');
+eq('parent mononym given empty from a trailing FNU',
+   M.nameHalf('tbxFathersGivenName', 'SUROSO FNU', { blankGiven: true }), '');
+eq('parent with two names is untouched',
+   M.nameHalf('tbxMothersGivenName', 'Endang Aris Tantini', { blankGiven: true }), 'ENDANG ARIS');
+eq('applicant given names keep FNU',
+   M.nameHalf('tbxAPP_GIVEN_NAME', 'Sukarno'), 'FNU');
+eq('only the parents opt in', M.MONONYM_NA_KEYS.join(','), 'fatherName,motherName');
+// The tick boxes themselves. The live ids are not known yet, so both
+// plausible CEAC spellings are accepted.
+const dnk = id =>
+  (M.matchKey({ id: P + id, name: '', label: 'Do Not Know',
+                type: 'checkbox', tag: 'input' }, {}) || {}).key;
+eq('father given Do Not Know, Unknown suffix', dnk('cbxFathersGivenNameUnknown'), 'fatherGivenNA');
+eq('father given Do Not Know, _NA suffix',     dnk('cbexFATHER_GIVEN_NAME_NA'), 'fatherGivenNA');
+eq('mother given Do Not Know',                 dnk('cbxMothersGivenNameUnknown'), 'motherGivenNA');
+// The SURNAME box is never ticked - we always have that half.
+eq('father surname Do Not Know stays unclaimed', dnk('cbxFathersSurnameUnknown'), undefined);
+/* "Surnames" and "Given Names" label the relatives' boxes too, and the
+   applicant's rules sit first in the list. The id pass saves it today, but a
+   renamed CEAC control would let the label pass write the SEAFARER's own name
+   into his father's box - so both rules carry the relative guard. */
+eq('applicant given names stay off a relative box',
+   (M.matchKey({ id: P + 'tbxFathersSomethingNew', name: '', label: 'Given Names',
+                 type: 'text', tag: 'input' }, {}) || {}).key, undefined);
+eq('applicant surname stays off a relative box',
+   (M.matchKey({ id: P + 'tbxSpouseSomethingNew', name: '', label: 'Surnames',
+                 type: 'text', tag: 'input' }, {}) || {}).key, undefined);
+eq('the applicant own boxes still match by label',
+   (M.matchKey({ id: P + 'tbxUnknownApplicantBox', name: '', label: 'Given Names',
+                 type: 'text', tag: 'input' }, {}) || {}).key, 'givenNames');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

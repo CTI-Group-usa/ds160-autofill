@@ -338,15 +338,39 @@ thing keeping it out of the parents' boxes is its
 without it the seafarer's own birthday goes into both parents' fields. A test
 asserts it.
 
-### "FNU" is a placeholder, not a name
+### "FNU" is a placeholder, not a name — and for a relative it is a TICK
 The live page filled the father as **Surnames FNU / Given Names SUROSO** —
 exactly backwards. The intake value was `SUROSO FNU`, and the splitter took the
 last token as the surname. `FNU` is the DS-160 placeholder for a name that does
 not exist; it arrives in already-processed intake data and is never a name
-itself. `splitName()` and `nameHalf()` now drop it before splitting, so
-`SUROSO FNU`, `FNU SUROSO` and `Suroso` all give Surnames SUROSO / Given Names
-FNU. A value of `FNU` alone is left as it is — there is no name in there to
-recover.
+itself. `splitName()` and `nameHalf()` drop it before splitting.
+
+Then the user corrected the other half: for a **relative**, a single name is
+**Surnames + a ticked "Do Not Know" beside Given Names** — not the letters
+`FNU` typed in. Third time the same trap: CEAC prints `FNU` there *because* the
+box is ticked, exactly as it prints `DO NOT KNOW` for the U.S. contact
+organisation.
+
+`MONONYM_NA_KEYS` in `matcher.js` lists the keys that opt in — `fatherName` and
+`motherName` only. For those, `nameHalf()` returns `''` for the given half of a
+mononym and `normalize.js` derives `fatherGivenNA` / `motherGivenNA` to tick the
+box. **The applicant's own Given Names on Personal 1 has no such checkbox, so
+`surname` / `givenNames` keep FNU** — do not "fix" that to match.
+
+The Surnames Do-Not-Know box is never ticked: that half always has a value.
+
+The live ids for these six boxes are still unknown — they are silenced by
+`isDoesNotApply()` and now appear under "Left blank on purpose" with their ids,
+so one Fill report settles it. Both plausible spellings (`...GivenNameUnknown`
+and `..._GIVEN_NAME_NA`) are accepted meanwhile.
+
+### The applicant's name rules carry the relative guard
+"Surnames" and "Given Names" label the relatives' boxes too, and `surname` /
+`givenNames` sit first in `RULES`. The id pass saves it today — `FathersSurname`
+matches `fatherName` before any label is tried — but a renamed CEAC control would
+let the label pass write the **seafarer's own name into his father's box**. Both
+rules now carry `not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR/i`, the
+same guard and the same reason as `dob`.
 
 ### Never put markdown backticks through a double-quoted shell command
 Writing this very section with `python -c "…"` let bash evaluate every

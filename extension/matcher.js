@@ -30,8 +30,15 @@
      labels: regexes tried against the nearest visible label text
      kind:   text | date | yesno   (date/yesno need special handling) */
   const RULES = [
-    { key: 'surname',        kind: 'text',  ids: [/APP_SURNAME/i], labels: [/^surnames/i] },
-    { key: 'givenNames',     kind: 'text',  ids: [/APP_GIVEN_NAME/i], labels: [/^given names/i] },
+    /* "Surnames" and "Given Names" are the labels on the relatives' boxes too,
+       and these rules sit first. The id pass saves them today - FathersSurname
+       matches `fatherName` before any label is tried - but if CEAC renames one
+       of those controls the label pass would write the SEAFARER's own name into
+       his father's box. Same guard, and same reason, as `dob` below. */
+    { key: 'surname',        kind: 'text',  ids: [/APP_SURNAME/i], labels: [/^surnames/i],
+      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR/i },
+    { key: 'givenNames',     kind: 'text',  ids: [/APP_GIVEN_NAME/i], labels: [/^given names/i],
+      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR/i },
     { key: 'gender',         kind: 'text',  ids: [/APP_GENDER/i], labels: [/^sex$/i] },
     { key: 'maritalStatus',  kind: 'text',  ids: [/APP_MARITAL_STATUS/i], labels: [/marital status/i] },
     // Relatives get their own DOB controls with the same suffix, so the
@@ -278,13 +285,21 @@
        which is the only reason the applicant's own birthday was not written
        into them. */
     { key: 'fatherName',   kind: 'text', ids: [/FATHERS?_?(SURNAME|GIVEN_?NAME)/i],
-      labels: [/father.*(surname|given name)/i] },
+      labels: [/father.*(surname|given name)/i], not: /UNK|_NA\b/i },
+    /* Ticked instead of typing "FNU" when the parent has a single name. The
+       live id for these boxes is not known yet - they are silenced from the
+       report by isDoesNotApply(), and now appear under "Left blank on
+       purpose" with their ids, so one Fill report will settle it. */
+    { key: 'fatherGivenNA', kind: 'checkbox',
+      ids: [/FATHERS?_?GIVEN_?NAME.*(UNK|_NA)/i, /FATHER.*GIVEN.*(UNK|_NA)/i] },
     { key: 'fatherDob',    kind: 'date', ids: [/FATHERS?_?DOB(Day|Month|Year)/i],
       labels: [/father.*date of birth/i] },
     { key: 'fatherInUs',   kind: 'yesno', ids: [/FATHERS?_?LIVE_IN_US/i],
       labels: [/is your father in the u\.?s/i] },
     { key: 'motherName',   kind: 'text', ids: [/MOTHERS?_?(SURNAME|GIVEN_?NAME)/i],
-      labels: [/mother.*(surname|given name)/i] },
+      labels: [/mother.*(surname|given name)/i], not: /UNK|_NA\b/i },
+    { key: 'motherGivenNA', kind: 'checkbox',
+      ids: [/MOTHERS?_?GIVEN_?NAME.*(UNK|_NA)/i, /MOTHER.*GIVEN.*(UNK|_NA)/i] },
     { key: 'motherDob',    kind: 'date', ids: [/MOTHERS?_?DOB(Day|Month|Year)/i],
       labels: [/mother.*date of birth/i] },
     { key: 'motherInUs',   kind: 'yesno', ids: [/MOTHERS?_?LIVE_IN_US/i],
@@ -466,7 +481,17 @@
     return isLine2 ? s.slice(cut).trim() : s.slice(0, cut).trim();
   }
 
-  function nameHalf(id, value) {
+  /* Relatives' name boxes each sit beside a "Do Not Know" checkbox, so a
+     single name is filled as Surnames + a ticked box - NOT the literal
+     "FNU", which is only what CEAC prints when that box is ticked. Same
+     trap as the U.S. contact Organization Name.
+
+     The applicant's own name on Personal 1 has no such checkbox, so
+     `surname` / `givenNames` keep FNU. Only these keys blank the given half
+     and let the NA flag do the talking. */
+  const MONONYM_NA_KEYS = ['fatherName', 'motherName'];
+
+  function nameHalf(id, value, opts) {
     const isSur = /SURNAME/i.test(id), isGiven = /GIVEN/i.test(id);
     if (!isSur && !isGiven) return value;
     let t = String(value || '').toUpperCase().replace(/[^A-Z' -]/g, ' ').split(/\s+/).filter(Boolean);
@@ -476,7 +501,10 @@
        "SUROSO FNU". Same rule as splitName() in normalize.js. */
     if (t.length > 1) t = t.filter(x => x !== 'FNU');
     if (!t.length) return '';
-    if (t.length === 1) return isSur ? t[0] : 'FNU';
+    if (t.length === 1) {
+      if (isSur) return t[0];
+      return (opts && opts.blankGiven) ? '' : 'FNU';
+    }
     return isSur ? t[t.length - 1] : t.slice(0, -1).join(' ');
   }
 
@@ -494,7 +522,8 @@
            /cbxDNA/i.test(String(ctl.id || ''));
   }
 
-  const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, ADDRESS_KEYS, addressHalf,
+  const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, MONONYM_NA_KEYS,
+                ADDRESS_KEYS, addressHalf,
                 matchKey, datePart, splitDate, isDoesNotApply,
                 isForbidden, nameHalf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

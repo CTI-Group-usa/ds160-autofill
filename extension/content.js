@@ -314,7 +314,12 @@
       if (!part) return v;
       return parts[part];
     }
-    if (M.FULLNAME_KEYS.indexOf(key) >= 0) v = M.nameHalf(ctl.id || ctl.name, v);
+    if (M.FULLNAME_KEYS.indexOf(key) >= 0) {
+      /* A relative with one name gets Surnames + a ticked Do Not Know box,
+         so the given half is left EMPTY rather than filled with FNU. */
+      v = M.nameHalf(ctl.id || ctl.name, v,
+                     { blankGiven: (M.MONONYM_NA_KEYS || []).indexOf(key) >= 0 });
+    }
     if (M.ADDRESS_KEYS.indexOf(key) >= 0) {
       /* Split on Line 1's own maxlength, whichever box we are filling, so
          the two halves always meet. Writing past maxlength would let the

@@ -278,6 +278,13 @@
        constant. CEAC only asks it inside the previous-visa block, which is
        the Yes branch anyway. */
     rec.tenPrinted = rec.priorUsVisa === 'YES' ? 'YES' : 'NO';
+
+    /* A parent with one name is filled as Surnames + a ticked "Do Not Know"
+       beside Given Names. Typing the literal "FNU" there was wrong: CEAC
+       prints those letters BECAUSE the box is ticked. The applicant's own
+       Given Names on Personal 1 has no such box, so `givenNames` keeps FNU. */
+    rec.fatherGivenNA = splitName(rec.fatherName).mononym ? 'YES' : '';
+    rec.motherGivenNA = splitName(rec.motherName).mononym ? 'YES' : '';
     /* CEAC greys the number box out for this option, so writing a count
        there would either fail silently or contradict the dropdown. */
     if (rec.prevStayUnit === 'LESS THAN 24 HOURS') rec.prevStayLength = '';
@@ -455,6 +462,7 @@
       ['usPocAddress','Address'], ['usPocPhone','Phone'], ['usPocEmail','Email'] ] },
     { title: 'Family - Relatives', fields: [
       ['fatherName',"Father's Full Name"], ['fatherDob',"Father's Date of Birth"],
+      ['fatherGivenNA','Father given names - Do Not Know'], ['motherGivenNA','Mother given names - Do Not Know'],
       ['fatherInUs','Is your father in the U.S.?'], ['motherInUs','Is your mother in the U.S.?'],
       ['motherName',"Mother's Full Name"], ['motherDob',"Mother's Date of Birth"] ] },
     { title: 'Family - Spouse', fields: [
