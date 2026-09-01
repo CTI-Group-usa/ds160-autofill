@@ -171,6 +171,53 @@ eq('driver licence by curly-apostrophe label', radio('rblUnknownDL', DL), 'usDri
 eq('driver licence by ascii-apostrophe label',
    radio('rblUnknownDL2', "Do you or did you ever hold a U.S. Driver's License?"), 'usDriverLicense');
 
+// -- Passport ---------------------------------------------------------
+// The live page reported ten controls unrecognised; six were the same _DTE
+// infix that hid PREV_VISA_ISSUED, so only the Year boxes were being filled
+// and the page showed a bare 2023 / 2033.
+eq('passport type',        key('ddlPPT_TYPE'), 'passportType');
+eq('issuing authority',    key('ddlPPT_ISSUED_CNTRY'), 'passportIssuedCountry');
+eq('city where issued',    key('tbxPPT_ISSUED_IN_CITY'), 'passportIssuePlace');
+eq('state where issued',   key('tbxPPT_ISSUED_IN_STATE'), 'passportIssuedState');
+eq('issuance day',         key('ddlPPT_ISSUED_DTEDay'), 'passportIssued');
+eq('issuance month',       key('ddlPPT_ISSUED_DTEMonth'), 'passportIssued');
+eq('issuance year',        key('tbxPPT_ISSUED_DTEYear'), 'passportIssued');
+eq('issuance no infix',    key('ddlPPT_ISSUEDDay'), 'passportIssued');
+eq('expiry day',           key('ddlPPT_EXPIRE_DTEDay'), 'passportExpiry');
+eq('expiry year part',
+   M.matchKey({ id: P + 'tbxPPT_EXPIRE_DTEYear', name: '', label: '' }, {}).part, 'year');
+// The two country dropdowns on this page are different questions, and
+// neither may take the home address country.
+const pptBlk = 'Passport/Travel Document Information City where Issued State/Province ' +
+               'Country/Region Issuance Date';
+const inPpt = (label, id) =>
+  (M.matchKey({ id: P + (id || 'ddlUnknown'), name: '', label, section: pptBlk,
+                tag: 'select' }, {}) || {}).key;
+eq('country where issued, by id',    inPpt('Country/Region', 'ddlPPT_ISSUED_IN_CNTRY'),
+   'passportIssuedInCountry');
+eq('country where issued, by label', inPpt('Country/Region'), 'passportIssuedInCountry');
+eq('home country is not this one',
+   (M.matchKey({ id: P + 'ddlAPP_ADDR_CNTRY', name: '', label: 'Country/Region',
+                 section: 'Home Address Street Address City', tag: 'select' }, {}) || {}).key,
+   'homeCountry');
+// "No Expiration" is the same kind of box as "Does Not Apply": we have an
+// expiry date, so it is left unticked on purpose and is not a gap.
+eq('no-expiration is not a gap',
+   M.isDoesNotApply({ type: 'checkbox', id: P + 'cbxPPT_EXPIRE_NA',
+                      label: 'No Expiration Expiration Date 01 02 03' }), true);
+eq('expiry rule does not claim the checkbox',
+   (M.matchKey({ id: P + 'cbxPPT_EXPIRE_NA', name: '', label: 'No Expiration',
+                 type: 'checkbox', tag: 'input' }, {}) || {}).key, undefined);
+// Column V asks about the visa AND the passport, so it answers both. The
+// passport control is LOST_PPT_IND and arrives with no question text.
+eq('lost passport by id',
+   (M.matchKey({ id: P + 'rblLOST_PPT_IND_0', name: '', label: 'Yes',
+                 type: 'radio', tag: 'input' }, {}) || {}).key, 'visaLostStolen');
+eq('lost visa still matches',
+   (M.matchKey({ id: P + 'rblPREV_VISA_LOST_IND_0', name: '',
+                 label: 'Yes Have you ever lost a visa or had one stolen?',
+                 type: 'radio', tag: 'input' }, {}) || {}).key, 'visaLostStolen');
+
 // -- Address and Phone ------------------------------------------------
 const homeBlk = 'Home Address Street Address (Line 1) City State/Province Postal Zone Country/Region';
 const inHome = (label, id) =>

@@ -283,6 +283,43 @@ separate explanation for a refusal (column Y explains the cancellation). If a
 refusal column is ever added to the sheet, point `visaRefused` at it and delete
 the derivation.
 
+## Passport (added 2026-09-01, at the user's instruction)
+The live page reported **ten** controls unrecognised and showed a bare `2023` /
+`2033` with the day and month dropdowns empty.
+
+| Answer | Key | Source |
+|---|---|---|
+| Passport/Travel Document Type | `passportType` | constant REGULAR |
+| Country/Authority that Issued | `passportIssuedCountry` | constant INDONESIA |
+| Country/Region where Issued | `passportIssuedInCountry` | constant INDONESIA |
+| Issuance Date | `passportIssued` | column AG |
+| Expiration Date | `passportExpiry` | column AH |
+| Ever lost a passport or had one stolen? | `visaLostStolen` | column V |
+
+**Six of the ten were the `_DTE` infix again** - the ids are `PPT_ISSUED_DTEDay`
+and `PPT_EXPIRE_DTEDay`, and the rules wanted `PPT_ISSUEDDay`. Only the Year
+boxes were matching, by label, which is exactly why the years alone appeared on
+the form. This is the third page where that infix has bitten; **check the live id
+before trusting a `(Day|Month|Year)` pattern.**
+
+**Column V asks about the visa AND the passport** (*"Has your U.S. Visa /
+passport ever been lost or stolen?"*), so it legitimately answers both this
+question and the Previous U.S. Travel one - unlike column X, this is not a
+conflation. The passport control is `LOST_PPT_IND` and arrives with **no question
+text**, so the id carries it alone.
+
+**This page has two country dropdowns** - the issuing authority and the place of
+issue - and the home address country on another page shares the same bare
+`Country/Region` label. Each is pinned: the passport ones by
+`must: /issuance|issued/i`, the home one by `must: /home address/i`.
+
+**"No Expiration"** beside the expiry date is the same kind of box as "Does Not
+Apply": the passport has an expiry, so it stays unticked and
+`isDoesNotApply()` now recognises that wording so it is not reported as a gap.
+
+`passportIssuedState` has no source - column AF is one free-text place - so it
+keeps an id-only rule and lands in `MISSING_FROM_INTAKE`.
+
 ## Address and Phone (added 2026-09-01, at the user's instruction)
 Seven answers, all constants except where noted. The live page came back with
 Country/Region on `- SELECT ONE -` and the mailing question unanswered, while
@@ -523,7 +560,7 @@ on the five Security and Background pages. Guards:
   so the agent reads them before clicking Next.
 
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
-`fake-prev-us-travel.html`, `fake-address-phone.html` and
+`fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

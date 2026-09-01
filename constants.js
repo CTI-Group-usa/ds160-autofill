@@ -55,6 +55,18 @@
       label: 'Have you used any other email addresses in the last five years?',
       def: 'NO', why: 'A Yes makes CEAC ask for each address. Same caution as the phone ' +
                       'question above.' },
+    { key: 'passportType', kind: 'text', page: 'Passport',
+      label: 'Passport/Travel Document Type', def: 'REGULAR',
+      why: 'An ordinary Indonesian passport. Change it for an official, diplomatic or ' +
+           'emergency travel document.' },
+    { key: 'passportIssuedCountry', kind: 'text', page: 'Passport',
+      label: 'Country/Authority that issued the passport', def: 'INDONESIA',
+      why: 'Imigrasi issues every passport CTI files with.' },
+    { key: 'passportIssuedInCountry', kind: 'text', page: 'Passport',
+      label: 'Country/Region where the passport was issued', def: 'INDONESIA',
+      why: 'Separate CEAC question from the issuing authority above. Change it if a ' +
+           'seafarer was issued a passport at a consulate abroad.' },
+
     { key: 'otherWebsites5y', kind: 'yesno', page: 'Address and Phone',
       label: 'Do you wish to provide information about your presence on any other ' +
              'websites or applications?',

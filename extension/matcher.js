@@ -132,10 +132,26 @@
     { key: 'socialPlatform', kind: 'text',  ids: [/SOCIAL_MEDIA_PROVIDER/i, /ddlSocialMedia/i], labels: [/social media platform/i] },
     { key: 'socialHandle',   kind: 'text',  ids: [/SOCIAL_MEDIA_IDENT/i, /tbxSocialMediaIdent/i], labels: [/social media identifier/i] },
 
+    { key: 'passportType',       kind: 'text', ids: [/PPT_TYPE/i],
+      labels: [/passport.*travel document type/i] },
     { key: 'passportNumber',     kind: 'text', ids: [/PPT_NUM/i], labels: [/passport.*number/i] },
+    /* Two different countries: the authority that issued the document, and
+       the place it was physically issued. Both Indonesia here. */
+    { key: 'passportIssuedCountry',   kind: 'text', ids: [/PPT_ISSUED_CNTRY/i],
+      labels: [/country.*authority that issued/i] },
     { key: 'passportIssuePlace', kind: 'text', ids: [/PPT_ISSUED_IN_CITY/i], labels: [/city.*issuance/i] },
-    { key: 'passportIssued',     kind: 'date', ids: [/PPT_ISSUED(Day|Month|Year)/i], labels: [/issuance date/i] },
-    { key: 'passportExpiry',     kind: 'date', ids: [/PPT_EXPIRE(Day|Month|Year)/i], labels: [/expiration date/i] },
+    /* No source on the sheet - column AF is one free-text place. Id only, so
+       the report says "no value in record" instead of blaming the rules. */
+    { key: 'passportIssuedState',     kind: 'text', ids: [/PPT_ISSUED_IN_STATE/i] },
+    { key: 'passportIssuedInCountry', kind: 'text', ids: [/PPT_ISSUED_IN_CNTRY/i],
+      labels: [/^country\s*\/?\s*region$/i], must: /issuance|issued/i },
+    /* Same _DTE infix that hid PREV_VISA_ISSUED: the live ids are
+       PPT_ISSUED_DTEDay and PPT_EXPIRE_DTEDay. Only the Year boxes were
+       being filled, which is why the page showed a bare 2023 / 2033. */
+    { key: 'passportIssued',     kind: 'date', ids: [/PPT_ISSUED_?(DTE)?(Day|Month|Year)/i],
+      labels: [/issuance date/i] },
+    { key: 'passportExpiry',     kind: 'date', ids: [/PPT_EXPIRE_?(DTE)?(Day|Month|Year)/i],
+      labels: [/expiration date/i], not: /_NA/ },
 
     // Travel page. The visible labels here are clean and distinct, so
     // they carry more weight than the id guesses.
@@ -300,8 +316,14 @@
     { key: 'lastVisaIssued', kind: 'date',  ids: [/PREV_VISA_ISSUED_?(DTE)?(Day|Month|Year)/i],
       labels: [/date last visa was issued/i] },
     { key: 'sameVisaType',   kind: 'yesno', ids: [/PREV_VISA_SAME_TYPE_IND/i], labels: [/same type of visa/i] },
-    { key: 'visaLostStolen', kind: 'yesno', ids: [/PREV_VISA_LOST_IND/i], labels: [/lost or stolen/i] },
-    { key: 'lostDetails',    kind: 'text',  ids: [/PREV_VISA_LOST_EXPL/i], labels: [/explain.*lost/i] },
+    /* Column V asks about the visa AND the passport, so it answers both the
+       Previous U.S. Travel question and the Passport page one. The live
+       passport id is LOST_PPT_IND, and it came back with no question text -
+       the label was just "Yes" - so the id has to carry it. */
+    { key: 'visaLostStolen', kind: 'yesno', ids: [/PREV_VISA_LOST_IND/i, /LOST_PPT_IND/i],
+      labels: [/lost or stolen/i] },
+    { key: 'lostDetails',    kind: 'text',  ids: [/PREV_VISA_LOST_EXPL/i, /LOST_PPT.*EXPL/i],
+      labels: [/explain.*lost/i] },
     { key: 'visaRevoked',    kind: 'yesno', ids: [/PREV_VISA_CANCELLED_IND/i], labels: [/cancelled or revoked/i] },
     { key: 'revokedDetails', kind: 'text',  ids: [/PREV_VISA_CANCELLED_EXPL/i], labels: [/explain.*(cancel|revok)/i] },
     /* The rest of the page. Ids here are best guesses from CEAC's naming;
@@ -427,13 +449,13 @@
      unticked on purpose - we have a real value for the field beside it.
      Reporting it as unrecognised suggests a gap that is not there.
 
-     CEAC words some of them "Do Not Know" instead - the one beside the
-     previous visa number. Classified on the label, never on an _NA suffix
+     CEAC words some of them "Do Not Know" (beside the previous visa number)
+     or "No Expiration" (beside the passport expiry date). Classified on the label, never on an _NA suffix
      in the id: APP_SSN_NA and APP_TAX_ID_NA end that way too and are boxes
      we deliberately tick. */
   function isDoesNotApply(ctl) {
     if (String(ctl.type || '').toLowerCase() !== 'checkbox') return false;
-    return /does not apply|do not know/i.test(String(ctl.label || '')) ||
+    return /does not apply|do not know|no expiration/i.test(String(ctl.label || '')) ||
            /cbxDNA/i.test(String(ctl.id || ''));
   }
 

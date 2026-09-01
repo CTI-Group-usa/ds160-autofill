@@ -220,6 +220,7 @@
     ['usPocPhone',    'US point of contact - phone'],
     ['usPocEmail',    'US point of contact - email'],
     ['homeCity',      'Home address - city (the sheet has one address column)'],
+    ['passportIssuedState', 'Passport - state/province where issued'],
     ['homeState',     'Home address - state / province'],
     ['homePostal',    'Home address - postal code'],
     ['arrivalDate',   'Intended date of arrival in the US'],
@@ -430,7 +431,12 @@
       ['socialPlatform','Social Media Platform'], ['socialHandle','Social Media Identifier'],
       ['otherWebsites5y','Provide any other websites or applications?'] ] },
     { title: 'Passport', fields: [
-      ['passportNumber','Passport Number'], ['passportIssuePlace','City/Country of Issuance'],
+      ['passportType','Passport/Travel Document Type'],
+      ['passportNumber','Passport Number'],
+      ['passportIssuedCountry','Country/Authority that Issued'],
+      ['passportIssuePlace','City where Issued'],
+      ['passportIssuedState','State/Province where Issued'],
+      ['passportIssuedInCountry','Country/Region where Issued'],
       ['passportIssued','Issuance Date'], ['passportExpiry','Expiration Date'],
       ['visaLostStolen','Ever lost or stolen?'], ['lostDetails','Explain'] ] },
     { title: 'Travel', fields: [

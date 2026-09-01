@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Passport / Travel Document</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- The live page reported TEN controls unrecognised here, and the form showed
+     a bare "2023" and "2033" with the day and month dropdowns empty.
+
+     1. Six of the ten were the _DTE infix again: the ids are
+        PPT_ISSUED_DTEDay and PPT_EXPIRE_DTEDay, not PPT_ISSUEDDay. Only the
+        Year boxes were matching, by label, which is why the years alone
+        appeared. Same class of bug as PREV_VISA_ISSUED_DTE.
+     2. This page has TWO country dropdowns - the issuing authority and the
+        place of issue - and a third, the home address country, lives on
+        another page with the same bare "Country/Region" label.
+     3. "No Expiration" beside the expiry date is a Does-Not-Apply box: we
+        have an expiry date, so it stays unticked and must not be reported
+        as a gap.
+     4. The lost-passport radio is LOST_PPT_IND and arrives with no question
+        text at all, so only its id can carry it. Column V of the intake
+        sheet asks about the visa AND the passport, so it answers both this
+        and the Previous U.S. Travel question. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Passport/Travel Document Information</h2>
+
+<table>
+  <tr><td>Passport/Travel Document Type</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPPT_TYPE">
+            <option>- SELECT ONE -</option><option>REGULAR</option><option>OFFICIAL</option>
+            <option>DIPLOMATIC</option><option>OTHER</option></select></td></tr>
+  <tr><td>Passport/Travel Document Number</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPPT_NUM"></td></tr>
+  <tr><td>Country/Authority that Issued Passport/Travel Document</td>
+      <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPPT_ISSUED_CNTRY">
+            <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+</table>
+
+<fieldset>
+  <legend>Where was the Passport/Travel Document Issued?</legend>
+  <table>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPPT_ISSUED_IN_CITY"></td></tr>
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPPT_ISSUED_IN_STATE"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPPT_ISSUED_IN_CNTRY">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+  </table>
+</fieldset>
+
+<table>
+  <tr><td>Issuance Date</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPPT_ISSUED_DTEDay">
+      <option value="">-</option><option>28</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPPT_ISSUED_DTEMonth">
+      <option value="">-</option><option value="JUN">JUN</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPPT_ISSUED_DTEYear" size="4">
+    <br><span>(Format: DD-MMM-YYYY)</span>
+  </td></tr>
+  <tr><td>Expiration Date</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPPT_EXPIRE_DTEDay">
+      <option value="">-</option><option>27</option></select>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPPT_EXPIRE_DTEMonth">
+      <option value="">-</option><option value="JUN">JUN</option></select>
+    <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPPT_EXPIRE_DTEYear" size="4">
+    <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxPPT_EXPIRE_NA">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxPPT_EXPIRE_NA">No Expiration</label>
+    <br><span>(Format: DD-MMM-YYYY)</span>
+  </td></tr>
+</table>
+
+<table>
+  <!-- No Q:/A: rows: the live page gives this question no text the label
+       walker can find, so the id is the only signal. -->
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblLOST_PPT_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblLOST_PPT_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'l\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblLOST_PPT_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblLOST_PPT_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblLOST_PPT_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'l\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblLOST_PPT_IND_1">No</label>
+  </td></tr>
+</table>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>
