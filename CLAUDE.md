@@ -206,6 +206,20 @@ clan/tribe NO, languages ENGLISH, military NO, Primary Occupation OTHER +
 SAILOR OS, US contact relationship BUSINESS ASSOCIATE, …). The user has not
 asked for these yet.
 
+## The payer block has no usable labels
+On the live page `deriveLabel` returns **nothing** for the paying-company
+controls, so the id is the only signal there. Three rounds of guessed ids all
+missed; the real ones are `tbxPayerName`, `tbxPayerPhone`,
+`tbxCompanyRelation`, `tbxPayerStreetAddress1/2`, `tbxPayerCity`,
+`tbxPayerStateProvince`, `tbxPayerPostalZIPCode`, `ddlPayerCountry`.
+
+The lesson that keeps repeating: **the popup's unrecognised list is the cheap
+way to get real ids.** Guessing them has never once worked.
+
+Its `cbxDNAPayer*` "Does Not Apply" boxes must stay unticked, because we fill
+the state and postal code beside them. `isDoesNotApply()` keeps them out of the
+unrecognised list — leaving them alone is the correct action, not a gap.
+
 ## Dropdown wording differs from the printed application
 The printed DS-160 says `COMPANY/ORGANIZATION`; the CEAC dropdown says
 `OTHER COMPANY/ORGANIZATION`. `setSelect` therefore falls back to a

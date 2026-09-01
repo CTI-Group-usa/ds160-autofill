@@ -125,6 +125,31 @@ eq('payer country',   inBlock('Country/Region', payBlock), 'payerCountry');
 eq('a bare "City" outside any block stays unmatched', inBlock('City', ''), undefined);
 eq('the contact block keeps its own city', inBlock('City', pocBlock), 'usPocCity');
 
+// The real ids, read off a live page. Every guess before these missed,
+// and the labels in this block come back empty, so the id is all there is.
+const realPayer = (id) =>
+  (M.matchKey({ id: P + id, name: '', label: '', section: payBlock,
+                type: 'text', tag: id.indexOf('ddl') === 0 ? 'select' : 'input' }, {}) || {}).key;
+eq('real payer phone',    realPayer('tbxPayerPhone'), 'payerPhone');
+eq('real payer relation', realPayer('tbxCompanyRelation'), 'payerRelationship');
+eq('real payer line 1',   realPayer('tbxPayerStreetAddress1'), 'payerAddr1');
+eq('real payer line 2',   realPayer('tbxPayerStreetAddress2'), 'payerAddr2');
+eq('real payer city',     realPayer('tbxPayerCity'), 'payerCity');
+eq('real payer state',    realPayer('tbxPayerStateProvince'), 'payerState');
+eq('real payer zip',      realPayer('tbxPayerPostalZIPCode'), 'payerZip');
+eq('real payer country',  realPayer('ddlPayerCountry'), 'payerCountry');
+
+// Its "Does Not Apply" boxes must stay unticked - we have real values -
+// and are not a gap in understanding, so they are not reported as one.
+eq('payer state DNA box claims nothing',
+   M.matchKey({ id: P + 'cbxDNAPayerStateProvince', name: '',
+                label: 'Does Not Apply', section: payBlock,
+                type: 'checkbox', tag: 'input' }, {}), null);
+eq('DNA box recognised as deliberate',
+   M.isDoesNotApply({ type: 'checkbox', id: P + 'cbxDNAPayerPostalZIPCode', label: 'Does Not Apply' }), true);
+eq('an ordinary checkbox is not one',
+   M.isDoesNotApply({ type: 'checkbox', id: P + 'cbexAPP_SSN_NA', label: 'Social Security' }), false);
+
 console.log('  (block pinning covered)');
 
 // -- overrides beat everything --------------------------------------

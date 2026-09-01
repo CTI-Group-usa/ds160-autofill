@@ -24,7 +24,10 @@ const v = C.values();
 eq('ssn default', v.ssnNA, 'YES');
 eq('telecode default',        v.telecode, 'NO');
 eq('mailing default',         v.mailingSameAsHome, 'YES');
-eq('every constant answered', Object.values(v).every(Boolean), true);
+// payerAddr2 is deliberately blank: Carnival UK needs one address line,
+// and inventing a second would put words on a visa application.
+eq('only the deliberately blank one is blank',
+   Object.keys(v).filter(k => !v[k]), ['payerAddr2']);
 eq('security sweep on by default', v.securityAllNo, 'YES');
 eq('security sweep has no control', C.BY_KEY.securityAllNo.field, false);
 

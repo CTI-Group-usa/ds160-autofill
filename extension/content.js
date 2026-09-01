@@ -310,7 +310,9 @@
 
       const m = M.matchKey(c, overrides);
       if (!m) {
-        if (c.type !== 'radio') report.unmatched.push({ id: c.id, label: c.label, tag: c.tag });
+        if (c.type !== 'radio' && !M.isDoesNotApply(c)) {
+          report.unmatched.push({ id: c.id, label: c.label, tag: c.tag });
+        }
         continue;
       }
       const value = valueFor(rec, m.key, c);

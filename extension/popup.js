@@ -66,7 +66,7 @@
           ' field(s) hold the right values.</div>' + h;
     }
     const empty = rep.skipped.filter(x => x.why === 'no value in record');
-    if (empty.length) {
+    if (empty.length >= 2) {
       h += '<div class="stale">' + empty.length + ' field(s) on this page have no value in the ' +
            'loaded record: <code>' + empty.slice(0, 6).map(x => esc(x.key)).join(', ') + '</code>. ' +
            'If you have changed the Constant answers or Trip details since sending this applicant, ' +

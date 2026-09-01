@@ -138,21 +138,29 @@
        guessed - if CEAC spells them differently the whole block fills
        nothing and says nothing. "City" and "State/Province" are far too
        common to match on their own, which is what `must` is for. */
-    { key: 'payerCompany',      kind: 'text', ids: [/PAYER_NAME/i, /PayerCompany/i],
+    /* Real ids, read off a live page. The labels in this block come back
+       empty - deriveLabel finds nothing for them - so the id is the only
+       signal that works here and every guess before this one missed.
+       The label rules stay as a fallback, pinned by must:/pay/ because
+       City, State/Province and Country/Region are word for word the same
+       in the U.S. contact block on the same page. */
+    { key: 'payerCompany',      kind: 'text', ids: [/tbxPayerName/i, /PAYER_NAME/i, /PayerCompany/i],
       labels: [/company.*organization paying/i], must: /pay/i },
-    { key: 'payerPhone',        kind: 'text', ids: [/PAYER_TEL/i, /PAYER_PHONE/i],
+    { key: 'payerPhone',        kind: 'text', ids: [/tbxPayerPhone/i, /PAYER_TEL/i],
       labels: [/^telephone number$/i], must: /pay/i },
-    { key: 'payerRelationship', kind: 'text', ids: [/PAYER_REL/i],
-      labels: [/^relationship to you$/i], must: /pay/i },
-    { key: 'payerAddr1',        kind: 'text', ids: [/PAYER_ADDR_LN1/i],
-      labels: [/address of company.*paying|^street address/i], must: /pay/i },
-    { key: 'payerCity',         kind: 'text', ids: [/PAYER_ADDR_CITY/i],
+    { key: 'payerRelationship', kind: 'text', ids: [/tbxCompanyRelation/i, /PAYER_REL/i],
+      labels: [/^relationship to you$/i], must: /pay|relation/i },
+    { key: 'payerAddr1',        kind: 'text', ids: [/tbxPayerStreetAddress1/i, /PAYER_ADDR_LN1/i],
+      labels: [/address of company.*paying|^street address \(line ?1\)/i], must: /pay/i },
+    { key: 'payerAddr2',        kind: 'text', ids: [/tbxPayerStreetAddress2/i, /PAYER_ADDR_LN2/i],
+      labels: [/^street address \(line ?2\)/i], must: /pay/i },
+    { key: 'payerCity',         kind: 'text', ids: [/tbxPayerCity/i, /PAYER_ADDR_CITY/i],
       labels: [/^city$/i], must: /pay/i },
-    { key: 'payerState',        kind: 'text', ids: [/PAYER_ADDR_STATE/i],
-      labels: [/^state\/?province$|^state$/i], must: /pay/i },
-    { key: 'payerZip',          kind: 'text', ids: [/PAYER_ADDR_POSTAL/i],
-      labels: [/postal zone|zip code/i], must: /pay/i },
-    { key: 'payerCountry',      kind: 'text', ids: [/PAYER_ADDR_CNTRY/i],
+    { key: 'payerState',        kind: 'text', ids: [/tbxPayerStateProvince/i, /PAYER_ADDR_STATE/i],
+      labels: [/^state\/?province$|^state$/i], must: /pay/i, not: /DNA|_NA\b/i },
+    { key: 'payerZip',          kind: 'text', ids: [/tbxPayerPostalZIPCode/i, /PAYER_ADDR_POSTAL/i],
+      labels: [/postal zone|zip code/i], must: /pay/i, not: /DNA|_NA\b/i },
+    { key: 'payerCountry',      kind: 'text', ids: [/ddlPayerCountry/i, /PAYER_ADDR_CNTRY/i],
       labels: [/country\/?region/i], must: /pay/i },
     { key: 'travelCompanions',  kind: 'yesno', ids: [/OTHER_PERS_TRAVELING/i, /TravelingWith/i],
       labels: [/other persons traveling with you/i] },
@@ -304,7 +312,15 @@
     return isSur ? t[t.length - 1] : t.slice(0, -1).join(' ');
   }
 
-  const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, matchKey, datePart, splitDate,
+  /* A "Does Not Apply" checkbox that no rule claims is being left
+     unticked on purpose - we have a real value for the field beside it.
+     Reporting it as unrecognised suggests a gap that is not there. */
+  function isDoesNotApply(ctl) {
+    if (String(ctl.type || '').toLowerCase() !== 'checkbox') return false;
+    return /does not apply/i.test(String(ctl.label || '')) || /^.*cbxDNA/i.test(String(ctl.id || ''));
+  }
+
+  const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, matchKey, datePart, splitDate, isDoesNotApply,
                 isForbidden, nameHalf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160Matcher = api;
