@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fake DS-160 payer dropdown</title></head>
+<body>
+<!-- The printed application says "COMPANY/ORGANIZATION"; CEAC's dropdown
+     words it more fully. Exactly one option contains the printed wording,
+     so it can be taken - but an ambiguous case must not be. -->
+<table>
+  <tr><td>Person/Entity Paying for Your Trip</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlWHO_IS_PAYING">
+      <option value="">-SELECT ONE-</option>
+      <option value="S">SELF</option>
+      <option value="O">OTHER PERSON</option>
+      <option value="P">PRESENT EMPLOYER</option>
+      <option value="U">EMPLOYER IN THE U.S.</option>
+      <option value="C">OTHER COMPANY/ORGANIZATION</option>
+    </select></td></tr>
+  <tr><td>Ambiguous control (two options contain the wanted text)</td><td>
+    <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlAmbiguous">
+      <option value="">-SELECT ONE-</option>
+      <option>OTHER COMPANY/ORGANIZATION</option>
+      <option>PARENT COMPANY/ORGANIZATION</option>
+    </select></td></tr>
+  <tr><td>Filler</td><td><input type="text" id="ctl00_filler"></td></tr>
+</table>
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

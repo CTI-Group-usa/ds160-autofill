@@ -72,7 +72,11 @@
            'If you have changed the Constant answers or Trip details since sending this applicant, ' +
            'press <b>Send to extension</b> again in the worksheet.</div>';
     }
-    h += list('Skipped', rep.skipped, 'warn', x => esc(x.key) + ' &ndash; ' + esc(x.why));
+    h += list('Skipped', rep.skipped, 'warn', x => esc(x.key) + ' &ndash; ' + esc(x.why) +
+      (x.options
+        ? '<br>wanted <code>' + esc(x.wanted) + '</code><br>page offers: <code>' +
+          esc(x.options.join(' | ')) + '</code>'
+        : ''));
     // Both the label and the id: the id is what a new matcher rule needs.
     h += list('Not recognised', rep.unmatched.slice(0, 25), 'warn',
               x => esc((x.label || '').slice(0, 60)) +

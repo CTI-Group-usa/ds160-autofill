@@ -206,6 +206,16 @@ clan/tribe NO, languages ENGLISH, military NO, Primary Occupation OTHER +
 SAILOR OS, US contact relationship BUSINESS ASSOCIATE, …). The user has not
 asked for these yet.
 
+## Dropdown wording differs from the printed application
+The printed DS-160 says `COMPANY/ORGANIZATION`; the CEAC dropdown says
+`OTHER COMPANY/ORGANIZATION`. `setSelect` therefore falls back to a
+containment match - but **only when exactly one option qualifies**. Choosing
+between two plausible options is guessing, and this is a visa form.
+
+When nothing matches, the skipped entry carries `wanted` and the page's actual
+`options`, and the popup prints them. That turns "no matching option" from a
+dead end into the exact list needed to correct the constant once.
+
 ## A setter has three outcomes, not two
 `setText`/`setSelect`/`setRadio`/`setCheckbox` return `set`, `same` or
 `nomatch`. Collapsing `same` into failure meant a second press of Fill

@@ -157,12 +157,25 @@
 
   function setSelect(el, value) {
     const want = String(value).trim().toUpperCase();
-    if (!want) return false;
+    if (!want) return NOMATCH;
     const opts = Array.from(el.options);
+    const txt = o => o.text.trim().toUpperCase();
+
     let hit = opts.find(o => o.value.trim().toUpperCase() === want)
-           || opts.find(o => o.text.trim().toUpperCase() === want)
-           || opts.find(o => o.text.trim().toUpperCase().startsWith(want))
-           || opts.find(o => want.startsWith(o.text.trim().toUpperCase()) && o.text.trim().length > 2);
+           || opts.find(o => txt(o) === want)
+           || opts.find(o => txt(o).startsWith(want))
+           || opts.find(o => want.startsWith(txt(o)) && txt(o).length > 2);
+
+    /* CEAC words some options more fully than the printed application
+       does - "COMPANY/ORGANIZATION" appears in the print, the dropdown
+       may say "OTHER COMPANY/ORGANIZATION". Accept a containment match,
+       but only when exactly one option qualifies: picking between two
+       plausible options is guessing, and this is a visa form. */
+    if (!hit && want.length >= 4) {
+      const near = opts.filter(o => txt(o).length >= 4 &&
+                                    (txt(o).indexOf(want) >= 0 || want.indexOf(txt(o)) >= 0));
+      if (near.length === 1) hit = near[0];
+    }
     if (!hit) return NOMATCH;
     if (el.value === hit.value) return SAME;
     el.value = hit.value;
@@ -248,7 +261,15 @@
       report.already.push({ id: c.id, key: m.key, value: String(value) });
     } else {
       mark(c.el, false);
-      report.skipped.push({ id: c.id, key: m.key, why: 'no matching option on this page' });
+      const entry = { id: c.id, key: m.key, why: 'no matching option on this page' };
+      /* Name what the page actually offers, so the value can be corrected
+         once instead of guessed at repeatedly. */
+      if (c.tag === 'select') {
+        entry.wanted = String(value);
+        entry.options = Array.from(c.el.options)
+          .map(o => o.text.trim()).filter(Boolean).slice(0, 12);
+      }
+      report.skipped.push(entry);
     }
   }
 
