@@ -432,6 +432,36 @@ form. `validate()` then quotes the raw cell and asks for the real date.
 An empty cell is reported too: CEAC requires Start Date, so a blank has to be
 visible rather than silent.
 
+## Additional Work / Education / Training (2026-09-01)
+Seven controls, all reported unrecognised from a live Fill — so every id in
+these rules is the real one.
+
+| Question | Key | Source |
+|---|---|---|
+| Do you belong to a clan or tribe? | `clanTribe` | constant NO |
+| Languages You Speak — first row | `languageSpoken` | constant ENGLISH |
+| Traveled to any countries in the last five years? | `countriesVisited` | **column M** |
+| Belonged to any professional/social/charitable organization? | `belongedOrganization` | constant NO |
+| Specialized skills — firearms, explosives, nuclear, biological, chemical? | `specializedSkills` | constant NO |
+| Ever served in the military? | `militaryService` | constant NO |
+| Ever involved with a paramilitary/rebel/insurgent organization? | `insurgentOrg` | constant NO |
+
+These are **sworn answers**, so each is its own named constant with a `why` —
+not folded into `securityAllNo`'s blanket sweep, which only covers
+`securityandbackground` URLs anyway. The agent can see and change each one.
+
+Note on `specializedSkills`: STCW safety and firefighting training is **not**
+what that question asks about. Its `why` says so, because the temptation to
+answer Yes on a seafarer's behalf is real.
+
+**`countriesVisited` is derived, not constant:** an entry in column M means Yes.
+A Yes reveals a repeating country block that CEAC then requires, and nothing
+fills it — the column is free text ("Singapore, Malaysia, Hong Kong") and each
+row costs an *Add Another* postback. `validate()` hands the list back for the
+agent to type. The same reasoning caps `languageSpoken` at the first row of the
+languages repeater. **CEAC's WAF blocked the agent once over a burst of
+postbacks** — that is the whole reason these stop at the question.
+
 ## Previous Work / Education / Training (2026-09-01)
 The live page came back with **both** gating questions unanswered — neither had
 a matcher rule at all — so the page could not be completed. Their ids are
@@ -860,7 +890,7 @@ on the five Security and Background pages. Guards:
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
 `fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
 `fake-us-contact.html`, `fake-family.html`,
-`fake-crew-visa.html`, `fake-work-education.html`, `fake-prev-work-education.html` and
+`fake-crew-visa.html`, `fake-work-education.html`, `fake-prev-work-education.html`, `fake-additional-work.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

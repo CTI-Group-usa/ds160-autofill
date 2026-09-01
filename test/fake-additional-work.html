@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Additional Work / Education / Training</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- Seven controls, all reported unrecognised from a live Fill - so every id
+     here is the real one, not a guess.
+
+     Six are constants: clan or tribe NO, organization NO, specialized skills
+     NO, military service NO, insurgent organization NO, and the first language
+     row ENGLISH. They are sworn answers, so each is its own named constant in
+     constants.js with a `why` rather than a blanket sweep - the agent can see
+     and change each one.
+
+     "Have you traveled to any countries in the last five years?" is NOT a
+     constant: it comes from intake column M. A Yes reveals a repeating country
+     block that CEAC requires, and nothing fills it - the column is free text
+     and each row costs an "Add Another" postback. validate() hands the list
+     back for the agent to type. CEAC's WAF blocked the agent once over a burst
+     of postbacks; that is why this stops at the question. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Additional Work/Education/Training Information</h2>
+
+<table>
+  <tr><td>Q:</td><td>Do you belong to a clan or tribe?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblCLAN_TRIBE_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblCLAN_TRIBE_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'c\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblCLAN_TRIBE_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblCLAN_TRIBE_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblCLAN_TRIBE_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'c\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblCLAN_TRIBE_IND_1">No</label>
+  </td></tr>
+</table>
+
+<fieldset>
+  <legend>Provide a List of Languages You Speak</legend>
+  <table>
+    <tr><td>Language Name</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlLANGUAGES_ctl00_tbxLANGUAGE_NAME" size="40"></td></tr>
+  </table>
+  <span>+ Add Another</span> <span>- Remove</span>
+</fieldset>
+
+<table>
+  <tr><td>Q:</td><td>Have you traveled to any countries/regions within the last five years?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblCOUNTRIES_VISITED_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblCOUNTRIES_VISITED_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'v\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblCOUNTRIES_VISITED_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblCOUNTRIES_VISITED_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblCOUNTRIES_VISITED_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'v\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblCOUNTRIES_VISITED_IND_1">No</label>
+  </td></tr>
+
+  <tr><td>Q:</td><td>Have you belonged to, contributed to, or worked for any professional,
+      social, or charitable organization?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblORGANIZATION_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblORGANIZATION_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'o\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblORGANIZATION_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblORGANIZATION_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblORGANIZATION_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'o\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblORGANIZATION_IND_1">No</label>
+  </td></tr>
+
+  <tr><td>Q:</td><td>Do you have any specialized skills or training, such as firearms,
+      explosives, nuclear, biological, or chemical experience?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSPECIALIZED_SKILLS_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblSPECIALIZED_SKILLS_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'k\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSPECIALIZED_SKILLS_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSPECIALIZED_SKILLS_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblSPECIALIZED_SKILLS_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'k\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSPECIALIZED_SKILLS_IND_1">No</label>
+  </td></tr>
+
+  <tr><td>Q:</td><td>Have you ever served in the military?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblMILITARY_SERVICE_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblMILITARY_SERVICE_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'m\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblMILITARY_SERVICE_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblMILITARY_SERVICE_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblMILITARY_SERVICE_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'m\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblMILITARY_SERVICE_IND_1">No</label>
+  </td></tr>
+
+  <tr><td>Q:</td><td>Have you ever served in, been a member of, or been involved with a
+      paramilitary unit, vigilante unit, rebel group, guerrilla group, or insurgent
+      organization?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblINSURGENT_ORG_IND_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblINSURGENT_ORG_IND" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'i\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblINSURGENT_ORG_IND_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblINSURGENT_ORG_IND_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblINSURGENT_ORG_IND" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'i\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblINSURGENT_ORG_IND_1">No</label>
+  </td></tr>
+</table>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

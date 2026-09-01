@@ -273,6 +273,31 @@ eq('employer postal Does Not Apply stays unclaimed',
    dna2('cbexEmpSchPostalNA', 'Does Not Apply Postal Zone/ZIP Code',
         'Present employer or school address: Postal Zone/ZIP Code'), undefined);
 
+// -- Additional Work/Education/Training -------------------------------
+/* All seven ids came from a live Fill report, so none of these is a guess.
+   Six are constants; countriesVisited is derived from intake column M. */
+const addl = (id, label, type) =>
+  (M.matchKey({ id: P + id, name: '', label: label || 'Yes',
+                type: type || 'radio', tag: 'input' }, {}) || {}).key;
+eq('clan or tribe',        addl('rblCLAN_TRIBE_IND_0'), 'clanTribe');
+eq('countries visited',    addl('rblCOUNTRIES_VISITED_IND_0'), 'countriesVisited');
+eq('organization',         addl('rblORGANIZATION_IND_0'), 'belongedOrganization');
+eq('specialized skills',   addl('rblSPECIALIZED_SKILLS_IND_0'), 'specializedSkills');
+eq('military service',     addl('rblMILITARY_SERVICE_IND_0'), 'militaryService');
+eq('insurgent org',        addl('rblINSURGENT_ORG_IND_0'), 'insurgentOrg');
+/* Only the FIRST row of the languages repeater. More rows need "Add Another",
+   a postback each, and a burst of those is what got the agent blocked once. */
+eq('first language row',
+   addl('dtlLANGUAGES_ctl00_tbxLANGUAGE_NAME', 'Language Name', 'text'), 'languageSpoken');
+// The organization question must not reach the U.S. contact organisation boxes.
+const pocOrgBlk = 'U.S. Point of Contact Organization Name Do Not Know Relationship to You';
+eq('the U.S. contact org box is still its own',
+   (M.matchKey({ id: P + 'tbxUS_POC_ORGANIZATION', name: '', label: 'Organization Name',
+                 section: pocOrgBlk, type: 'text', tag: 'input' }, {}) || {}).key, 'usPocOrg');
+eq('and its Do Not Know box too',
+   (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
+                 section: pocOrgBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key, 'usPocOrgNA');
+
 // -- Crew Visa: the manning agency block ------------------------------
 /* CTI Indonesia is the AGENCY, not the employer. Every box here shares its
    label with four other blocks - City, State/Province, Street Address,

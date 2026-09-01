@@ -184,6 +184,39 @@
        UK filled INDONESIA against an address in Southampton, Hampshire. The
        employer is Indonesian for most applicants and foreign for some, so
        there is no constant to have - the agent picks it. */
+    /* Additional Work/Education/Training. Six of the seven questions on that
+       page are sworn answers with no column in the sheet, so they live here in
+       the open. "Have you traveled to any countries in the last five years?"
+       is NOT among them - it comes from column M. */
+    { key: 'clanTribe', kind: 'yesno', page: 'Additional Work/Education',
+      label: 'Do you belong to a clan or tribe?',
+      def: 'NO', why: 'CEAC means a tribal affiliation, not an ethnic group. Change it for ' +
+                      'an applicant who does belong to one - a Yes makes CEAC ask for the name.' },
+    { key: 'languageSpoken', kind: 'text', page: 'Additional Work/Education',
+      label: 'Languages You Speak - first entry', def: 'ENGLISH',
+      why: 'Only the first row of the repeater is filled. Extra languages need the ' +
+           '"Add Another" button, which is a postback each time - and a burst of those ' +
+           'is what got the agent blocked out of CEAC once. Add them by hand.' },
+    { key: 'belongedOrganization', kind: 'yesno', page: 'Additional Work/Education',
+      label: 'Belonged to, contributed to, or worked for any professional, social or ' +
+             'charitable organization?',
+      def: 'NO', why: 'A Yes makes CEAC ask for each organisation. Check it per applicant.' },
+    { key: 'specializedSkills', kind: 'yesno', page: 'Additional Work/Education',
+      label: 'Any specialized skills or training - firearms, explosives, nuclear, ' +
+             'biological or chemical?',
+      def: 'NO', why: 'STCW safety and firefighting training is NOT what this asks about. ' +
+                      'This is a sworn answer and a Yes is read closely - check it for ' +
+                      'anyone with a military or security background.' },
+    { key: 'militaryService', kind: 'yesno', page: 'Additional Work/Education',
+      label: 'Have you ever served in the military?',
+      def: 'NO', why: 'A Yes makes CEAC ask for the country, branch, rank and dates. Check ' +
+                      'it per applicant - this is a sworn answer.' },
+    { key: 'insurgentOrg', kind: 'yesno', page: 'Additional Work/Education',
+      label: 'Ever served in or been involved with a paramilitary, vigilante, rebel, ' +
+             'guerrilla or insurgent organization?',
+      def: 'NO', why: 'A sworn answer with serious consequences if wrong either way. Read it ' +
+                      'before clicking Next.' },
+
     /* The SCHOOL is always in Indonesia - unlike the employer, which can be
        Carnival UK in Southampton. That is why `employerCountry` is not a
        constant and this one is. */

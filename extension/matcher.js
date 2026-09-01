@@ -435,6 +435,27 @@
     /* Column BB is one free-text address, so there is no city to fill. Named
        by id only, so the report points at the sheet rather than the rules. */
     { key: 'prevEmployerCity', kind: 'text', ids: [/PrevEmpl.*Addr.*City/i] },
+
+    /* Additional Work/Education/Training. All seven ids come from a live Fill
+       report, so these are not guesses. Six are constants; countriesVisited is
+       derived from intake column M. */
+    { key: 'clanTribe', kind: 'yesno', ids: [/CLAN_TRIBE_IND/i],
+      labels: [/belong to a clan or tribe/i] },
+    /* Only the FIRST row of the languages repeater - dtlLANGUAGES_ctl00_. More
+       rows need "Add Another", a postback each, and a burst of those is what
+       got the agent blocked out of CEAC once. */
+    { key: 'languageSpoken', kind: 'text', ids: [/LANGUAGE_NAME/i],
+      labels: [/^language name$/i] },
+    { key: 'countriesVisited', kind: 'yesno', ids: [/COUNTRIES_VISITED_IND/i],
+      labels: [/traveled to any countries.*last five years/i] },
+    { key: 'belongedOrganization', kind: 'yesno', ids: [/ORGANIZATION_IND/i],
+      labels: [/belonged to.*contributed to.*organization/i] },
+    { key: 'specializedSkills', kind: 'yesno', ids: [/SPECIALIZED_SKILLS_IND/i],
+      labels: [/specialized skills or training/i] },
+    { key: 'militaryService', kind: 'yesno', ids: [/MILITARY_SERVICE_IND/i],
+      labels: [/ever served in the military/i] },
+    { key: 'insurgentOrg', kind: 'yesno', ids: [/INSURGENT_ORG_IND/i],
+      labels: [/paramilitary|vigilante|insurgent organization/i] },
     { key: 'eduCity', kind: 'text', ids: [/School.*Addr.*City/i, /EducInst.*City/i] },
 
     /* Two different questions that used to share one key. "Have you ever

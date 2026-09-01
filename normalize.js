@@ -343,6 +343,16 @@
                    : pick === 'hs'  ? 'high school / vocational (columns BJ-BN)'
                    : '';
 
+    /* "Have you traveled to any countries/regions within the last five years?"
+       comes from column M, at the user's instruction: an entry there means Yes.
+       The other six questions on that page are constants - see constants.js.
+
+       A Yes reveals a repeating country block that CEAC then requires, and the
+       column is free text ("Singapore, Malaysia"), so validate() hands the list
+       back for the agent to enter. Filling it here would mean one postback per
+       "Add Another", and a burst of those is what got the agent blocked once. */
+    rec.countriesVisited = clean(rec.countries5y) ? 'YES' : 'NO';
+
     /* A parent with one name is filled as Surnames + a ticked "Do Not Know"
        beside Given Names. Typing the literal "FNU" there was wrong: CEAC
        prints those letters BECAUSE the box is ticked. The applicant's own
@@ -458,6 +468,11 @@
                          '(column AX), which CEAC requires');
     if (!rec.employerAddress)
       W('employerAddress', 'No address for the present employer or school (column AV)');
+    /* Answering Yes reveals a country list CEAC requires, and nothing fills it:
+       the column is free text and each row costs an "Add Another" postback. */
+    if (rec.countriesVisited === 'YES')
+      W('countries5y', 'Countries visited answered Yes from column M - enter these in the ' +
+                       'list by hand: ' + clean(rec.countries5y));
     if (rec.priorUsVisa === 'YES') {
       if (!rec.lastVisaNumber) W('lastVisaNumber', 'Held a US visa before - DS-160 asks for the previous visa number');
       if (!rec.lastVisaIssued) W('lastVisaIssued', 'Held a US visa before - DS-160 asks when it was issued');
@@ -587,7 +602,12 @@
       ['revokedDetails','Explain'],
       ['visaRefused','Ever refused a visa or admission? (also column X)'],
       ['immigrantPetition','Immigrant petition ever filed on your behalf?'],
-      ['countries5y','Countries Visited in the Last 5 Years'] ] },
+      ['countries5y','Countries Visited in the Last 5 Years (column M)'],
+      ['countriesVisited','Traveled abroad in the last 5 years?'],
+      ['clanTribe','Belong to a clan or tribe?'], ['languageSpoken','Language spoken'],
+      ['belongedOrganization','Belonged to an organization?'],
+      ['specializedSkills','Specialized skills or training?'],
+      ['militaryService','Served in the military?'], ['insurgentOrg','Insurgent organization?'] ] },
     { title: 'CTI Tracking (not on DS-160)', fields: [
       ['cruiseLine','Cruise Line'], ['visaAppId','Visa Application ID'],
       ['visaStatus','Visa Status'], ['bniva','BNIVA Number'],
