@@ -184,6 +184,16 @@
        UK filled INDONESIA against an address in Southampton, Hampshire. The
        employer is Indonesian for most applicants and foreign for some, so
        there is no constant to have - the agent picks it. */
+    /* "Were you previously employed?" is column AZ, not a constant. This one
+       has no column: CEAC's own help says answer Yes if you ever attended a
+       high school or its equivalent, for any length of time, so it is Yes for
+       every seafarer CTI files - they all have at least an SMA or SMK, and the
+       sheet carries a highest-level-of-education column for all of them. */
+    { key: 'attendedEducation', kind: 'yesno', page: 'Work / Education',
+      label: 'Have you attended any educational institutions at a secondary level or above?',
+      def: 'YES', why: 'Answering No would hide the education block, and CEAC counts any ' +
+                       'secondary school. Change it only for an applicant with no ' +
+                       'secondary schooling at all.' },
     { key: 'monthlyIncomeNA', kind: 'checkbox', page: 'Work / Education',
       label: 'Monthly Income in Local Currency - tick "Does Not Apply"',
       def: 'YES', why: 'The intake form does not collect a salary, and the question is ' +

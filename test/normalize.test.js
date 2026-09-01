@@ -176,6 +176,65 @@ eq('uniTo year-only refused',
 eq('empty cell stays empty',
    D.toRecord({ 'Name': 'X', 'Year of College/University Entry': '' }).uniFrom, '');
 
+// -- Previous Work / Education ------------------------------------------
+/* Column AZ answers "Were you previously employed?" and gates the employer
+   block (BA-BH). Column BI picks which of the TWO candidate education blocks
+   fills CEAC's single Name-of-Institution set:
+     High School / Vocational -> BJ-BN,  College / University -> BO-BS.
+   The branching is NOT keyed on AZ - that mistake was made and corrected. */
+const EDU = { 'Name': 'X',
+  'Name of high school/vocational school': 'SMK PELAYARAN',
+  'Address of high school/vocational school': 'JL LAUT 1, SEMARANG',
+  'Course of Study in High School/Vocational School': 'NAUTIKA',
+  'Year of High School/Vocational School Entry': '16 Jul 2012',
+  'Year of High School High School Graduation': '22 Aug 2015',
+  'Name of College/University': 'UDAYANA UNIVERSITY',
+  'Address of College/University': 'JL KAMPUS, JIMBARAN',
+  'Course of Study in College/University': 'TOURISM',
+  'Year of College/University Entry': '28 Aug 2015',
+  'Year of High School/University Graduation': '06 Apr 2019' };
+const atLevel = lvl => D.toRecord(Object.assign({}, EDU,
+  { 'Please select your highest level of education': lvl }));
+
+const hs = atLevel('High School/Vocational School');
+eq('BI high school: name',   hs.eduName, 'SMK PELAYARAN');
+eq('BI high school: address', hs.eduAddress, 'JL LAUT 1, SEMARANG');
+eq('BI high school: course', hs.eduCourse, 'NAUTIKA');
+eq('BI high school: from',   hs.eduFrom, '16-JUL-2012');
+eq('BI high school: to',     hs.eduTo, '22-AUG-2015');
+
+const uni = atLevel('College/University');
+eq('BI university: name',    uni.eduName, 'UDAYANA UNIVERSITY');
+eq('BI university: course',  uni.eduCourse, 'TOURISM');
+eq('BI university: from',    uni.eduFrom, '28-AUG-2015');
+eq('BI university: to',      uni.eduTo, '06-APR-2019');
+// Loose wording in BI still lands on the right block.
+eq('BI "SMK"',         atLevel('SMK').eduName, 'SMK PELAYARAN');
+eq('BI "Diploma III"', atLevel('Diploma III').eduName, 'UDAYANA UNIVERSITY');
+eq('BI "Sarjana"',     atLevel('Sarjana (S1)').eduName, 'UDAYANA UNIVERSITY');
+
+/* BI unreadable and BOTH blocks hold a name: choosing one is not ours to do. */
+const ambiguous = atLevel('Kursus Singkat');
+eq('BI unreadable, both filled: nothing chosen', ambiguous.eduName, '');
+has('BI unreadable is reported', D.validate(ambiguous, { today: '2026-08-31' }).warnings,
+    'eduName', 'choose the institution by hand');
+// One block only: no ambiguity, so use it even when BI is unreadable.
+eq('BI unreadable, only university',
+   D.toRecord({ 'Name': 'X', 'Please select your highest level of education': '???',
+                'Name of College/University': 'UDAYANA' }).eduName, 'UDAYANA');
+eq('BI unreadable, only high school',
+   D.toRecord({ 'Name': 'X', 'Please select your highest level of education': '???',
+                'Name of high school/vocational school': 'SMK 1' }).eduName, 'SMK 1');
+
+// AZ still only gates the employer block, and reaches column BH.
+const prev = D.toRecord({ 'Name': 'X', 'Were you previously employed?': 'Yes',
+  'Previous Work Place Name': 'PT SAMUDERA BAHARI',
+  'Previous Workplace Country': 'Indonesia' });
+eq('AZ answers the employed question', prev.prevEmployed, 'YES');
+eq('BH: previous workplace country',   prev.prevCountry, 'INDONESIA');
+eq('AZ does not steer the education block', atLevel('College/University').eduName,
+   'UDAYANA UNIVERSITY');
+
 // -- employer falls back to the cruise line ---------------------------
 const fb = D.toRecord({ 'Name': 'Sukarno', 'Cruise Line': 'Carnival', "Current Workplace's Name": '' });
 eq('employer fallback', fb.employerName, 'CARNIVAL');

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Previous Work / Education / Training</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- The live page came back with BOTH gating questions unanswered - neither had
+     a matcher rule at all - so it could not be completed. Their ids are
+     rblPreviouslyEmployed and rblOtherEduc, and both are postbacks: a Yes
+     reveals its block, so they land one per pass.
+
+     "Were you previously employed?" is column AZ, and a Yes fills the employer
+     block from BA..BH.
+
+     "Have you attended any educational institutions at a secondary level or
+     above?" is a constant YES, and then column BI picks which of the sheet's
+     TWO candidate blocks fills CEAC's single Name-of-Institution set:
+       BI = High School / Vocational -> BJ..BN
+       BI = College / University     -> BO..BS
+     The education choice is NOT keyed on AZ. That was tried on the Present
+     Work page earlier the same day and corrected. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Previous Work/Education/Training Information</h2>
+
+<table>
+  <tr><td>Q:</td><td>Were you previously employed?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPreviouslyEmployed_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPreviouslyEmployed" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'e\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPreviouslyEmployed_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPreviouslyEmployed_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblPreviouslyEmployed" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'e\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPreviouslyEmployed_1">No</label>
+  </td></tr>
+  <tr><td>Q:</td><td>Have you attended any educational institutions at a secondary level or above?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblOtherEduc_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblOtherEduc" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(\'s\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblOtherEduc_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblOtherEduc_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblOtherEduc" value="N"
+           onclick="javascript:setTimeout('__doPostBack(\'s\',\'\')', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblOtherEduc_1">No</label>
+  </td></tr>
+</table>
+
+<fieldset>
+  <legend>Previous Employer</legend>
+  <table>
+    <tr><td>Employer Name</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplName" size="40"></td></tr>
+    <tr><td>Employer Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplAddr1" size="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplAddrCity"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplAddrCNTRY">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+    <tr><td>Telephone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplTel"></td></tr>
+    <tr><td>Job Title</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplJobTitle"></td></tr>
+    <tr><td>Supervisor Surnames</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevSupervisorSurname"></td></tr>
+    <tr><td>Supervisor Given Names</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevSupervisorGivenName"></td></tr>
+    <tr><td>Employment Date From</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateFromDay">
+        <option value="">-</option><option>01</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateFromMonth">
+        <option value="">-</option><option value="FEB">FEB</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplDateFromYear" size="4">
+    </td></tr>
+    <tr><td>Employment Date To</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateToDay">
+        <option value="">-</option><option>30</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateToMonth">
+        <option value="">-</option><option value="JUN">JUN</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplDateToYear" size="4">
+    </td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Educational Institution: Date of Attendance</legend>
+  <table>
+    <tr><td>Name of Institution</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolName" size="40"></td></tr>
+    <tr><td>Institution Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddr1" size="40"></td></tr>
+    <tr><td>Course of Study</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolCourseOfStudy" size="40"></td></tr>
+    <tr><td>Date of Attendance From</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolFromDay">
+        <option value="">-</option><option>28</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolFromMonth">
+        <option value="">-</option><option value="AUG">AUG</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolFromYear" size="4">
+    </td></tr>
+    <tr><td>Date of Attendance To</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolToDay">
+        <option value="">-</option><option>06</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolToMonth">
+        <option value="">-</option><option value="APR">APR</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolToYear" size="4">
+    </td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

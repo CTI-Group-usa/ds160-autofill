@@ -375,6 +375,15 @@
       ids: [/MONTHLY_SALARY.*_?NA/i, /MonthlySalary.*NA/i],
       labels: [/does not apply/i], must: /monthly (income|salary)/i },
 
+    /* The two questions that gate this whole page. Neither had a rule, so both
+       came back unanswered and the page could not be completed. Both are
+       postbacks - a Yes reveals its block - so they land one per pass. */
+    { key: 'prevEmployed',        kind: 'yesno',
+      ids: [/rblPreviouslyEmployed/i, /PREV_EMPL_IND/i],
+      labels: [/were you previously employed/i] },
+    { key: 'attendedEducation',   kind: 'yesno',
+      ids: [/rblOtherEduc/i, /OTHER_EDUC_IND/i],
+      labels: [/attended any educational institutions/i] },
     { key: 'prevEmployerName',    kind: 'text', ids: [/PrevEmplName/i], labels: [/employer name/i] },
     { key: 'prevEmployerAddress', kind: 'text', ids: [/PrevEmplAddr1/i], labels: [/employer street address/i] },
     /* A bare "Telephone Number" label reaches four blocks. Unscoped, this rule
@@ -388,9 +397,27 @@
     { key: 'prevStart',           kind: 'date', ids: [/PrevEmplDateFrom(Day|Month|Year)/i], labels: [/employment date from/i] },
     { key: 'prevEnd',             kind: 'date', ids: [/PrevEmplDateTo(Day|Month|Year)/i], labels: [/employment date to/i] },
 
-    { key: 'hsName',    kind: 'text', ids: [/SchoolName/i], labels: [/name of institution/i] },
-    { key: 'hsAddress', kind: 'text', ids: [/SchoolAddr1/i], labels: [/institution.*street address/i] },
-    { key: 'hsCourse',  kind: 'text', ids: [/SchoolCourseOfStudy/i], labels: [/course of study/i] },
+    /* CEAC's education block is ONE set of fields and the sheet carries two
+       candidate blocks, so these point at the keys normalize.js derives from
+       column BI - not at the high-school columns directly, which is what they
+       used to do. See `_eduSource` for which block was chosen. */
+    { key: 'eduName',    kind: 'text', ids: [/SchoolName/i, /EducInstName/i],
+      labels: [/name of institution/i] },
+    { key: 'eduAddress', kind: 'text', ids: [/SchoolAddr[12]/i, /EducInstAddr/i],
+      labels: [/institution.*street address/i] },
+    { key: 'eduCourse',  kind: 'text', ids: [/SchoolCourseOfStudy/i, /CourseOfStudy/i],
+      labels: [/course of study/i] },
+    { key: 'eduFrom',    kind: 'date',
+      ids: [/School(Date)?From(Day|Month|Year)/i, /EducInstFrom(Day|Month|Year)/i],
+      labels: [/date of attendance.*from/i, /^from$/i], must: /institution|attendance|school/i },
+    { key: 'eduTo',      kind: 'date',
+      ids: [/School(Date)?To(Day|Month|Year)/i, /EducInstTo(Day|Month|Year)/i],
+      labels: [/date of attendance.*to/i, /^to$/i], must: /institution|attendance|school/i },
+    { key: 'prevCountry', kind: 'text', ids: [/PrevEmpl.*(CNTRY|COUNTRY)/i],
+      labels: [/^country\s*\/?\s*region$/i], must: /previous|prevempl/i },
+    /* Column BB is one free-text address, so there is no city to fill. Named
+       by id only, so the report points at the sheet rather than the rules. */
+    { key: 'prevEmployerCity', kind: 'text', ids: [/PrevEmpl.*Addr.*City/i] },
 
     /* Two different questions that used to share one key. "Have you ever
        been in the U.S.?" is about entries; "Have you ever been issued a

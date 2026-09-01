@@ -411,10 +411,45 @@ form. `validate()` then quotes the raw cell and asks for the real date.
 An empty cell is reported too: CEAC requires Start Date, so a blank has to be
 visible rather than silent.
 
-**The education block has no matcher rules yet** — `hsName`, `hsAddress` and
-`hsCourse` exist, but nothing for `uniName`, `uniAddress`, `uniCourse`, or any
-of the four dates. The Previous Work/Education page has not been reported from
-a live Fill yet, and inventing ids for it would be guessing.
+## Previous Work / Education / Training (2026-09-01)
+The live page came back with **both** gating questions unanswered — neither had
+a matcher rule at all — so the page could not be completed. Their ids are
+`rblPreviouslyEmployed` and `rblOtherEduc`, and both are postbacks, so they land
+one per pass.
+
+| Question | Source |
+|---|---|
+| Were you previously employed? | column **AZ** |
+| Attended an educational institution at secondary level or above? | constant **YES** |
+
+A Yes on the first fills the employer block from **BA–BH** — note BH, the
+previous workplace country, which had no rule before.
+
+**Column BI picks the education block**, not column AZ. CEAC's education block is
+*one* set of fields — Name of Institution, Address, Course of Study, Date of
+Attendance From/To — and the sheet carries two candidates:
+
+| Column BI | Source |
+|---|---|
+| High School / Vocational School | BJ–BN |
+| College / University | BO–BS |
+
+`normalize.js` derives `eduName` / `eduAddress` / `eduCourse` / `eduFrom` /
+`eduTo` from that choice, and `_eduSource` records which block ran. Matching is
+tolerant of loose wording — `SMK`, `Diploma III`, `Sarjana (S1)` all land
+correctly. The three old rules pointed at the **high-school columns directly**;
+they now point at the derived keys.
+
+If BI is unreadable **and both** candidate blocks hold a name, nothing is chosen
+and `validate()` asks — picking an institution to swear to is not ours to do.
+With only one block filled there is no ambiguity, so it is used.
+
+`attendedEducation` = YES because CEAC's own help counts *any* secondary school
+attended for any length of time, and every seafarer CTI files has at least an SMA
+or SMK. Answering No would hide the block entirely.
+
+`prevEmployerCity` has no column — BB is one free-text address — so it is named
+by id only and joins `MISSING_FROM_INTAKE`.
 
 ### The agency block is constants
 `usedAgency` = YES plus `agencyName`, `agencyContactSurname` /
@@ -787,7 +822,7 @@ on the five Security and Background pages. Guards:
 `test/fake-personal1.html`, `fake-personal2.html`, `fake-travel.html`,
 `fake-prev-us-travel.html`, `fake-address-phone.html`, `fake-passport.html`,
 `fake-us-contact.html`, `fake-family.html`,
-`fake-crew-visa.html`, `fake-work-education.html` and
+`fake-crew-visa.html`, `fake-work-education.html`, `fake-prev-work-education.html` and
 `fake-security.html` are stand-in DS-160 pages for driving the filler in a
 normal browser (the Travel one uses deliberately unknown ids, so it proves the
 label matching alone); `content.js` exposes `window.DS160Filler` for them (isolated

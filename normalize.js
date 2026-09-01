@@ -245,6 +245,7 @@
     ['homeState',     'Home address - state / province'],
     ['homePostal',    'Home address - postal code'],
     ['employerCountry','Employer / school - country/region'],
+    ['prevEmployerCity','Previous employer - city (one address column in the sheet)'],
     ['employerCity',   'Employer / school - city (one address column in the sheet)'],
     ['employerState',  'Employer / school - state / province'],
     ['employerPostal', 'Employer / school - postal code'],
@@ -308,6 +309,38 @@
        constant. CEAC only asks it inside the previous-visa block, which is
        the Yes branch anyway. */
     rec.tenPrinted = rec.priorUsVisa === 'YES' ? 'YES' : 'NO';
+
+    /* CEAC's education block is ONE set of fields - Name of Institution,
+       Address, Course of Study, Date of Attendance From / To - and the sheet
+       carries two candidate blocks. Column BI picks which, at the user's
+       instruction:
+         BI = High School / Vocational School -> BJ..BN
+         BI = College / University            -> BO..BS
+       This is NOT keyed on column AZ; that mistake was made earlier today and
+       corrected. AZ only decides whether the previous-EMPLOYER block is
+       filled (from BA..BH). */
+    const lvl = upper(rec.educationLevel);
+    let pick = /COLLEGE|UNIVERS|DIPLOMA|SARJANA|POLITEKNIK|AKADEMI/.test(lvl) ? 'uni'
+             : /HIGH SCHOOL|VOCATION|SMA\b|SMK\b|SEKOLAH MENENGAH/.test(lvl) ? 'hs' : '';
+    if (!pick) {
+      /* BI unreadable. One block with a name is no ambiguity; both or neither
+         is not ours to guess - validate() asks instead. */
+      if (rec.uniName && !rec.hsName) pick = 'uni';
+      else if (rec.hsName && !rec.uniName) pick = 'hs';
+    }
+    if (pick === 'uni') {
+      rec.eduName = rec.uniName; rec.eduAddress = rec.uniAddress;
+      rec.eduCourse = rec.uniCourse; rec.eduFrom = rec.uniFrom; rec.eduTo = rec.uniTo;
+    } else if (pick === 'hs') {
+      rec.eduName = rec.hsName; rec.eduAddress = rec.hsAddress;
+      rec.eduCourse = rec.hsCourse; rec.eduFrom = rec.hsFrom; rec.eduTo = rec.hsTo;
+    } else {
+      rec.eduName = ''; rec.eduAddress = ''; rec.eduCourse = '';
+      rec.eduFrom = ''; rec.eduTo = '';
+    }
+    rec._eduSource = pick === 'uni' ? 'college / university (columns BO-BS)'
+                   : pick === 'hs'  ? 'high school / vocational (columns BJ-BN)'
+                   : '';
 
     /* A parent with one name is filled as Surnames + a ticked "Do Not Know"
        beside Given Names. Typing the literal "FNU" there was wrong: CEAC
@@ -406,6 +439,17 @@
 
     if (rec.prevEmployed === 'YES' && !rec.prevEmployerName)
       E('prevEmployerName', 'Marked as previously employed but no previous employer given');
+    /* The education block is chosen by column BI. If BI is unreadable and both
+       candidate blocks carry a name, picking one is not ours to do. */
+    if (!rec.eduName) {
+      const both = rec.hsName && rec.uniName;
+      W('eduName', both
+          ? 'Highest level of education (column BI) reads "' + clean(rec.educationLevel) +
+            '", which matches neither High School/Vocational nor College/University, ' +
+            'and both blocks hold a name - choose the institution by hand'
+          : 'No institution for the education block: column BI reads "' +
+            clean(rec.educationLevel) + '" and columns BJ-BN / BO-BS are empty');
+    }
     /* CEAC requires both of these on the Work/Education page, and both come
        from columns AX and AV. A blank has to be visible rather than silent. */
     if (!rec.employerStart)
@@ -515,13 +559,15 @@
       ['employerPhone','Phone'], ['employerStart','Start Date'],
       ['jobTitle','Job Title'] ] },
     { title: 'Previous Work / Education', fields: [
-      ['prevEmployed','Previously employed?'], ['prevEmployerName','Employer Name'],
+      ['prevEmployed','Were you previously employed? (column AZ)'], ['attendedEducation','Attended a secondary school or above?'], ['prevEmployerName','Employer Name'],
       ['prevEmployerAddress','Employer Address'], ['prevEmployerPhone','Employer Phone'],
       ['prevJobTitle','Job Title'], ['prevSupervisor',"Supervisor's Name"],
       ['prevStart','Employment From'], ['prevEnd','Employment To'],
       ['prevCountry','Country'] ] },
     { title: 'Additional Education', fields: [
-      ['educationLevel','Highest Level Completed'],
+      ['educationLevel','Highest Level Completed (column BI)'], ['_eduSource','Education block sourced from'],
+      ['eduName','Name of Institution'], ['eduAddress','Institution Address'],
+      ['eduCourse','Course of Study'], ['eduFrom','Attendance From'], ['eduTo','Attendance To'],
       ['hsName','School Name'], ['hsAddress','School Address'], ['hsCourse','Course of Study'],
       ['hsFrom','Attendance From'], ['hsTo','Attendance To'],
       ['uniName','University Name'], ['uniAddress','University Address'],
