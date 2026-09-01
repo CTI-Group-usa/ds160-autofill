@@ -224,6 +224,20 @@ before it was seen were wrong, and the user confirmed both changes:
    (`ALDI MAULANA RIZKY`) — not ticked as "Does Not Apply". `rec.nativeName`
    carries it; the adjacent NA checkbox now matches no rule at all and is left
    alone. Do not reintroduce a `nativeAlphabetNA` constant.
+
+   It is built from the **name split**, not from the raw cell. Some intake rows
+   write the name with a comma — `I PUTU JULI, FRINDAYANA` — and
+   `rec.nativeName = rec.fullName` put that comma on a live form. A name has no
+   punctuation in it: the comma is the sheet's separator and `splitName()`
+   already treats it as one, so `given + surname` reproduces the passport order
+   without it. A mononym is the single name alone, never `FNU SUROSO`.
+
+   Note what the comma does **not** settle: `splitName()` still takes the last
+   token as the surname, so `I PUTU JULI, FRINDAYANA` gives Surname FRINDAYANA
+   (right for this sheet) while `FRINDAYANA, I PUTU JULI` would give Surname
+   JULI (wrong). Reading the comma as a surname-first marker would be a guess
+   about a convention nobody has stated, and every multi-word split is already
+   warned about.
 2. **Have you made specific travel plans? = NO.** CEAC then drops the flight,
    arrival-city and departure questions and asks only for an *Intended Date of
    Arrival* and an *Intended Length of Stay* (the sample: 8 MONTH(S)). Trip

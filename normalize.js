@@ -390,8 +390,15 @@
     // The vessel name and IMO number live in the supporting letter, not
     // in any column - carry the link through so the agent can open it.
     /* A filed application shows the Latin full name here, not a ticked
-       "Does Not Apply" - see the ALDI MAULANA RIZKY sample. */
-    rec.nativeName = rec.fullName;
+       "Does Not Apply" - see the ALDI MAULANA RIZKY sample.
+
+       BUILT FROM THE SPLIT, not from the raw cell. Some intake rows write the
+       name with a comma - "I PUTU JULI, FRINDAYANA" - and passing that through
+       put the comma on the live form. A name has no punctuation in it: the
+       comma is the sheet's separator, and `splitName()` already treats it as
+       one, so given + surname reproduces the passport order without it. A
+       mononym is the single name alone - never "FNU SUROSO". */
+    rec.nativeName = n.mononym ? n.surname : (n.given + ' ' + n.surname).trim();
 
     const links = row._links || {};
     const cell = clean(row['Supporting Letter']);

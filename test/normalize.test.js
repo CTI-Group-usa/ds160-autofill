@@ -36,6 +36,26 @@ eq('a + is dropped, not kept', D.normPhone('+62 812 3456 7890'), '6281234567890'
 eq('no phone value ever starts with +',
    /^\+/.test(D.normPhone('+62 812 3456 7890')), false);
 
+// -- Full Name in Native Alphabet ------------------------------------
+/* A filed application shows the Latin full name here, not a ticked "Does Not
+   Apply". It is built from the SPLIT, not the raw cell: some intake rows write
+   the name with a comma - "I PUTU JULI, FRINDAYANA" - and passing that through
+   put the comma on a live form. A name has no punctuation in it. */
+eq('a comma in the intake name never reaches the form',
+   D.toRecord({ 'Name': 'I PUTU JULI, FRINDAYANA' }).nativeName, 'I PUTU JULI FRINDAYANA');
+eq('an ordinary name is unchanged',
+   D.toRecord({ 'Name': 'Aldi Maulana Rizky' }).nativeName, 'ALDI MAULANA RIZKY');
+eq('runs of whitespace collapse',
+   D.toRecord({ 'Name': 'Yahdia  Syahrul   Dharmawan' }).nativeName,
+   'YAHDIA SYAHRUL DHARMAWAN');
+/* A mononym is the single name alone - never the FNU placeholder alongside it. */
+eq('a mononym is the name by itself',
+   D.toRecord({ 'Name': 'Sukarno' }).nativeName, 'SUKARNO');
+eq('an already-processed FNU mononym too',
+   D.toRecord({ 'Name': 'SUROSO FNU' }).nativeName, 'SUROSO');
+eq('no native name ever holds punctuation',
+   /[^A-Z' -]/.test(D.toRecord({ 'Name': 'I PUTU JULI, FRINDAYANA' }).nativeName), false);
+
 // -- names -----------------------------------------------------------
 eq('mononym surname', D.splitName('Sukarno').surname, 'SUKARNO');
 eq('mononym given',   D.splitName('Sukarno').given, 'FNU');
