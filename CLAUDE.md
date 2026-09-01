@@ -305,6 +305,18 @@ and Given Names that do get filled. `usPocOrgNA` is therefore matched on its
 says so, which is the right way round: a wrongly ticked box is a wrong sworn
 answer, a missed one is a visible gap.
 
+Matching on the id alone then **missed the live control** — the box came back
+unticked, and because `isDoesNotApply()` silences every "Do Not Know" box, it did
+not appear in the report either, so its id could not be read off the page. Two
+changes:
+
+- the pattern accepts the short spelling as well (`POC_ORG` rather than
+  `POC_ORGANIZATION`);
+- `fillPage` reports does-not-apply boxes in **`report.deliberate`**, rendered as
+  a calm "Left blank on purpose" list **with ids**. Left alone is not a gap, but
+  it is not nothing either: the next time one of them turns out to want ticking,
+  the id is right there.
+
 `test/fake-us-contact.html` proves the end state; the regression itself is pinned
 in `matcher.test.js`, which passes the block text explicitly — a fixture's
 `blockLabel()` does not necessarily reproduce the live nesting.

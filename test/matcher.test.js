@@ -210,6 +210,18 @@ eq('organisation box still claimed inside the same block',
    (M.matchKey({ id: P + 'cbexUS_POC_ORGANIZATION_NA', name: '', label: 'Do Not Know',
                  section: pocPersonBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key,
    'usPocOrgNA');
+/* Matching on the id alone then missed the live control, which came back
+   unticked. The box is invisible in the report - isDoesNotApply() silences
+   every "Do Not Know" - so the id could not be read off it either. Accept the
+   short spelling too, and see report.deliberate for the reporting half. */
+eq('organisation box, short id spelling',
+   (M.matchKey({ id: P + 'cbexUS_POC_ORG_NA', name: '', label: 'Do Not Know',
+                 section: pocPersonBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key,
+   'usPocOrgNA');
+eq('person box unaffected by the wider pattern',
+   (M.matchKey({ id: P + 'cbexUS_POC_NAME_NA', name: '', label: 'Do Not Know',
+                 section: pocPersonBlk, type: 'checkbox', tag: 'input' }, {}) || {}).key,
+   undefined);
 eq('the person box is a deliberate blank, not a gap',
    M.isDoesNotApply({ type: 'checkbox', id: P + 'cbexUS_POC_NAME_NA',
                       label: 'Do Not Know' }), true);

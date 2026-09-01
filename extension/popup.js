@@ -95,6 +95,13 @@
     h += list('Not recognised', rep.unmatched.slice(0, 25), 'warn',
               x => esc((x.label || '').slice(0, 60)) +
                    (x.id ? ' <code>' + esc(x.id.replace(/^ctl00_SiteContentPlaceHolder_FormView1_/, '')) + '</code>' : ''));
+    /* Not a gap and not an error: boxes we leave unticked on purpose. Shown
+       with their ids because that is what a rule needs when one of them turns
+       out to want ticking - the U.S. contact organisation box was invisible
+       here and could not be written against. */
+    h += list('Left blank on purpose', (rep.deliberate || []).slice(0, 15), 'ok',
+              x => esc((x.label || '').slice(0, 40)) +
+                   (x.id ? ' <code>' + esc(x.id.replace(/^ctl00_SiteContentPlaceHolder_FormView1_/, '')) + '</code>' : ''));
     $('report').innerHTML = h || '<div class="warn">Nothing on this page matched.</div>';
   }
 

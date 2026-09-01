@@ -327,7 +327,8 @@
 
   function fillPage(rec, overrides, opts) {
     opts = opts || {};
-    const report = { filled: [], already: [], skipped: [], unmatched: [], postbackPending: null, url: location.href };
+    const report = { filled: [], already: [], skipped: [], unmatched: [], deliberate: [],
+                     postbackPending: null, url: location.href };
     const all = controls();
 
     // Radios sharing a name are one logical question.
@@ -348,9 +349,17 @@
 
            Forbidden controls stay out - they are excluded on purpose, not
            gaps in the rules, and listing them buried the real ones. */
-        const deliberate = M.isDoesNotApply(c) ||
-                           M.isForbidden(c.id) || M.isForbidden(c.name);
-        if (!deliberate) report.unmatched.push({ id: c.id, label: c.label, tag: c.tag });
+        /* A does-not-apply box left alone is not a gap, but it is not
+           nothing either: the U.S. contact organisation box needed ticking
+           and this silence hid its id, so there was no way to write a rule
+           for it. Report those separately - quiet, but with the id. */
+        if (M.isDoesNotApply(c)) {
+          report.deliberate.push({ id: c.id, label: c.label });
+        } else if (!M.isForbidden(c.id) && !M.isForbidden(c.name)) {
+          /* Forbidden controls stay out entirely - excluded on purpose, and
+             listing them buried the real gaps. */
+          report.unmatched.push({ id: c.id, label: c.label, tag: c.tag });
+        }
         if (c.type === 'radio') done.add(c.name);
         continue;
       }

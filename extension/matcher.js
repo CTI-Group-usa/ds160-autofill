@@ -93,9 +93,9 @@
        list, so Personal 2 still wins there. */
     { key: 'homeCountry', kind: 'text', ids: [/APP_ADDR_CNTRY/i],
       labels: [/^country\s*\/?\s*region$/i], must: /home address/i },
-    /* City is recovered from the address text (see splitAddress in
-       normalize.js). State/Province and Postal are not in the sheet at all,
-       and are named here only so the report says "no value in record" and
+    /* None of these three has a source: the sheet holds one free-text address
+       column and the agent arranges City, State/Province and Postal by hand.
+       They are named here only so the report says "no value in record" and
        points at the sheet, rather than "not recognised" and blames the rules.
 
        Id only, no label. "City" and "State/Province" are word-for-word the
@@ -256,7 +256,7 @@
        If CEAC renames this control the box goes unticked and the report says
        so, which is the right way round: a wrongly ticked box is a wrong sworn
        answer, a missed one is a visible gap. */
-    { key: 'usPocOrgNA',        kind: 'checkbox', ids: [/POC_ORGANIZATION.*_NA/i] },
+    { key: 'usPocOrgNA',        kind: 'checkbox', ids: [/POC_ORG.*_NA/i] },
     { key: 'usPocRelationship', kind: 'text', ids: [/POC_REL_TO_APP/i] },
     { key: 'usPocAddr1',        kind: 'text', ids: [/POC_ADDR_LN1/i],
       labels: [/street address \(line ?1\)|u\.?s\.? contact.*address/i], must: /contact/i },
