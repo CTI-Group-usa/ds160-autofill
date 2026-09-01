@@ -343,17 +343,38 @@ CEAC requires the address and the start date, so a blank AV or AX is reported
 rather than passed over. Tests assert that BA (previous employer) and BO
 (university) are **not** consulted for this block.
 
-### Two constants on this page
-`employerCountry` = **INDONESIA** and `monthlyIncomeNA` = **tick Does Not
-Apply**. The income box has no salary column in the sheet and CEAC only asks it
-"if employed".
+### One constant on this page, and one that was withdrawn
+`monthlyIncomeNA` = **tick Does Not Apply** — no salary column in the sheet, and
+CEAC only asks it "if employed". It is pinned by
+`must: /monthly (income|salary)/i`, because State/Province and Postal Zone on
+this same page carry an identical "Does Not Apply" **and hold real values**.
 
-`Country/Region` is a bare label shared by **four** blocks — home address,
-passport issue, manning agency and present employer — so every one of those
-rules is pinned to its own block, and a bare one outside any block stays
-unclaimed. A cross-block test covers all four. Likewise `monthlyIncomeNA` is
-pinned by `must: /monthly (income|salary)/i`, because State/Province and Postal
-Zone on this same page carry an identical "Does Not Apply" and hold real values.
+**`employerCountry` was a constant = INDONESIA for a few hours and is now
+removed.** A row whose employer is Carnival UK filled `INDONESIA` against an
+address in *Southampton, Hampshire, SO15 1ST*. The employer is Indonesian for
+most applicants and foreign for some, so there is no constant to have — the
+agent picks it, and `MISSING_FROM_INTAKE` names it so the omission is visible.
+
+`Country/Region` is still a bare label shared by **four** blocks — home address,
+passport issue, manning agency and present employer — so each of those rules is
+pinned to its own block and a bare one outside any block stays unclaimed. A
+cross-block test covers all four.
+
+### Only the applicant's own phone number is normalised
+`normPhone` assumes Indonesia: it strips a leading `0` and prepends `62`. Column
+AW held Carnival UK's `02380655000`, which came out as `+622380655000` — a number
+that does not exist. An Indonesian landline starts with `0` as well (`0361`,
+`021`), so no prefix rule can tell them apart, and CEAC accepts the local format.
+
+`employerPhone` (AW) and `prevEmployerPhone` (BC) therefore use
+**`phoneAsWritten`** — digits and a leading `+`, nothing else. The agency phone
+constant is stored raw for the same reason. Only column AA, the applicant's own
+number, still goes through `normPhone`.
+
+### The employer's phone label is bare "Phone Number"
+The rule wanted `/telephone number.*employer/i` and never fired, so column AW
+landed nowhere. A bare "Phone Number" also labels the U.S. contact box, so the
+rule is pinned to this block.
 
 ### The employer address was clipping in Line 1
 `employerAddress` matched only `EmpSchAddr1`, so nothing claimed Line 2 and an

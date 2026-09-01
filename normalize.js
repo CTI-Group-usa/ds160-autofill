@@ -106,6 +106,14 @@
      addressHalf() so nothing is clipped and lost. Do not reintroduce a
      parser here. */
 
+  /* Third-party numbers are left as the sheet has them. `normPhone` below is
+     Indonesia-specific, and an employer is not always Indonesian: Carnival
+     UK's Southampton number 02380655000 came out as +622380655000, a number
+     that does not exist. An Indonesian landline starts with 0 too (0361, 021),
+     so a prefix cannot tell them apart - and CEAC takes the local format. Only
+     the applicant's own number, which is always Indonesian, is normalised. */
+  const phoneAsWritten = raw => clean(raw).replace(/[^\d+]/g, '');
+
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
     let s = clean(raw).replace(/[^\d+]/g, '').replace(/^\+/, '');
@@ -192,13 +200,13 @@
     'Country/Region Marriage was Terminated':                        ['marriageEndCountry', upper],
     "Current Workplace's Name":                                      ['employerName', upper],
     "Current Workplace's Address":                                   ['employerAddress', clean],
-    "Current Workplace's Phone Number":                              ['employerPhone', normPhone],
+    "Current Workplace's Phone Number":                              ['employerPhone', phoneAsWritten],
     'Start Date at Current Workplace':                               ['employerStart', dateStr],
     'Current Employment Position':                                   ['jobTitle', upper],
     'Were you previously employed?':                                 ['prevEmployed', yn],
     'Previous Work Place Name':                                      ['prevEmployerName', upper],
     'Previous Workplace Address':                                    ['prevEmployerAddress', clean],
-    'Previous Workplace Phone Number':                               ['prevEmployerPhone', normPhone],
+    'Previous Workplace Phone Number':                               ['prevEmployerPhone', phoneAsWritten],
     'Previous Workplace Working Position':                           ['prevJobTitle', upper],
     "Previous Workplace Manager's Name":                             ['prevSupervisor', upper],
     'Previous Workplace Start Date':                                 ['prevStart', dateStr],
@@ -236,6 +244,7 @@
     ['passportIssuedState', 'Passport - state/province where issued'],
     ['homeState',     'Home address - state / province'],
     ['homePostal',    'Home address - postal code'],
+    ['employerCountry','Employer / school - country/region'],
     ['employerCity',   'Employer / school - city (one address column in the sheet)'],
     ['employerState',  'Employer / school - state / province'],
     ['employerPostal', 'Employer / school - postal code'],

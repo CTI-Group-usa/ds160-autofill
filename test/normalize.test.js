@@ -118,7 +118,21 @@ const present = D.toRecord({ 'Name': 'X',
   'Name of College/University': 'UDAYANA UNIVERSITY' });
 eq('AU: employer or school name', present.employerName, 'INSTITUTE TOURISM OF SAHID');
 eq('AV: address',                 present.employerAddress, 'JL KEMIRI RAYA NO 22 PD CABE UDIK');
-eq('AW: phone',                   present.employerPhone, '+62217402329');
+/* Third-party numbers are left as the sheet has them. normPhone is
+   Indonesia-specific, and an employer is not always Indonesian: Carnival UK's
+   02380655000 came out as +622380655000, a number that does not exist. An
+   Indonesian landline starts with 0 too (0361, 021), so a prefix cannot tell
+   them apart, and CEAC takes the local format. */
+eq('AW: phone as written',        present.employerPhone, '0217402329');
+eq('a UK employer number is untouched',
+   D.toRecord({ 'Name': 'X', "Current Workplace's Phone Number": '02380655000' })
+     .employerPhone, '02380655000');
+eq('an international prefix survives',
+   D.toRecord({ 'Name': 'X', 'Previous Workplace Phone Number': '+44 23 8065 5000' })
+     .prevEmployerPhone, '+442380655000');
+// The applicant's own number is always Indonesian, so it is still normalised.
+eq('the applicant own number is still normalised',
+   D.toRecord({ 'Name': 'X', 'Phone Number': '081542474324' }).phone, '+6281542474324');
 eq('AX: start date',              present.employerStart, '28-AUG-2015');
 eq('AY: position',                present.jobTitle, 'STUDENT');
 eq('BA is not consulted here',

@@ -205,6 +205,23 @@ eq('agency country',
    'agencyCountry');
 eq('no block, no claim', cr(''), undefined);
 
+/* Column AW was landing nowhere: the live label is a bare "Phone Number" and
+   the rule wanted "telephone number ... employer". A bare "Phone Number" also
+   labels the U.S. contact box, so the rule is pinned to its block. */
+const pocBlk2 = 'U.S. Point of Contact Address Relationship to You Street Address ' +
+                'City State Phone Number Email Address';
+const ph = (id, label, section) =>
+  (M.matchKey({ id: P + id, name: '', label, section, type: 'text',
+                tag: 'input' }, {}) || {}).key;
+eq('employer phone by id',    ph('tbxWorkEducTel', 'Phone Number', empBlk), 'employerPhone');
+eq('employer phone by label', ph('tbxUnknown', 'Phone Number', empBlk), 'employerPhone');
+eq('the U.S. contact phone is still its own',
+   ph('tbxUS_POC_HOME_TEL', 'Phone Number', pocBlk2), 'usPocPhone');
+eq('a bare Phone Number outside any block stays unclaimed',
+   ph('tbxUnknown', 'Phone Number', ''), undefined);
+eq('the primary phone is untouched',
+   ph('tbxAPP_HOME_TEL', 'Primary Phone Number', 'Phone Primary Phone Number'), 'phone');
+
 /* Monthly Income is left empty and its "Does Not Apply" ticked - no salary
    column in the sheet, and CEAC only asks "if employed". Three other
    Does-Not-Apply boxes sit on this same page, and State and Postal hold real

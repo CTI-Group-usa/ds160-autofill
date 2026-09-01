@@ -348,7 +348,14 @@
     { key: 'employerCity',   kind: 'text', ids: [/EmpSch(Addr)?City/i] },
     { key: 'employerState',  kind: 'text', ids: [/EmpSch(Addr)?State/i], not: /_?NA\b/i },
     { key: 'employerPostal', kind: 'text', ids: [/EmpSch(Addr)?Postal/i], not: /_?NA\b/i },
-    { key: 'employerPhone',   kind: 'text', ids: [/WorkEducTel/i, /EmpSchTel/i], labels: [/telephone number.*employer/i] },
+    /* The live label is a bare "Phone Number" - the rule wanted "telephone
+       number ... employer" and so never fired, leaving column AW on the floor.
+       A bare "Phone Number" also labels the U.S. contact box, so the rule is
+       pinned to this block. */
+    { key: 'employerPhone',   kind: 'text',
+      ids: [/WorkEducTel/i, /EmpSchTel/i, /EmpSch(Addr)?(Tel|Phone)/i],
+      labels: [/telephone number.*employer/i, /^phone number$/i],
+      must: /employer|school/i },
     { key: 'employerStart',   kind: 'date', ids: [/EmpDateFrom(Day|Month|Year)/i], labels: [/start date/i] },
     /* "Country/Region" is bare and shared by the home address, the passport
        issue block, the manning agency and this one, so the label match has to
