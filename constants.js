@@ -119,6 +119,20 @@
        it is the seafarer's own answer and comes from the intake form. See
        `prevStayUnit` / `prevStayLength` in normalize.js. */
 
+    { key: 'sameCountryResidence', kind: 'yesno', page: 'Previous U.S. Travel',
+      label: 'Applying in the same country/location the previous visa was issued, ' +
+             'and it is your place of principal residence?',
+      def: 'YES', why: 'CTI files in Jakarta for seafarers resident in Indonesia, which is ' +
+                       'where the previous visa was issued. Change it for anyone applying ' +
+                       'from a third country.' },
+    /* No constant for "Have you been ten-printed?" - it follows from whether
+       he has held a U.S. visa before, so it is derived in normalize.js. */
+    { key: 'immigrantPetition', kind: 'yesno', page: 'Previous U.S. Travel',
+      label: 'Has anyone ever filed an immigrant petition on your behalf with USCIS?',
+      def: 'NO', why: 'Yes if a relative or employer has ever filed an I-130 or I-140 for ' +
+                      'them. Check it per applicant - it is a sworn answer and a Yes here ' +
+                      'changes how the application is read.' },
+
     /* Not a single control - a sweep across five pages. It has no matcher
        rule; content.js reads it straight off the record. It lives here so
        it sits alongside every other answer the agent is making on the

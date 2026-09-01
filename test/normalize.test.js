@@ -99,6 +99,27 @@ const been = D.toRecord({ 'Name': 'Sukarno', 'When did you arrive in the US?': '
 eq('been in US: date given',  been.beenInUs, 'YES');
 eq('been in US: date kept',   been.lastUsArrival, '12-JUN-2024');
 
+// Ten-printing follows from having held a U.S. visa before.
+eq('ten-printed with a prior visa',
+   D.toRecord({ 'Name': 'Sukarno', 'Have you ever been issued U.S. Visa?': 'Yes' }).tenPrinted, 'YES');
+eq('ten-printed without one',
+   D.toRecord({ 'Name': 'Sukarno', 'Have you ever been issued U.S. Visa?': 'No' }).tenPrinted, 'NO');
+eq('ten-printed when unanswered',
+   D.toRecord({ 'Name': 'Sukarno' }).tenPrinted, 'NO');
+
+// The refusal question is answered from column X, which asks about
+// cancellation - one cell, two sworn answers, so a Yes is flagged.
+const revoked = D.toRecord({ 'Name': 'Sukarno',
+  'Has your U.S. Visa / passport ever been cancelled or revoked?': 'Yes',
+  'Explain Cancellation/Revocation Details': 'Foil damaged' });
+eq('refusal mirrors column X', revoked.visaRefused, 'YES');
+has('refusal from the wrong question', D.validate(revoked, { today: '2026-08-31' }).warnings,
+    'visaRefused', 'confirm he was actually');
+none('no refusal warning when column X is No',
+     D.validate(D.toRecord({ 'Name': 'Sukarno',
+       'Has your U.S. Visa / passport ever been cancelled or revoked?': 'No' }),
+       { today: '2026-08-31' }).warnings, 'visaRefused');
+
 const notBeen = D.toRecord({ 'Name': 'Sukarno', 'Have you ever been issued U.S. Visa?': 'Yes' });
 eq('been in US: no date',     notBeen.beenInUs, 'NO');
 eq('been in US: visa is separate', notBeen.priorUsVisa, 'YES');

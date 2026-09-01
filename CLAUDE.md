@@ -258,6 +258,31 @@ rather than guessing.
 For `LESS THAN 24 HOURS` the count is cleared: CEAC greys the number box out for
 that option, so writing there would fail silently or contradict the dropdown.
 
+### The rest of the page (added 2026-09-01, at the user's instruction)
+- **"Applying in the same country the visa was issued, and resident there?"** —
+  constant `sameCountryResidence` = YES. CTI files in Jakarta for seafarers
+  resident in Indonesia.
+- **"Have you been ten-printed?"** — **derived, not a constant.** The user first
+  said constant NO, then corrected it to YES *if he has held a U.S. visa before*,
+  which makes it `priorUsVisa === 'YES' ? 'YES' : 'NO'`. Ten-printing is the scan
+  taken at a visa interview, and CEAC only asks it inside the previous-visa
+  block, so in practice it is the Yes branch.
+- **"Immigrant petition filed on your behalf?"** — constant `immigrantPetition`
+  = NO. A Yes changes how the whole application reads; check it per applicant.
+- **"Ever refused a U.S. visa, refused admission, or withdrawn an application at
+  the port of entry?"** — `visaRefused`, taken from **column X** at the user's
+  direction.
+
+Column X is headed *"Has your U.S. Visa / passport ever been cancelled or
+revoked?"* and already answers `visaRevoked`, a **different** DS-160 question —
+the intake form has no column for refusals. So one cell now swears to two
+answers. That was raised with the user and they confirmed it, so it stands, but:
+both worksheet lines name column X, and `validate()` warns on a Yes, because
+someone can be refused a visa without ever having one revoked, and CEAC wants a
+separate explanation for a refusal (column Y explains the cancellation). If a
+refusal column is ever added to the sheet, point `visaRefused` at it and delete
+the derivation.
+
 ### What the live page corrected (2026-09-01)
 Running it against the real CEAC page found four things the fixture had not:
 

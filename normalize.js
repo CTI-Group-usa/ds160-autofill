@@ -247,6 +247,22 @@
        number beside it. */
     rec.prevStayUnit   = stayUnit(rec.stayUnit);
     rec.prevStayLength = stayCount(rec.stayLength);
+
+    /* "Have you ever been refused a U.S. Visa, or been refused admission, or
+       withdrawn your application at the port of entry?" has no column of its
+       own. At the user's direction it is answered from column X, which is
+       headed "Has your U.S. Visa / passport ever been cancelled or revoked?"
+       and also answers that separate DS-160 question. One cell, two sworn
+       answers: the worksheet says so on both lines and validate() flags a
+       Yes, because someone can be refused a visa without ever having one
+       revoked. */
+    rec.visaRefused = rec.visaRevoked;
+
+    /* Ten-printing is the full ten-finger scan taken at a visa interview, so
+       it follows from having held a U.S. visa before rather than being a
+       constant. CEAC only asks it inside the previous-visa block, which is
+       the Yes branch anyway. */
+    rec.tenPrinted = rec.priorUsVisa === 'YES' ? 'YES' : 'NO';
     /* CEAC greys the number box out for this option, so writing a count
        there would either fail silently or contradict the dropdown. */
     if (rec.prevStayUnit === 'LESS THAN 24 HOURS') rec.prevStayLength = '';
@@ -366,6 +382,13 @@
       E('lostDetails', 'Visa or passport reported lost/stolen with no explanation');
     if (rec.visaRevoked === 'YES' && !rec.revokedDetails)
       E('revokedDetails', 'Visa reported cancelled/revoked with no explanation');
+    /* Column X answers both this and the cancellation question, so a Yes is
+       being sworn to twice off one cell. CEAC also demands an explanation
+       here, and column Y explains the cancellation, not the refusal. */
+    if (rec.visaRefused === 'YES')
+      W('visaRefused', 'Answered Yes to "ever refused a U.S. visa or admission" from column X, ' +
+                       'which asks about cancellation/revocation - confirm he was actually ' +
+                       'refused, and give CEAC a separate explanation if he was');
 
     // These are the same every time and would drown the real findings,
     // so they are kept in their own bucket.
@@ -434,7 +457,12 @@
       ['usDriverLicense','Do you hold a U.S. driver licence?'],
       ['lastVisaIssued','Date Last Visa Was Issued'], ['lastVisaNumber','Visa Number'],
       ['sameVisaType','Applying for the same visa type?'],
-      ['visaRevoked','Visa ever cancelled or revoked?'], ['revokedDetails','Explain'],
+      ['sameCountryResidence','Applying where the last visa was issued, and resident there?'],
+      ['tenPrinted','Have you been ten-printed?'],
+      ['visaRevoked','Visa ever cancelled or revoked? (column X)'],
+      ['revokedDetails','Explain'],
+      ['visaRefused','Ever refused a visa or admission? (also column X)'],
+      ['immigrantPetition','Immigrant petition ever filed on your behalf?'],
       ['countries5y','Countries Visited in the Last 5 Years'] ] },
     { title: 'CTI Tracking (not on DS-160)', fields: [
       ['cruiseLine','Cruise Line'], ['visaAppId','Visa Application ID'],

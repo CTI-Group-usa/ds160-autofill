@@ -131,6 +131,7 @@ question and must not be reused for it.
 | P | `lastUsArrival` | yes - *Date Arrived*, and it derives `beenInUs` |
 | Q | `stayUnit` | yes - *Length of Stay* period, via `prevStayUnit` |
 | R | `stayLength` | yes - *Length of Stay* number, via `prevStayLength` |
+| X | `visaRevoked` | yes - **twice**: *cancelled or revoked* AND *ever refused* |
 
 Column Q holds the CEAC period and column R the number beside it, as the
 headers read. `stayUnit()` accepts loose English and Indonesian wording
@@ -140,3 +141,17 @@ closed option set (`YEAR(S)`, `MONTH(S)`, `WEEK(S)`, `DAY(S)`,
 greys that box out. `validate()` warns when the period cannot be placed on an
 option, when it is missing, when it turns up in column R instead of Q, and
 when a period has no number.
+
+### Column X answers two questions
+The sheet has no column for *"Have you ever been refused a U.S. Visa, or been
+refused admission, or withdrawn your application at the port of entry?"*, so at
+the user's direction it is answered from column X, which is headed
+*"Has your U.S. Visa / passport ever been cancelled or revoked?"* and answers
+that separate DS-160 question too. `validate()` warns on a Yes: a refusal and a
+revocation are not the same event, and CEAC asks for a separate explanation for
+each (column Y explains the revocation). Adding a refusal column to the sheet
+would let `visaRefused` read from it directly.
+
+The remaining questions on the page are not from the sheet: `sameCountryResidence`
+= YES and `immigrantPetition` = NO are constants, and `tenPrinted` is derived from
+`priorUsVisa` (column O).

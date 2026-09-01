@@ -248,6 +248,20 @@
     { key: 'lostDetails',    kind: 'text',  ids: [/PREV_VISA_LOST_EXPL/i], labels: [/explain.*lost/i] },
     { key: 'visaRevoked',    kind: 'yesno', ids: [/PREV_VISA_CANCELLED_IND/i], labels: [/cancelled or revoked/i] },
     { key: 'revokedDetails', kind: 'text',  ids: [/PREV_VISA_CANCELLED_EXPL/i], labels: [/explain.*(cancel|revok)/i] },
+    /* The rest of the page. Ids here are best guesses from CEAC's naming;
+       the label regexes are what these will match on until a live Fill
+       report pins them - PREV_VISA_ISSUED_DTE had to be corrected that way. */
+    { key: 'sameCountryResidence', kind: 'yesno',
+      ids: [/PREV_VISA_(ISSUED_)?SAME_CNTRY_IND/i, /SAME_CNTRY/i],
+      labels: [/same country or location where the visa/i, /place of principal.*residence/i] },
+    { key: 'tenPrinted',     kind: 'yesno', ids: [/TEN_PRINT/i, /PREV_VISA_TEN_PRINT_IND/i],
+      labels: [/ten.?printed/i] },
+    { key: 'visaRefused',    kind: 'yesno', ids: [/PREV_VISA_REFUSED_IND/i, /VISA_REFUSED/i],
+      labels: [/refused a u\.?s\.? visa|refused admission|withdrawn your application/i] },
+    { key: 'refusedDetails', kind: 'text',  ids: [/PREV_VISA_REFUSED_EXPL/i],
+      labels: [/explain.*refus/i] },
+    { key: 'immigrantPetition', kind: 'yesno', ids: [/IV_PETITION_IND/i, /IMMIGRANT_PETITION/i],
+      labels: [/immigrant petition/i] },
   ];
 
   const KIND = RULES.reduce((m, r) => (m[r.key] = r.kind, m), {});

@@ -132,6 +132,36 @@ eq('_NA suffix alone is not enough',
    M.isDoesNotApply({ type: 'checkbox', id: P + 'cbexAPP_TAX_ID_NA', label: 'Taxpayer ID' }), false);
 eq('tooltip language forbidden', M.isForbidden('ctl00_ddlLanguage'), true);
 
+// -- the rest of Previous U.S. Travel ---------------------------------
+const radio = (id, label) =>
+  (M.matchKey({ id: P + id, name: '', label, type: 'radio', tag: 'input' }, {}) || {}).key;
+eq('same country + residence',
+   radio('rblPREV_VISA_SAME_CNTRY_IND',
+     'Are you applying in the same country or location where the visa above was issued, ' +
+     'and is this country or location your place of principal of residence?'),
+   'sameCountryResidence');
+eq('same country by label alone',
+   radio('rblUnknownSameCountry',
+     'Are you applying in the same country or location where the visa above was issued?'),
+   'sameCountryResidence');
+eq('ten-printed', radio('rblPREV_VISA_TEN_PRINT_IND', 'Have you been ten-printed?'), 'tenPrinted');
+eq('ten-printed by label', radio('rblUnknownTenPrint', 'Have you been ten printed?'), 'tenPrinted');
+const REFUSED = 'Have you ever been refused a U.S. Visa, or been refused admission to the ' +
+                'United States, or withdrawn your application for admission at the port of entry?';
+eq('visa refused', radio('rblPREV_VISA_REFUSED_IND', REFUSED), 'visaRefused');
+eq('visa refused by label', radio('rblUnknownRefused', REFUSED), 'visaRefused');
+eq('immigrant petition',
+   radio('rblIV_PETITION_IND',
+     'Has anyone ever filed an immigrant petition on your behalf with the United States ' +
+     'Citizenship and Immigration Services?'),
+   'immigrantPetition');
+// Refusal and cancellation are separate questions on the same page.
+eq('cancellation is still its own',
+   radio('rblPREV_VISA_CANCELLED_IND', 'Has your U.S. Visa ever been cancelled or revoked?'),
+   'visaRevoked');
+// "Have you ever been..." opens three questions here; only one is beenInUs.
+eq('refused is not beenInUs', radio('rblUnknownX', REFUSED), 'visaRefused');
+
 // The trip's intended stay must not leak into the previous-visit boxes.
 eq('intended stay stays off the prev block',
    (M.matchKey({ id: P + PREV + 'ddlPREV_US_VISIT_LOS_CD', name: '',
