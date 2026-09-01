@@ -67,6 +67,27 @@ If it happens again: stop, do not retry in a loop, and wait it out. Never
 work around a block by changing IP, browser or identity - that is evasion of
 a security control on a government system, and it is not on the table.
 
+## An empty `section` makes every block guard inert — silently
+`blockLabel()` used to `break` and return `''` for any container holding more
+than 14 controls ("too big to be one block"). Every `must` and `not` guard reads
+that string, so on an oversized block **all block pinning quietly stopped
+working**: `must` guards blocked correct fills, and `not` guards stopped blocking
+wrong ones.
+
+CEAC's educational-institution block has **sixteen** controls — Name, two address
+lines, City, State + its Does-Not-Apply, Postal + its Does-Not-Apply,
+Country/Region, Course of Study, and two three-part dates. That is how its
+`Country/Region` came back unfilled: the rule was right, the context it depended
+on was blank.
+
+Over the cap `blockLabel()` now returns **the heading alone** — the legend, or the
+nearest non-empty preceding element. That still identifies the block exactly
+without dragging half the page in to weaken the guards. `test/fake-prev-work-education.html`
+reproduces the sixteen-control size on purpose; do not trim it back.
+
+**When a `must`-guarded rule mysteriously does not fire, check the control's
+`section` first.** It is reported per control by `pageMap()`.
+
 ## Hard Rules (safety, not preference)
 - Never automate the CAPTCHA / security check.
 - Never click Next, Sign, Submit, or Confirm.

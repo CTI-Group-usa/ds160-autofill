@@ -97,6 +97,16 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddr2" size="40" maxlength="40"></td></tr>
     <tr><td>City</td>
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrCity"></td></tr>
+    <!-- These two push the block past blockLabel()'s size cap, which is what
+         made section '' on the live page and left every must/not guard inert. -->
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrState">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrStateNA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrStateNA">Does Not Apply</label></td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrPostal">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrPostalNA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrPostalNA">Does Not Apply</label></td></tr>
     <tr><td>Country/Region</td>
         <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolCountry">
               <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>

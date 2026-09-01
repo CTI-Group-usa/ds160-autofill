@@ -96,12 +96,13 @@
      ship's agent. This is only ever used to RESTRICT a match, never to
      cause one: the text is broad, and letting it match positively would
      trade one wrong fill for another. */
+  const BLOCK_MAX = 14;
+
   function blockLabel(el) {
     let n = el.parentElement;
     for (let i = 0; i < 10 && n; i++, n = n.parentElement) {
       const count = n.querySelectorAll('input, select, textarea').length;
       if (count < 3) continue;
-      if (count > 14) break;          // too big to be one block; stop guessing
 
       /* The heading usually sits OUTSIDE the block's own table - as a
          legend, or as the element just before it - so taking only the
@@ -115,7 +116,19 @@
         while (prev && !prev.textContent.trim()) prev = prev.previousElementSibling;
         if (prev) lead = prev.textContent;
       }
-      return (lead + ' ' + n.textContent).replace(/\s+/g, ' ').trim().slice(0, 240);
+      const tidy = s => s.replace(/\s+/g, ' ').trim().slice(0, 240);
+
+      /* Over the cap this is more than one block, so its own text would drag
+         half the page in and weaken every guard that reads it. The HEADING
+         still identifies it exactly, so return that alone.
+
+         This used to `break` and return '' - and an empty section makes every
+         `must` and `not` guard on the block INERT, silently. CEAC's
+         educational-institution block has sixteen controls, which is how its
+         Country/Region went unfilled: the rule was right, the context it
+         depended on was blank. */
+      if (count > BLOCK_MAX) return tidy(lead);
+      return tidy(lead + ' ' + n.textContent);
     }
     return '';
   }
