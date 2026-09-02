@@ -171,6 +171,14 @@ ok('nor writes the setting', !/autoContinue/.test(popup));
 eq('the content script makes no network request of its own',
    /fetch\(|XMLHttpRequest|sendBeacon/.test(content), false);
 
+/* The applicant summary is three stacked lines - name, then passport/DOB/cruise
+   line, then "sent <time>". showWho() writes the last two as sibling <span>s,
+   and inline they ran together on a live popup as "Cunard Linesent 1:31:12 PM".
+   The <b> above them was already block; these were meant to stack the same
+   way. */
+ok('the applicant summary spans stack instead of running together',
+   /\.who span \{ display: block;/.test(read(path.join('extension', 'popup.html'))));
+
 // -- host permission, so the check is not blocked by CORS -------------
 /* Done from background.js under host_permissions rather than from the popup:
    a popup fetch sends Origin: chrome-extension://<id>, and an unpacked

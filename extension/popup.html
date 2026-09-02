@@ -15,7 +15,11 @@
   .brand img { width: 24px; height: 24px; border-radius: 6px; flex: 0 0 auto; }
   .who { background: #f3f4f6; border-radius: 6px; padding: 8px; margin-bottom: 8px; }
   .who b { display: block; font-size: 14px; }
-  .who span { color: #6b7280; }
+  /* BLOCK, not inline. showWho() writes two spans - the passport/DOB/cruise
+     line, then "sent <time>" - and inline they ran together as
+     "Cunard Linesent 1:31:12 PM". The <b> above is already block; these
+     were meant to stack the same way. */
+  .who span { display: block; color: #6b7280; }
   button { font: inherit; padding: 6px 10px; border-radius: 6px; border: 1px solid #d1d5db;
            background: #fff; cursor: pointer; }
   button.primary { background: #B01A18; border-color: #B01A18; color: #fff; }
