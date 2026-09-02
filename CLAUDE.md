@@ -1,9 +1,34 @@
 # DS-160 Autofill — Project Context for Claude
 
 ## What This Is
-Cuts the copy-paste work out of filing C1/D (and other) DS-160 applications for
-CTI seafarers. Data already exists in the Zoho intake sheet; this project
-normalises it, validates it, and fills the CEAC form from it.
+Cuts the copy-paste work out of filing DS-160 applications for CTI seafarers.
+Data already exists in the Zoho intake sheet; this project normalises it,
+validates it, and fills the CEAC form from it.
+
+## THIS IS A C1/D TOOL ONLY
+Every applicant is a crewmember in transit. That is not a detail - a large part
+of what this project *decides* is only defensible under that scope, so do not
+generalise it to B1/B2 or any other class without revisiting each one:
+
+- `purposeOfTrip` = `ALIEN IN TRANSIT (C)` and `specifyPurpose` =
+  `CREWMEMBER IN TRANSIT (C1/D)` are defaults because **every** application uses
+  them;
+- the whole **Crew Visa** page - the vessel, its IMO number, the shipboard job
+  title, the manning agency block - exists on the form *because* the purpose is
+  C1/D. On any other class CEAC never shows it;
+- `travelCompanions` = NO (crew join individually), `specificTravelPlans` = NO,
+  and the intended stay is the contract length;
+- the *Person/Entity Paying* and *U.S. Contact* blocks are constants because
+  they describe the **cruise line**, not the seafarer;
+- `LESS THAN 24 HOURS` for a previous stay, and column Q's `In Days` mapping to
+  it, are read as a same-day transit - which is what a crew shore leave is;
+- `attendedEducation` = YES rests on "every seafarer CTI files has at least an
+  SMA or SMK", and `specializedSkills` = NO on STCW training not being what that
+  question asks.
+
+A different visa class would need most of that re-decided with the user, not
+adapted. `letter.js` likewise parses a **C1/D supporting letter** and nothing
+else.
 
 No build tools, no framework — plain HTML/CSS/JS, same house style as the J1
 Dashboard and the Indonesia Monitoring Dashboard.
