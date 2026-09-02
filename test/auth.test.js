@@ -16,7 +16,10 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const read = f => fs.readFileSync(path.join(root, f), 'utf8');
+/* Line endings normalised: the Windows working copy is CRLF while git holds
+   LF, and a pattern with a literal newline would otherwise pass on one and
+   fail on the other. */
+const read = f => fs.readFileSync(path.join(root, f), 'utf8').split('\r\n').join('\n');
 const worker = read('worker.js');
 const auth = read('auth.js');
 const index = read('index.html');

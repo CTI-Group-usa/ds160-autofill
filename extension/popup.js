@@ -116,6 +116,43 @@
     });
   }
 
+  /* -- the sign-in gate ----------------------------------------------
+     Fill starts DISABLED and is only enabled once the Worker has confirmed
+     a live @cti-usa.com session, or the grace period covers a service that
+     cannot be reached. Starting enabled and switching off would leave a
+     window where a click gets through, which is the whole thing this is
+     meant to prevent. */
+  function renderAuth() {
+    const box = $('auth');
+    const fill = $('fill');
+    fill.disabled = true;
+    fill.title = 'Checking the sign-in...';
+    chrome.runtime.sendMessage({ type: 'ds160:checkAuth' }, d => {
+      if (chrome.runtime.lastError || !d) {
+        box.hidden = false;
+        box.className = 'authbox deny';
+        box.textContent = 'The background worker did not answer, so the sign-in could not be ' +
+                          'checked. Check chrome://extensions for an error on this extension.';
+        fill.title = 'Sign-in could not be checked';
+        return;
+      }
+      box.hidden = false;
+      if (d.allow && d.reason === 'verified') {
+        box.className = 'authbox ok';
+        box.textContent = 'Signed in as ' + (d.email || d.name || 'a CTI account');
+      } else if (d.allow) {
+        box.className = 'authbox grace';
+        box.textContent = d.message;
+      } else {
+        box.className = 'authbox deny';
+        box.textContent = d.message;
+      }
+      fill.disabled = !d.allow;
+      fill.title = d.allow ? '' : d.message;
+    });
+  }
+  renderAuth();
+
   // -- boot -----------------------------------------------------------
   chrome.storage.local.get(['record', 'autoContinue', 'lastReport'], st => {
     showWho(st.record);
@@ -127,6 +164,10 @@
     chrome.storage.local.set({ autoContinue: $('auto').checked, autoStep: 0 }));
 
   $('fill').addEventListener('click', () => withTab(tab => {
+    /* Belt and braces: the button is disabled without a session, and a
+       disabled button fires no click - but an extension popup is a page
+       like any other, and `disabled` is one devtools edit away. */
+    if ($('fill').disabled) return;
     $('report').textContent = 'Filling...';
     chrome.tabs.sendMessage(tab.id, { type: 'ds160:fill', overwrite: $('overwrite').checked }, rep => {
       if (chrome.runtime.lastError) {

@@ -10,6 +10,7 @@
   ],
   "host_permissions": [
     "https://ceac.state.gov/*",
+    "https://ds160-auth.putu-astra.workers.dev/*",
     "https://*.zoho.com/*",
     "https://*.zohoexternal.com/*",
     "https://*.zohousercontent.com/*"

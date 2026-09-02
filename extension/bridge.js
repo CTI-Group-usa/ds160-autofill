@@ -16,6 +16,23 @@
     catch (e) { return false; }
   };
 
+  /* Hand the worksheet's session token to the extension.
+     A content script shares the page's localStorage - it is per origin,
+     not per world - so the token the sign-in gate stored is readable here
+     and nowhere else. Pushed on every page load, not only when a record is
+     sent, so simply opening the worksheet keeps the extension's copy fresh.
+     An empty value is still worth sending: it clears a stale token after
+     the operator signs out. */
+  function pushAuthToken() {
+    if (!alive()) return;
+    let token = '';
+    try { token = localStorage.getItem('ds160_auth_token') || ''; } catch (e) { /* private mode */ }
+    try { chrome.runtime.sendMessage({ type: 'ds160:authToken', token }, () => {
+      void chrome.runtime.lastError;    // nothing to do if the worker is asleep
+    }); } catch (e) { /* orphaned content script */ }
+  }
+  pushAuthToken();
+
   window.addEventListener('message', ev => {
     if (ev.source !== window) return;
     const d = ev.data;
@@ -30,6 +47,7 @@
     /* Every path answers. A silent failure here shows up on the page as
        "the extension did not answer", which says nothing about why. */
     if (d.type === 'record') {
+      pushAuthToken();          // the operator may have signed in since load
       try {
         chrome.storage.local.set({ record: d.record, autoStep: 0, lastReport: null }, () => {
           const err = chrome.runtime.lastError;

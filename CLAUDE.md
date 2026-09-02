@@ -209,11 +209,65 @@ also exactly what a momentary offline looks like, so the token is *kept* and the
 login page says it could not reach the service. Wiping on any failure would make
 a flaky connection log the whole office out.
 
-### The extension is not gated
-`extension/popup.js` fills CEAC from a record already in `chrome.storage`. Anyone
-holding the extension and a record can use it without ever loading the
-worksheet. Gating the worksheet does not change that, and pretending otherwise
-would be worse than knowing it.
+### The extension is gated too, with a grace period (2026-09-02)
+It was not, and that was the honest gap: `popup.js` filled CEAC from a record
+already in `chrome.storage` without ever asking who was driving. Now **Fill
+starts disabled** and is only enabled once `background.js` has confirmed a live
+session against the same Worker the worksheet uses.
+
+**The extension cannot mint a session.** `bridge.js` lifts the token out of the
+worksheet page's `localStorage` - a content script shares that with the page,
+because storage is per origin - and hands it to `background.js`. So the only way
+to unlock the extension is to have signed in on the worksheet in that same
+browser. The token is pushed on every worksheet page load, not only when a
+record is sent, so simply opening the worksheet keeps the extension's copy
+fresh; an empty value is pushed too, which clears a stale token after sign-out.
+
+**The check runs in `background.js` under `host_permissions`, not in the popup.**
+A popup `fetch` would send `Origin: chrome-extension://<id>`, and an unpacked
+extension's id is not stable, so it could never be allow-listed in the Worker.
+Going through the background worker means **the Worker needed no change at
+all**.
+
+#### The grace period, and the one branch that must not have it
+`authDecision(last, probe, now)` in `background.js` is pure so every branch is
+testable. Four outcomes:
+
+| Probe | Result |
+|---|---|
+| Worker confirms | allow, and record `checkedAt` |
+| no token at all | deny - "sign in on the worksheet" |
+| **401** | **deny, clear the state - the grace period must NOT apply** |
+| unreachable, or 5xx | allow if the last good check was within **8 hours**, else deny |
+
+The 401 branch is the whole gate. It is the Worker *actively refusing* the token
+- proof, not a guess - and it is the only thing that shuts out a revoked session
+or a disabled Microsoft account. A 5xx takes the unreachable path instead,
+because a broken service says nothing about the token.
+
+The user chose the grace period over blocking, and the reason is the same one
+`auth.js` already lives by: **from the browser a dead token and a dropped
+connection are the same failed fetch.** Blocking on every failure would let a
+flaky office line stop a DS-160 halfway through. Eight hours is about a working
+day, so a disabled account loses access the same day without anyone being
+stranded mid-application.
+
+#### What it buys, and what it does not
+Same class as the worksheet gate: this code sits on the operator's own disk, so
+whoever has the folder can edit `popup.js` and skip the check. What is real is
+narrow and still worth having - **the extension as distributed refuses to work
+without a live CTI session**, so a disabled account loses it within hours. For
+someone who copies the folder, it does nothing.
+
+#### Not verified in a browser
+`test/extension-auth.test.js` (33 assertions) covers every `authDecision`
+branch and asserts the wiring - Fill starts disabled, the click handler refuses a
+disabled button, the host permission matches `WORKER_ORIGIN`. What it cannot do
+is load an extension: a popup needs a real extension context. The live Worker
+was checked instead (no header, a bogus token and an empty token all return
+**401**, which is what `probeSession` maps to the deny branch). The remaining
+check is a human one: reload the extension and try Fill with and without a
+session.
 
 ## Hard Rules (safety, not preference)
 - Never automate the CAPTCHA / security check.
