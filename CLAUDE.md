@@ -156,11 +156,25 @@ and the test asserts `auth.js` names the same host. `GET /api/health` answers
 
 `GET /api/health` returns `{"ok":true,...}`.
 
-**Still outstanding:** `SSO_CLIENT_SECRET`, which only the user can set
-(`npx wrangler secret put SSO_CLIENT_SECRET`, pasted at the prompt), and the
-repo secret `CLOUDFLARE_API_TOKEN` for the CI deploy. Two client secrets have
-been through a chat transcript, so both should be deleted in Entra and a fresh
-one created that never leaves the prompt.
+All three secrets are set, and **CI deploys** work:
+`CLOUDFLARE_API_TOKEN` is a repo secret and
+`.github/workflows/deploy-worker.yml` deploys `worker.js` on push.
+
+**`keep_vars` was proven, not just trusted.** The first CI `wrangler deploy`
+against this Worker ran on 2026-09-02, and afterwards all three secrets were
+still present *and still working* - `/api/auth/login` returned a 302 to
+Microsoft with the right tenant, which is the only check that distinguishes
+"the secret is named" from "the secret has a value". That is the disaster the
+flag exists to prevent, and here it was headed off because the flag went in
+**before** the first deploy rather than after.
+
+The workflow logs one warning - `actions/checkout@v4`, `setup-node@v4` and
+`cloudflare/wrangler-action@v3` all target Node 20, which GitHub now forces onto
+Node 24. Harmless, and not fully fixable: the wrangler action is not ours to
+bump.
+
+**Still outstanding:** two Entra client secrets went through a chat transcript,
+so both should be deleted and replaced with one set only at the wrangler prompt.
 
 ### It is on the putu-astra account, and that is technical debt
 The August 2026 migration moved CTI's workers off `putu-astra` onto name-neutral
