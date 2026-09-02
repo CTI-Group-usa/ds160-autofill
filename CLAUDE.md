@@ -1217,5 +1217,27 @@ The extension icons are a different mechanism entirely: Chrome reads
 card. All four files were verified to decode at 16/32/48/128 from the paths the
 manifest names.
 
+### A pinned taskbar icon comes from the WEB APP MANIFEST, not the favicon
+This is the one that actually produced the "D" tile on the Windows taskbar.
+Chrome's *Install page as app* reads `manifest.webmanifest` and takes its
+largest `any` icon for the desktop and taskbar shortcut. With no manifest it
+generates a letter tile from the title - `DS-160 Worksheet` gives **D**. The
+favicon has nothing to do with it.
+
+- `manifest.webmanifest` declares 192 / 256 / 512 PNGs, all `purpose: "any"`.
+  No maskable variant: that matters on Android, and adding one here would put a
+  flat ring around an icon that already has its own rounded ground.
+- `server.js` needed `.webmanifest` -> `application/manifest+json`. Served as
+  `application/octet-stream`, Chrome ignores the manifest and the pin falls back
+  to the letter again - which is exactly what happened on the first attempt.
+- **The icon is baked in when the app is installed.** Fixing the manifest does
+  not update an existing pin: it has to be removed and re-installed.
+- Install from the **GitHub Pages URL**, not `localhost:7773`. A pin to
+  localhost is dead whenever `node server.js` is not running.
+
+Three separate icon mechanisms, then, and each needs its own trigger to refresh:
+favicon (cache + `?v=`), extension manifest (Reload on the card), web app
+manifest (re-install the pin).
+
 ## UI copy
 English only.

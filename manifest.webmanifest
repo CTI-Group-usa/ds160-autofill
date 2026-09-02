@@ -1,0 +1,15 @@
+{
+  "name": "DS-160 Worksheet · CTI Group",
+  "short_name": "DS-160 Worksheet",
+  "description": "Turns a CTI seafarer intake row into a validated DS-160 worksheet, and hands the record to the Chrome extension that fills ceac.state.gov.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7f9",
+  "theme_color": "#0b3370",
+  "icons": [
+    { "src": "assets/logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo-256.png", "sizes": "256x256", "type": "image/png", "purpose": "any" },
+    { "src": "assets/logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

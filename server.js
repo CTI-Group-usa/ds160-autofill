@@ -10,6 +10,9 @@ const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
   '.png': 'image/png', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.csv': 'text/csv',
+  /* Chrome will not treat the page as installable if the manifest comes back as
+     text/plain, and then the taskbar pin falls back to a generated letter. */
+  '.webmanifest': 'application/manifest+json',
 };
 
 http.createServer((req, res) => {

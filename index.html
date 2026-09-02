@@ -15,6 +15,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png?v=2">
 <link rel="icon" type="image/png" sizes="256x256" href="assets/logo-256.png?v=2">
 <link rel="apple-touch-icon" href="assets/logo-256.png?v=2">
+<!-- A PINNED TASKBAR ICON COMES FROM HERE, NOT FROM THE FAVICON. Chrome's
+     "Install page as app" reads this manifest and uses its largest `any` icon
+     for the desktop and taskbar shortcut. Without one it generates a letter
+     tile from the title - which is where the "D" came from. The icon is baked
+     in at install time, so an existing pin has to be removed and re-pinned to
+     pick up a change. -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b3370">
 <link rel="stylesheet" href="style.css?v=20260902logo">
 </head>
 <body>
