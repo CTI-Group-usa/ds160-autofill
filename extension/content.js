@@ -11,14 +11,17 @@
 
   const M = window.DS160Matcher;
   const MARK = 'data-ds160-filled';
-  /* CEAC sits behind a WAF, and on 2026-08-31 it blocked the agent
-     mid-application. A burst of postbacks answered 400ms apart, twelve
-     deep, is exactly the shape of traffic that trips one. Auto-continue
-     is now opt-in, paced at human speed, and gives up early: a tool that
-     gets the agent blocked is worse than one that asks for another
-     click. */
-  const MAX_AUTO_STEPS = 3;
-  const AUTO_DELAY_MS = 2500;
+  /* AUTO-CONTINUE IS GONE, REMOVED 2026-09-02 AT THE USER'S REQUEST.
+     CEAC's WAF blocked this session on 2026-08-31 and twice again on
+     2026-09-02, and this was the only feature that could reload the page
+     with nobody pressing anything: one Fill could produce four reloads
+     2.5s apart, which is precisely the shape of traffic a WAF exists to
+     stop. It was made opt-in and paced after the first block; that was
+     not enough.
+
+     There is nothing left in this file that reloads a CEAC page. Every
+     postback now comes from a human pressing Fill, one per press, and
+     popup.js paces those. DO NOT REINTRODUCE AN AUTOMATIC RESUME. */
 
   // -- reading the page ----------------------------------------------
   const FILLABLE =
@@ -525,35 +528,13 @@
   chrome.runtime.onMessage.addListener((msg, _sender, send) => {
     if (!alive()) return false;
     if (msg.type === 'ds160:fill') {
-      chrome.storage.local.get(['record', 'overrides', 'autoContinue'], st => {
+      chrome.storage.local.get(['record', 'overrides'], st => {
         if (!st.record) { send({ error: 'No applicant loaded. Open the worksheet and send one to the extension.' }); return; }
-        const rep = fillPage(st.record, st.overrides || {}, { overwrite: !!msg.overwrite });
-        if (rep.postbackPending && st.autoContinue === true) {
-          chrome.storage.local.set({ autoStep: (msg.step || 0) + 1 });
-        } else {
-          chrome.storage.local.set({ autoStep: 0 });
-        }
-        send(rep);
+        send(fillPage(st.record, st.overrides || {}, { overwrite: !!msg.overwrite }));
       });
       return true;
     }
     if (msg.type === 'ds160:map') { send({ map: pageMap(), url: location.href }); return true; }
     return false;
   });
-
-  /* Resume after an ASP.NET postback reload - only if explicitly asked. */
-  try {
-    chrome.storage.local.get(['autoStep', 'autoContinue', 'record', 'overrides'], st => {
-      if (!alive() || st.autoContinue !== true || !st.record) return;
-      const step = st.autoStep || 0;
-      if (step <= 0 || step > MAX_AUTO_STEPS) return;
-      setTimeout(() => {
-        if (!alive()) return;
-        try {
-          const rep = fillPage(st.record, st.overrides || {}, {});
-          chrome.storage.local.set({ autoStep: rep.postbackPending ? step + 1 : 0, lastReport: rep });
-        } catch (e) { /* the extension was reloaded mid-pass */ }
-      }, AUTO_DELAY_MS);
-    });
-  } catch (e) { /* orphaned by an extension reload; refreshing the page fixes it */ }
 })();

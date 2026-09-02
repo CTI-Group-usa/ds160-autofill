@@ -55,7 +55,7 @@
       const p = rep.postbackPending;
       h += '<div class="warn">The page reloads after <code>' + esc(p.key) + '</code>' +
            (p.remaining ? ' (' + p.remaining + ' more like it)' : '') +
-           '. Auto-continue picks up where it left off; otherwise press Fill again.</div>';
+           '. Press Fill again once the page has settled.</div>';
     }
     /* "no value in record" almost always means the record predates a
        constant that has since been added or edited. Saying so beats any
@@ -207,18 +207,14 @@
   renderAuth();
 
   // -- boot -----------------------------------------------------------
-  chrome.storage.local.get(['record', 'autoContinue', 'lastReport', 'fillCooldownUntil'], st => {
+  chrome.storage.local.get(['record', 'lastReport', 'fillCooldownUntil'], st => {
     showWho(st.record);
-    $('auto').checked = st.autoContinue === true;
     if (st.lastReport) showReport(st.lastReport);
     /* The popup is a fresh document every time it opens, so the cool-down
        has to come back from storage or closing the popup would clear it. */
     cooldownUntil = Number(st.fillCooldownUntil) || 0;
     updateFill();
   });
-
-  $('auto').addEventListener('change', () =>
-    chrome.storage.local.set({ autoContinue: $('auto').checked, autoStep: 0 }));
 
   $('fill').addEventListener('click', () => withTab(tab => {
     /* Belt and braces: the button is disabled without a session, and a
@@ -245,7 +241,7 @@
   $('load').addEventListener('click', () => {
     try {
       const rec = JSON.parse($('json').value);
-      chrome.storage.local.set({ record: rec, autoStep: 0 }, () => {
+      chrome.storage.local.set({ record: rec }, () => {
         showWho(rec);
         $('report').innerHTML = '<div class="ok">Applicant loaded.</div>';
       });

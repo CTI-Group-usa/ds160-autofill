@@ -67,18 +67,44 @@ auto-continue: every postback dropdown reloads the page, and the filler
 resumed 400ms later, up to twelve times - a burst of rapid form posts from
 one session is the shape of traffic a WAF exists to stop.
 
-Auto-continue is therefore **off unless switched on**, waits 2.5s, and gives
-up after 3 passes. Do not tune these back up for convenience. A tool that
-gets the agent blocked out of CEAC is worse than one that asks for another
-click, because the block costs the whole day's applications, not one page.
+Auto-continue was made **off unless switched on**, at 2.5s, giving up after 3
+passes. **That was not enough, and on 2026-09-02 it was removed entirely** - see
+below. A tool that gets the agent blocked out of CEAC is worse than one that
+asks for another click, because the block costs the whole day's applications,
+not one page.
 
 If it happens again: stop, do not retry in a loop, and wait it out. Never
 work around a block by changing IP, browser or identity - that is evasion of
 a security control on a government system, and it is not on the table.
 
-## It happened a SECOND time - 2026-09-02, on Previous U.S. Travel
-Same page family, same cause, and this time nothing in the code had changed to
-explain it. The filler was already as quiet as it can be: all safe fields
+## It happened a SECOND and THIRD time - 2026-09-02, on Previous U.S. Travel
+Same page family, same cause, and **nothing in the code had changed to explain
+it** - which was checked rather than assumed. On a CEAC page only `matcher.js`
+and `content.js` run, and neither makes a single network request: no `fetch`, no
+XHR. The only traffic to CEAC is `__doPostBack`, the page's own form submit. The
+sign-in gate talks to Cloudflare, and `bridge.js` runs on the worksheet origin,
+never on `ceac.state.gov`.
+
+What differed was **the volume of iteration that day** - many pages, many Fill
+presses, many re-sends - on one IP. And after the first block the threshold
+drops: access came back, a short run of the same work blocked it again.
+
+### AUTO-CONTINUE IS GONE (removed 2026-09-02 at the user's request)
+It was the only feature that could reload a CEAC page with nobody pressing
+anything. `MAX_AUTO_STEPS = 3` and `AUTO_DELAY_MS = 2500` meant **one Fill press
+could produce four reloads 2.5s apart** - precisely the burst shape a WAF exists
+to stop.
+
+Worse, it **bypassed the cool-down completely**: `FILL_COOLDOWN_MS` lives in
+`popup.js` and paces the button, while the auto-resume ran in `content.js` on
+page load and never went near it. Two independent paths could fire postbacks and
+only one was paced. That was a defect in the fix shipped an hour earlier, and it
+is why the feature was deleted rather than tuned again.
+
+**There is now nothing in `content.js` that reloads a CEAC page.** Every postback
+comes from a human pressing Fill, one per press, paced by the popup. Do not
+reintroduce an automatic resume; `test/extension-auth.test.js` asserts the
+absence. The filler was already as quiet as it can be: all safe fields
 first, then **one** postback per pass, and No answers and Does-Not-Apply ticks
 set without firing a reload at all (`revealsNothing()`).
 
@@ -306,8 +332,8 @@ session.
 ## How the filler handles ASP.NET
 CEAC is WebForms. Controls whose `onchange`/`onclick` calls `__doPostBack`
 reload the page, so `content.js` fills every safe field first, then applies
-**one** postback control and stops. `autoStep` in `chrome.storage.local` makes
-it resume after the reload (max 12 passes).
+**one** postback control and stops. The agent presses Fill again for the next
+one - there is no automatic resume any more, see the block notes above.
 
 **`revealsNothing()` avoids nearly all of that.** CEAC hangs `__doPostBack` on
 the conditional questions so a *Yes* can reveal an explanation box. A *No*, or

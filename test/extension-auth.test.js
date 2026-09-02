@@ -153,6 +153,24 @@ ok('the countdown says WHY, not just to wait',
    /blocked before/.test(popup));
 ok('the popup has somewhere to show it', /id="cooldown"/.test(read(path.join('extension', 'popup.html'))));
 
+/* AUTO-CONTINUE IS GONE, AND MUST STAY GONE. It was the only thing that could
+   reload a CEAC page with nobody pressing anything - one Fill could produce four
+   reloads 2.5s apart - and it bypassed the cool-down entirely, because the
+   pacing lives in popup.js while the auto-resume ran in content.js on page
+   load. Two paths firing postbacks, one of them paced. */
+const content = read(path.join('extension', 'content.js'));
+eq('nothing schedules a fill on its own', /setTimeout/.test(content), false);
+eq('no auto-continue setting is read', /autoContinue/.test(content), false);
+eq('no step counter survives a reload', /autoStep/.test(content), false);
+ok('and the popup no longer offers the switch',
+   !/id="auto"/.test(read(path.join('extension', 'popup.html'))));
+ok('nor writes the setting', !/autoContinue/.test(popup));
+/* The only CEAC traffic the extension can cause is the page's own form submit.
+   If a fetch ever appears in the content script, that is a new class of
+   request against a government system from inside a WAF-protected session. */
+eq('the content script makes no network request of its own',
+   /fetch\(|XMLHttpRequest|sendBeacon/.test(content), false);
+
 // -- host permission, so the check is not blocked by CORS -------------
 /* Done from background.js under host_permissions rather than from the popup:
    a popup fetch sends Origin: chrome-extension://<id>, and an unpacked

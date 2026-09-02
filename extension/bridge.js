@@ -49,7 +49,7 @@
     if (d.type === 'record') {
       pushAuthToken();          // the operator may have signed in since load
       try {
-        chrome.storage.local.set({ record: d.record, autoStep: 0, lastReport: null }, () => {
+        chrome.storage.local.set({ record: d.record, lastReport: null }, () => {
           const err = chrome.runtime.lastError;
           if (err) reply('record-ack-failed', { error: 'Storage refused the record: ' + err.message });
           else reply('record-ack', { name: d.record && d.record.fullName });
