@@ -107,6 +107,20 @@ ok('auth.js loads before app.js', index.indexOf('auth.js') < index.indexOf('app.
 ok('sign-out wipes the loaded rows before redirecting',
    /sessionStorage\.removeItem\('ds160\.rows'\)[\s\S]{0,120}Auth\.logout\(\)/.test(index));
 
+/* THE SIGNED-IN CHIP MUST NOT REUSE `.who`. That class was already the
+   applicant detail header - display:flex, a border-bottom and 12px of
+   padding-bottom - and the first version of this chip borrowed the name, so it
+   rendered with a stray line under it and sat 6px above the buttons beside it.
+   The later rule in the file won on every shared property. */
+const css = read('style.css');
+ok('the signed-in chip has its own class', /\.signed-in\{/.test(css));
+ok('and the header does not reuse .who',
+   !/<span[^>]+id="signedIn"[^>]+class="who"/.test(index));
+ok('the detail header keeps .who to itself',
+   /\.who\{display:flex/.test(css));
+ok('the chip is wired to the id that exists in the markup',
+   /id="signedIn"/.test(index) && /getElementById\('signedIn'\)/.test(index));
+
 // -- the login page stands on its own --------------------------------
 ok('login.html loads auth.js', /src="auth\.js/.test(login));
 /* Test the LINK, not the bare string: "style.css" also appears in a comment

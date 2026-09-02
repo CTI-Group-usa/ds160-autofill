@@ -23,7 +23,7 @@
      pick up a change. -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b3370">
-<link rel="stylesheet" href="style.css?v=20260902logo">
+<link rel="stylesheet" href="style.css?v=20260902signedin">
 <!-- Hidden until the session validates, so no applicant data is ever painted
      to someone who is about to be redirected. Inline and before the body on
      purpose: a stylesheet that loads a moment late would flash the whole
@@ -39,7 +39,7 @@
     <div><b>DS-160 Worksheet</b><small>CTI Group &middot; Visa Registration Log &rarr; DS-160</small></div>
   </div>
   <div class="tools">
-    <span id="who" class="who" hidden></span>
+    <span id="signedIn" class="signed-in" hidden></span>
     <span id="extBadge" class="badge off">extension not detected</span>
     <button id="btnLoad">Load data</button>
     <button id="btnLogout" hidden>Sign out</button>
@@ -97,7 +97,7 @@
   const user = await Auth.requireAuth();
   if (!user) return;                       // requireAuth has redirected
 
-  const who = document.getElementById('who');
+  const who = document.getElementById('signedIn');
   who.textContent = user.name || user.email;
   who.title = user.email;
   who.hidden = false;

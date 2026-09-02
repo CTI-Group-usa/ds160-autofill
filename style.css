@@ -22,10 +22,13 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px;
 .brand b{display:block;font-size:15px}
 .brand small{color:var(--muted)}
 .tools{display:flex;gap:8px;align-items:center}
-/* Signed-in account. Truncates rather than pushing the buttons off a narrow
-   header - the full address is in the title attribute. */
-.who{font-size:12px;color:var(--muted);max-width:180px;overflow:hidden;
-     text-overflow:ellipsis;white-space:nowrap}
+/* Signed-in account. NOT `.who` - that name was already the applicant detail
+   header further down this file (display:flex, a border-bottom and 12px of
+   padding-bottom), and reusing it put a stray rule underneath the name and
+   pushed it 6px above the buttons beside it. Truncates rather than pushing the
+   buttons off a narrow header; the full address is in the title attribute. */
+.signed-in{font-size:12px;color:var(--muted);max-width:180px;overflow:hidden;
+           text-overflow:ellipsis;white-space:nowrap}
 .badge{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .badge.on{color:var(--ok);border-color:currentColor}
 .badge.off{color:var(--muted)}
