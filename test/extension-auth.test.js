@@ -127,10 +127,10 @@ ok('a background worker that does not answer denies, it does not allow',
    quiet as it can be; what was missing was anything stopping the operator
    hammering the button. */
 const COOLDOWN = eval((popup.match(/const FILL_COOLDOWN_MS = ([^;]+);/) || [, '0'])[1]);
-eq('there is a cool-down after a reload', COOLDOWN, 8000);
+eq('there is a cool-down after a reload', COOLDOWN, 10000);
 /* Asserted as a FLOOR as well, because the temptation to shave it is exactly
-   how auto-continue got tuned into a block the first time. */
-ok('and it is not shortened below 5s', COOLDOWN >= 5000);
+   how auto-continue got tuned down twice and blocked the session anyway. */
+ok('and it is not shortened below 8s', COOLDOWN >= 8000);
 
 /* THE INVARIANT THAT MATTERS. Two independent gates now decide whether Fill
    works - the sign-in and the cool-down - so exactly one line may write

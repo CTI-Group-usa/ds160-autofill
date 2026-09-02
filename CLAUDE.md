@@ -113,8 +113,11 @@ instant the page came back. `complete_previousustravel.aspx` is the worst page
 for it - two postback gates plus an *Add Another* block - so it takes several
 passes, and a fast hand turns those into a burst.
 
-**`FILL_COOLDOWN_MS` in `popup.js` (8s)** now disables Fill after any pass that
-fired a postback, with a visible countdown that says *why*. Details that matter:
+**`FILL_COOLDOWN_MS` in `popup.js` (10s)** disables Fill after any pass that
+fired a postback, with a visible countdown that says *why*. It started at 8s and
+was raised to 10s on 2026-09-02 at the user's request, after the third block. It
+is the **only** pacing left in the extension - auto-continue was deleted rather
+than tuned a third time. Details that matter:
 
 - it starts **only** when `report.postbackPending` is set. A pass that reloads
   nothing put no traffic on CEAC, so pausing after it would be pure friction;
@@ -125,8 +128,10 @@ fired a postback, with a visible countdown that says *why*. Details that matter:
   ran last silently undo the other. `updateFill()` resolves both, and
   `test/extension-auth.test.js` asserts the single writer.
 
-**Do not shorten it for convenience.** Shaving auto-continue's delay is how the
-first block happened. A block costs the whole day's applications, not one page.
+**Do not shorten it for convenience.** Auto-continue was tuned down twice and
+blocked the session twice anyway. A block costs the whole day's applications,
+not one page. The test asserts both the exact value and an 8s floor, so a quiet
+shave fails the suite.
 
 ## An empty `section` makes every block guard inert — silently
 `blockLabel()` used to `break` and return `''` for any container holding more

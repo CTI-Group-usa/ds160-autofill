@@ -116,8 +116,8 @@
     });
   }
 
-  /* -- PACING. CEAC HAS BLOCKED THIS SESSION TWICE -------------------
-     Both times it was the rate of page reloads, not a bug: every postback
+  /* -- PACING. CEAC HAS BLOCKED THIS SESSION THREE TIMES -------------
+     Every time it was the rate of page reloads, not a bug: every postback
      control the filler applies reloads the page, and a human pressing Fill
      again the moment it comes back produces exactly the burst a WAF exists
      to stop. The filler was already as quiet as it can be - all safe fields
@@ -125,14 +125,18 @@
      ticks set without firing a reload at all. What was missing was anything
      stopping the operator hammering the button.
 
-     So after a pass that fires a postback, Fill is disabled for a few
-     seconds with a visible countdown and a line saying why. It survives the
-     popup closing, because the timestamp is in chrome.storage.
+     So after a pass that fires a postback, Fill is disabled with a visible
+     countdown and a line saying why. It survives the popup closing, because
+     the timestamp is in chrome.storage.
 
-     DO NOT SHORTEN THIS FOR CONVENIENCE, for the same reason auto-continue
-     is opt-in at 2.5s: a block costs the whole day's applications, not one
-     page. */
-  const FILL_COOLDOWN_MS = 8000;
+     This is now the ONLY pacing in the extension: auto-continue, the other
+     thing that could reload a page, was deleted rather than tuned again.
+
+     DO NOT SHORTEN IT FOR CONVENIENCE. Auto-continue was tuned down twice
+     and blocked the session twice anyway. A block costs the whole day's
+     applications, not one page. Raised from 8s to 10s on 2026-09-02 at the
+     user's request, after the third block. */
+  const FILL_COOLDOWN_MS = 10000;
 
   /* Two independent gates - the sign-in and the cool-down - so they are
      resolved in ONE place. Writing `fill.disabled` from both would let
