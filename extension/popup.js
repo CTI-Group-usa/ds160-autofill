@@ -116,6 +116,56 @@
     });
   }
 
+  /* -- PACING. CEAC HAS BLOCKED THIS SESSION TWICE -------------------
+     Both times it was the rate of page reloads, not a bug: every postback
+     control the filler applies reloads the page, and a human pressing Fill
+     again the moment it comes back produces exactly the burst a WAF exists
+     to stop. The filler was already as quiet as it can be - all safe fields
+     first, then ONE postback per pass, and No answers and Does-Not-Apply
+     ticks set without firing a reload at all. What was missing was anything
+     stopping the operator hammering the button.
+
+     So after a pass that fires a postback, Fill is disabled for a few
+     seconds with a visible countdown and a line saying why. It survives the
+     popup closing, because the timestamp is in chrome.storage.
+
+     DO NOT SHORTEN THIS FOR CONVENIENCE, for the same reason auto-continue
+     is opt-in at 2.5s: a block costs the whole day's applications, not one
+     page. */
+  const FILL_COOLDOWN_MS = 8000;
+
+  /* Two independent gates - the sign-in and the cool-down - so they are
+     resolved in ONE place. Writing `fill.disabled` from both would let
+     whichever ran last silently undo the other. */
+  let authAllows = false;
+  let authMessage = 'Checking the sign-in...';
+  let cooldownUntil = 0;
+  let ticker = null;
+
+  function updateFill() {
+    const fill = $('fill');
+    const left = Math.max(0, cooldownUntil - Date.now());
+    const cooling = left > 0;
+    fill.disabled = !authAllows || cooling;
+    fill.title = !authAllows ? authMessage
+               : cooling ? 'Paused so the page reloads are not a burst' : '';
+
+    const box = $('cooldown');
+    box.hidden = !cooling;
+    if (cooling) {
+      box.textContent = 'Page reloaded on CEAC. Pausing ' + Math.ceil(left / 1000) +
+                        's - a burst of reloads is what got this session blocked before.';
+    }
+    if (cooling && !ticker) ticker = setInterval(updateFill, 250);
+    if (!cooling && ticker) { clearInterval(ticker); ticker = null; }
+  }
+
+  function startCooldown() {
+    cooldownUntil = Date.now() + FILL_COOLDOWN_MS;
+    chrome.storage.local.set({ fillCooldownUntil: cooldownUntil });
+    updateFill();
+  }
+
   /* -- the sign-in gate ----------------------------------------------
      Fill starts DISABLED and is only enabled once the Worker has confirmed
      a live @cti-usa.com session, or the grace period covers a service that
@@ -124,16 +174,18 @@
      meant to prevent. */
   function renderAuth() {
     const box = $('auth');
-    const fill = $('fill');
-    fill.disabled = true;
-    fill.title = 'Checking the sign-in...';
+    authAllows = false;
+    authMessage = 'Checking the sign-in...';
+    updateFill();
     chrome.runtime.sendMessage({ type: 'ds160:checkAuth' }, d => {
       if (chrome.runtime.lastError || !d) {
         box.hidden = false;
         box.className = 'authbox deny';
         box.textContent = 'The background worker did not answer, so the sign-in could not be ' +
                           'checked. Check chrome://extensions for an error on this extension.';
-        fill.title = 'Sign-in could not be checked';
+        authAllows = false;
+        authMessage = 'Sign-in could not be checked';
+        updateFill();
         return;
       }
       box.hidden = false;
@@ -147,17 +199,22 @@
         box.className = 'authbox deny';
         box.textContent = d.message;
       }
-      fill.disabled = !d.allow;
-      fill.title = d.allow ? '' : d.message;
+      authAllows = !!d.allow;
+      authMessage = d.allow ? '' : d.message;
+      updateFill();
     });
   }
   renderAuth();
 
   // -- boot -----------------------------------------------------------
-  chrome.storage.local.get(['record', 'autoContinue', 'lastReport'], st => {
+  chrome.storage.local.get(['record', 'autoContinue', 'lastReport', 'fillCooldownUntil'], st => {
     showWho(st.record);
     $('auto').checked = st.autoContinue === true;
     if (st.lastReport) showReport(st.lastReport);
+    /* The popup is a fresh document every time it opens, so the cool-down
+       has to come back from storage or closing the popup would clear it. */
+    cooldownUntil = Number(st.fillCooldownUntil) || 0;
+    updateFill();
   });
 
   $('auto').addEventListener('change', () =>
@@ -177,6 +234,11 @@
       }
       chrome.storage.local.set({ lastReport: rep });
       showReport(rep);
+      /* Only when a postback actually fired. A pass that reloads nothing put
+         no traffic on CEAC at all, so pausing after it would be pure
+         friction. `postbackPending` is set exactly when a postback control
+         was applied. */
+      if (rep && rep.postbackPending) startCooldown();
     });
   }));
 

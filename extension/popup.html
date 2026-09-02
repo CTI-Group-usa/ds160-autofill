@@ -64,6 +64,8 @@
   <!-- The sign-in gate's verdict. Hidden while it is still being checked,
        so the popup never flashes a wrong state. -->
   <div id="auth" class="authbox" hidden></div>
+  <!-- Why Fill is briefly unavailable. Says the reason, not just "wait". -->
+  <div id="cooldown" class="authbox grace" hidden></div>
 
   <div class="row">
     <button class="primary" id="fill">Fill this page</button>

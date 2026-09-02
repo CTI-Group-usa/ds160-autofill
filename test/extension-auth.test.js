@@ -107,14 +107,51 @@ ok('an empty token is still sent, so signing out clears the stale one',
 // -- the popup starts locked ------------------------------------------
 /* Starting enabled and switching off would leave a window in which a click
    gets through, which is the one thing this is meant to prevent. */
-ok('Fill is disabled before the check runs',
-   /fill\.disabled = true;[\s\S]{0,200}sendMessage\(\{ type: 'ds160:checkAuth' \}/.test(popup));
-ok('and only re-enabled from the decision', /fill\.disabled = !d\.allow/.test(popup));
+ok('the gate starts closed, before the check is even sent',
+   /authAllows = false;[\s\S]{0,200}sendMessage\(\{ type: 'ds160:checkAuth' \}/.test(popup));
+ok('and only opens from the decision itself', /authAllows = !!d\.allow/.test(popup));
 ok('renderAuth runs at popup open', /renderAuth\(\);/.test(popup));
 ok('the click handler refuses a disabled button as well',
    /if \(\$\('fill'\)\.disabled\) return;/.test(popup));
+/* A background worker that never answers must DENY. Failing open here would
+   be the worst of both worlds: a gate that disappears exactly when something
+   is already wrong. */
+const noAnswer = popup.slice(popup.indexOf('chrome.runtime.lastError || !d'));
 ok('a background worker that does not answer denies, it does not allow',
-   /chrome\.runtime\.lastError \|\| !d[\s\S]{0,400}fill\.title = 'Sign-in could not be checked'/.test(popup));
+   /authAllows = false;/.test(noAnswer.slice(0, 600)));
+
+// -- pacing: CEAC has blocked this session twice ----------------------
+/* Both blocks were the RATE of page reloads, not a bug. Every postback the
+   filler applies reloads the page, and a human pressing Fill again the moment
+   it comes back is the burst a WAF exists to stop. The filler was already as
+   quiet as it can be; what was missing was anything stopping the operator
+   hammering the button. */
+const COOLDOWN = eval((popup.match(/const FILL_COOLDOWN_MS = ([^;]+);/) || [, '0'])[1]);
+eq('there is a cool-down after a reload', COOLDOWN, 8000);
+/* Asserted as a FLOOR as well, because the temptation to shave it is exactly
+   how auto-continue got tuned into a block the first time. */
+ok('and it is not shortened below 5s', COOLDOWN >= 5000);
+
+/* THE INVARIANT THAT MATTERS. Two independent gates now decide whether Fill
+   works - the sign-in and the cool-down - so exactly one line may write
+   `disabled`. Two writers would let whichever ran last silently undo the
+   other, and the failure would look like "the button is enabled when it
+   should not be", which is the whole thing this prevents. */
+eq('fill.disabled is written in exactly one place',
+   (popup.match(/\.disabled = /g) || []).length, 1);
+ok('and it reads both gates',
+   /fill\.disabled = !authAllows \|\| cooling/.test(popup));
+
+ok('the cool-down starts only when a postback actually fired',
+   /if \(rep && rep\.postbackPending\) startCooldown\(\)/.test(popup));
+ok('it is persisted, so closing the popup does not clear it',
+   /chrome\.storage\.local\.set\(\{ fillCooldownUntil/.test(popup));
+ok('and restored on open', /cooldownUntil = Number\(st\.fillCooldownUntil\)/.test(popup));
+ok('boot asks storage for it',
+   /storage\.local\.get\(\[[^\]]*'fillCooldownUntil'[^\]]*\]/.test(popup));
+ok('the countdown says WHY, not just to wait',
+   /blocked before/.test(popup));
+ok('the popup has somewhere to show it', /id="cooldown"/.test(read(path.join('extension', 'popup.html'))));
 
 // -- host permission, so the check is not blocked by CORS -------------
 /* Done from background.js under host_permissions rather than from the popup:

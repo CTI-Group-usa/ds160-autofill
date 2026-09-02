@@ -76,6 +76,32 @@ If it happens again: stop, do not retry in a loop, and wait it out. Never
 work around a block by changing IP, browser or identity - that is evasion of
 a security control on a government system, and it is not on the table.
 
+## It happened a SECOND time - 2026-09-02, on Previous U.S. Travel
+Same page family, same cause, and this time nothing in the code had changed to
+explain it. The filler was already as quiet as it can be: all safe fields
+first, then **one** postback per pass, and No answers and Does-Not-Apply ticks
+set without firing a reload at all (`revealsNothing()`).
+
+What was missing was anything stopping **the operator** pressing Fill again the
+instant the page came back. `complete_previousustravel.aspx` is the worst page
+for it - two postback gates plus an *Add Another* block - so it takes several
+passes, and a fast hand turns those into a burst.
+
+**`FILL_COOLDOWN_MS` in `popup.js` (8s)** now disables Fill after any pass that
+fired a postback, with a visible countdown that says *why*. Details that matter:
+
+- it starts **only** when `report.postbackPending` is set. A pass that reloads
+  nothing put no traffic on CEAC, so pausing after it would be pure friction;
+- the timestamp lives in `chrome.storage`, because the popup is a fresh
+  document every time it opens and closing it would otherwise clear the pause;
+- **exactly one line writes `fill.disabled`.** There are now two independent
+  gates - the sign-in and the cool-down - and two writers would let whichever
+  ran last silently undo the other. `updateFill()` resolves both, and
+  `test/extension-auth.test.js` asserts the single writer.
+
+**Do not shorten it for convenience.** Shaving auto-continue's delay is how the
+first block happened. A block costs the whole day's applications, not one page.
+
 ## An empty `section` makes every block guard inert — silently
 `blockLabel()` used to `break` and return `''` for any container holding more
 than 14 controls ("too big to be one block"). Every `must` and `not` guard reads
