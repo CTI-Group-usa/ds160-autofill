@@ -14,9 +14,21 @@
     "https://*.zohoexternal.com/*",
     "https://*.zohousercontent.com/*"
   ],
+  "icons": {
+    "16": "icons/logo-16.png",
+    "32": "icons/logo-32.png",
+    "48": "icons/logo-48.png",
+    "128": "icons/logo-128.png"
+  },
   "action": {
     "default_title": "CTI DS-160 Autofill",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/logo-16.png",
+      "32": "icons/logo-32.png",
+      "48": "icons/logo-48.png",
+      "128": "icons/logo-128.png"
+    }
   },
   "content_scripts": [
     {

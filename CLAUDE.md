@@ -25,8 +25,13 @@ pdftext.js    — minimal PDF text extraction (no library)           (SHARED, te
 xlsx.js       — dependency-free .xlsx reader (ZIP + XML)  (SHARED, tested)
 style.css     — all styles, light/dark via CSS variables
 server.js     — local static preview on :7773
+assets/       — the app logo: logo.png (309px source), logo-32.png, logo-256.png
 extension/
   manifest.json  — MV3, host_permissions limited to ceac.state.gov
+  icons/         — logo-16/32/48/128.png, the same mark (Chrome resolves
+                   manifest icon paths relative to the extension root, so these
+                   are a deliberate copy of assets/ - the extension folder is
+                   loaded on its own and cannot reach out of itself)
   matcher.js     — control id / label -> record field rules  (SHARED, tested)
   content.js     — reads the DS-160 page, fills it, reports back
   popup.js/html  — applicant summary, Fill button, override teaching
@@ -1168,6 +1173,28 @@ npm test   # 8 suites, ~204 assertions + background 9
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in
 the app rather than under node.
+
+## The logo
+`assets/logo.png` is the app mark - a rounded-square icon with its own dark blue
+ground, a US flag, a form and a pencil. It is the favicon on both HTML pages, the
+Chrome toolbar and extensions-page icon, and the header mark on the worksheet and
+in the popup.
+
+Three details worth keeping:
+
+- **No plate behind it.** The old header mark was a red `CTI` chip that needed a
+  background; this one carries its own, so `.mark` is just a 32px box with an
+  8px radius. It reads correctly in light and dark without a second version -
+  checked in both.
+- **Width and height are set in the HTML**, so a slow load cannot shift the
+  wordmark beside it.
+- **Sizes are pre-rendered, not scaled in CSS.** 16 and 32 exist because Chrome
+  asks for them exactly; letting the browser downscale a 309px source for a
+  16px toolbar slot loses the flag entirely.
+
+Regenerating them, if the source is ever replaced: PowerShell with
+`System.Drawing`, `HighQualityBicubic`, onto a transparent bitmap - the command
+is in this session's history and takes one call for all five sizes.
 
 ## UI copy
 English only.

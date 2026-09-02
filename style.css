@@ -15,8 +15,10 @@ header{display:flex;justify-content:space-between;align-items:center;gap:12px;
        padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);
        position:sticky;top:0;z-index:5}
 .brand{display:flex;align-items:center;gap:10px}
-.mark{background:var(--accent);color:#fff;font-weight:700;letter-spacing:.5px;
-      padding:6px 8px;border-radius:6px;font-size:13px}
+/* The logo is a rounded-square app icon with its own dark ground, so it needs
+   no plate behind it - just the matching corner radius and a fixed box, so a
+   slow load does not shift the wordmark beside it. */
+.mark{width:32px;height:32px;border-radius:8px;display:block;flex:0 0 auto}
 .brand b{display:block;font-size:15px}
 .brand small{color:var(--muted)}
 .tools{display:flex;gap:8px;align-items:center}
