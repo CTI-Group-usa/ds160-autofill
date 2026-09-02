@@ -23,7 +23,7 @@
      pick up a change. -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b3370">
-<link rel="stylesheet" href="style.css?v=20260902signedin">
+<link rel="stylesheet" href="style.css?v=20260902tabs">
 <!-- Hidden until the session validates, so no applicant data is ever painted
      to someone who is about to be redirected. Inline and before the body on
      purpose: a stylesheet that loads a moment late would flash the whole
@@ -46,11 +46,17 @@
   </div>
 </header>
 
+<!-- TWO VISA CLASSES, ONE APP. The user asked for one link and one login
+     rather than a second app to remember. The two sides share nothing: each
+     keeps its own loaded rows, its own constant answers and its own store
+     keys, and only ONE constants pack is ever active - see constants.js. The
+     tab is also the only thing on screen that says which class you are
+     working in, so it is deliberately loud rather than a subtle toggle. -->
+<nav class="tabs" id="classTabs" role="tablist"></nav>
+
 <div id="loader" class="panel">
   <h2>Load the intake data</h2>
-  <p>In Zoho Sheet open <b>Visa Registration Log</b> &rarr; worksheet <b>VISA APPLICATIONS</b>,
-     then <b>File &rarr; Download As</b> &mdash; either <b>XLSX</b> or <b>CSV</b> works.
-     Drop the file here, or paste the rows below.</p>
+  <p id="loaderHint"></p>
   <div id="drop">Drop the <b>.xlsx</b> or <b>.csv</b> file here &mdash; or click to browse</div>
   <input type="file" id="file" accept=".xlsx,.csv,.tsv,.txt" hidden>
   <textarea id="paste" placeholder="...or paste CSV / TSV including the header row"></textarea>
@@ -90,8 +96,10 @@
      to prevent: the C1/D pack ticks "Does Not Apply" for the SSN, tax ID and
      salary that a J1 sheet actually collects.
 
-     This will move to the visa-class tab once that exists. Until then the
-     worksheet is C1/D, which is what it has always been. */
+     THE TAB IS THE AUTHORITY - app.js calls use() again with the remembered
+     class as it boots. This line only guarantees a pack is loaded before any
+     script can read one, so a failure in app.js surfaces as a broken tab bar
+     rather than a thrown error with no page at all. */
   DS160Const.use('c1d');
 </script>
 <script src="trip.js?v=20260831t"></script>
@@ -99,7 +107,7 @@
 <script src="letter.js?v=20260831t"></script>
 <script src="xlsx.js?v=20260831t"></script>
 <script src="normalize.js?v=20260831t"></script>
-<script src="app.js?v=20260831t"></script>
+<script src="app.js?v=20260902tabs"></script>
 <script>
 (async () => {
   /* The sign-in gate. app.js has already run by now - it is an IIFE - but it
@@ -121,7 +129,13 @@
        export - passport numbers, dates of birth, addresses, parents' names.
        Signing out has to leave nothing behind for the next person at this
        browser, and Auth.logout() knows nothing about the app's own storage. */
-    try { sessionStorage.removeItem('ds160.rows'); } catch (e) { /* ignore */ }
+    /* BOTH classes. Each tab keeps its own rows, so clearing one would leave
+       the other tab's applicants - passport numbers, dates of birth, parents'
+       names - sitting there for the next person at this browser. */
+    try {
+      sessionStorage.removeItem('ds160.rows');          // pre-tab key
+      for (const c of DS160Const.classes()) sessionStorage.removeItem('ds160.rows.' + c);
+    } catch (e) { /* ignore */ }
     Auth.logout();
   });
 

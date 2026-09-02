@@ -105,7 +105,12 @@ ok('auth.js loads before app.js', index.indexOf('auth.js') < index.indexOf('app.
 /* Signing out has to leave nothing behind: sessionStorage holds the whole
    intake export - passport numbers, dates of birth, parents' names. */
 ok('sign-out wipes the loaded rows before redirecting',
-   /sessionStorage\.removeItem\('ds160\.rows'\)[\s\S]{0,120}Auth\.logout\(\)/.test(index));
+   /sessionStorage\.removeItem\('ds160\.rows'\)[\s\S]{0,400}Auth\.logout\(\)/.test(index));
+/* BOTH CLASSES. Each tab keeps its own rows under its own key, so clearing
+   one would leave the other tab's applicants - passport numbers, dates of
+   birth, parents' names - sitting there for the next person at this browser. */
+ok('and it wipes every visa class, not just the active one',
+   /DS160Const\.classes\(\)[\s\S]{0,80}removeItem\('ds160\.rows\.'/.test(index));
 
 /* THE SIGNED-IN CHIP MUST NOT REUSE `.who`. That class was already the
    applicant detail header - display:flex, a border-bottom and 12px of

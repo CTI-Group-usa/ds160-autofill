@@ -51,6 +51,20 @@ textarea{width:100%;height:120px;padding:8px;border:1px solid var(--line);border
 .row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
 #loadMsg{color:var(--muted);font-size:12px}
 
+/* The visa-class tabs. Loud on purpose: this is the only thing on screen
+   that says which class you are working in, and filling a J1 application
+   from a C1/D record puts the cruise line's U.S. contact on it - the same
+   fields, so nothing else would notice. */
+.tabs{display:flex;gap:2px;margin:16px 16px 0;border-bottom:1px solid var(--line)}
+.tabs button{border:1px solid var(--line);border-bottom:none;
+             border-radius:8px 8px 0 0;padding:8px 16px;font-weight:600;
+             background:var(--bg);color:var(--muted);position:relative;top:1px}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected=true]{background:var(--panel);color:var(--ink);
+             border-bottom:1px solid var(--panel)}
+.tabs button small{display:block;font-weight:400;font-size:11px;color:var(--muted)}
+.tabs button[aria-selected=true] small{color:var(--accent)}
+
 main{display:grid;grid-template-columns:290px 1fr;gap:16px;padding:16px;align-items:start}
 @media (max-width:820px){ main{grid-template-columns:1fr} }
 

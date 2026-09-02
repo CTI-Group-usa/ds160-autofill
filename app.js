@@ -5,7 +5,32 @@
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
-  const STORE = 'ds160.rows';
+  /* TWO VISA CLASSES, ONE APP - and they share nothing. Each tab keeps its
+     own loaded rows under its own sessionStorage key, its own constant
+     answers (see constants.js), and its own applicant list. Switching tabs
+     re-reads from storage rather than filtering one list, so there is no
+     path by which a J1 applicant can appear under C1/D or the reverse.
+
+     `sheet` is the export the agent has to download for that tab; naming it
+     in the loader saves the "which file was it?" round trip. */
+  const CLASSES = [
+    { id: 'c1d', label: 'C1/D',
+      sub: 'Seafarers &middot; crewmember in transit',
+      sheet: 'Visa Registration Log', worksheet: 'VISA APPLICATIONS' },
+    { id: 'j1', label: 'J1',
+      sub: 'Exchange visitors',
+      sheet: 'J1 Visa Log', worksheet: '' },
+  ];
+  const CLASS_STORE = 'ds160.class';
+  let cls = CLASSES[0].id;
+  try {
+    const want = localStorage.getItem(CLASS_STORE);
+    if (CLASSES.some(c => c.id === want)) cls = want;
+  } catch (e) { /* private mode - C1/D is the historical default */ }
+
+  const classOf = id => CLASSES.filter(c => c.id === id)[0];
+  /* Per class, so the two tabs cannot read each other's applicants. */
+  const storeKey = () => 'ds160.rows.' + cls;
   const RECORD_V = 7;          // coarse check; _knownConsts is the exact one
 
   let rows = [];      // raw sheet rows (header -> value)
@@ -84,7 +109,7 @@
 
   function accept(objects, note) {
     rows = objects;
-    try { sessionStorage.setItem(STORE, JSON.stringify(rows)); } catch (e) { /* over quota, fine */ }
+    try { sessionStorage.setItem(storeKey(), JSON.stringify(rows)); } catch (e) { /* over quota, fine */ }
     $('loadMsg').textContent = note || '';
     build();
   }
@@ -501,11 +526,69 @@
       '2020-01-01,2026-11-01,Fauzi,,,,Carnival,2026-10-01\n';
   });
 
-  // Restore whatever was loaded before a refresh.
-  try {
-    const saved = sessionStorage.getItem(STORE);
-    if (saved) { rows = JSON.parse(saved); build(); }
-  } catch (e) { /* ignore */ }
+  // -- the visa-class tabs ---------------------------------------------
+  function renderTabs() {
+    $('classTabs').innerHTML = CLASSES.map(c =>
+      '<button role="tab" data-cls="' + c.id + '" aria-selected="' + (c.id === cls) + '">' +
+      c.label + '<small>' + c.sub + '</small></button>').join('');
+    $('classTabs').querySelectorAll('button').forEach(b =>
+      b.addEventListener('click', () => switchTo(b.dataset.cls)));
+  }
+
+  function renderLoaderHint() {
+    const c = classOf(cls);
+    $('loaderHint').innerHTML =
+      'In Zoho Sheet open <b>' + c.sheet + '</b>' +
+      (c.worksheet ? ' &rarr; worksheet <b>' + c.worksheet + '</b>' : '') +
+      ', then <b>File &rarr; Download As</b> &mdash; either <b>XLSX</b> or <b>CSV</b> works. ' +
+      'Drop the file here, or paste the rows below.';
+  }
+
+  /* Switching class is a full reload of this side of the app, not a filter.
+     The constants pack changes (only one is ever active), the rows come from
+     that class's own key, and anything still on screen from the other tab is
+     cleared - an applicant list left behind would be the same fields with the
+     wrong values behind them. */
+  function switchTo(id) {
+    if (!classOf(id) || id === cls) return;
+    cls = id;
+    try { localStorage.setItem(CLASS_STORE, cls); } catch (e) { /* ignore */ }
+    DS160Const.use(cls);
+    rows = [];
+    people = [];
+    selected = -1;
+    pendingLetter = null;
+    renderTabs();
+    renderLoaderHint();
+    $('loadMsg').textContent = '';
+    $('paste').value = '';
+    /* Re-render the constants panel even though restore() may hide it. The
+       DOM must never hold the other class's answers: the panel was showing
+       J1's count above C1/D's Purpose of Trip when this was left out, and a
+       stale render is worse than a hidden one. */
+    renderConstants();
+    restore();
+  }
+
+  /* Whatever this class had loaded before a refresh - or nothing, which puts
+     the loader back rather than showing the other tab's list. */
+  function restore() {
+    let saved = null;
+    try { saved = sessionStorage.getItem(storeKey()); } catch (e) { /* ignore */ }
+    if (saved) {
+      try { rows = JSON.parse(saved); build(); return; } catch (e) { /* fall through */ }
+    }
+    $('loader').hidden = false;
+    $('main').hidden = true;
+    $('constPanel').hidden = true;
+    $('detail').innerHTML = '';
+    $('people').innerHTML = '';
+  }
+
+  renderTabs();
+  renderLoaderHint();
+  DS160Const.use(cls);      // the tab is the authority, not index.html
+  restore();
 
   setTimeout(() => {
     const on = hasExtension();
