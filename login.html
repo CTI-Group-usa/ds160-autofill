@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in &middot; DS-160 Worksheet</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png?v=2">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b3370">
+<style>
+  /* Same tokens as style.css, kept local so this page needs nothing but
+     itself - a stylesheet that fails to load must not leave the sign-in
+     button invisible. */
+  :root{ --bg:#f6f7f9; --panel:#fff; --ink:#111827; --muted:#6b7280;
+         --line:#e5e7eb; --accent:#B01A18; --err-bg:#fef2f2; --err:#b91c1c; }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1115; --panel:#161a21; --ink:#e5e7eb; --muted:#9ca3af;
+           --line:#262c36; --err-bg:#2a1618; --err:#f87171; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:var(--bg);color:var(--ink);
+       font:14px/1.5 system-ui,"Segoe UI",Roboto,sans-serif}
+  .wrap{width:100%;max-width:400px;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+        padding:36px 32px;box-shadow:0 18px 50px rgba(0,0,0,.10)}
+  .logo{width:72px;height:72px;border-radius:16px;display:block;margin:0 auto 18px}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:22px;margin:0 0 6px;text-align:center}
+  .sub{color:var(--muted);text-align:center;margin:0 0 24px}
+  .error{display:none;background:var(--err-bg);color:var(--err);border-radius:8px;
+         padding:10px 12px;margin-bottom:16px;font-size:13px}
+  .error.show{display:block}
+  .btn{width:100%;padding:11px;background:var(--panel);color:var(--ink);
+       border:1px solid var(--line);border-radius:8px;font:inherit;font-weight:600;
+       cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+  .btn:hover:not(:disabled){border-color:var(--muted)}
+  .btn:disabled{opacity:.6;cursor:default}
+  .foot{color:var(--muted);font-size:12px;text-align:center;margin:22px 0 0;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <img class="logo" src="assets/logo-256.png?v=2" alt="">
+    <h1>DS-160 Worksheet</h1>
+    <p class="sub">CTI Group &middot; Visa Registration Log &rarr; DS-160</p>
+
+    <div class="error" id="err"></div>
+
+    <button type="button" class="btn" id="msBtn">
+      <svg width="18" height="18" viewBox="0 0 21 21" aria-hidden="true">
+        <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+        <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+        <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+      </svg>
+      <span id="msBtnText">Sign in with Microsoft</span>
+    </button>
+
+    <p class="foot">Authorised <b>@cti-usa.com</b> accounts only.<br>
+       This worksheet holds applicant passport and personal data.</p>
+  </div>
+</div>
+
+<script src="auth.js?v=20260902auth"></script>
+<script>
+  const err = document.getElementById('err');
+  const msBtn = document.getElementById('msBtn');
+  const msBtnText = document.getElementById('msBtnText');
+
+  /* requireAuth() sends the reason here when a session is rejected or the
+     Worker cannot be reached, so the page can say what went wrong instead of
+     bouncing silently. */
+  const qsErr = new URLSearchParams(location.search).get('error');
+  if (qsErr) { err.textContent = qsErr; err.classList.add('show'); }
+
+  msBtn.addEventListener('click', () => {
+    msBtn.disabled = true;
+    msBtnText.textContent = 'Redirecting to Microsoft…';
+    Auth.loginWithMicrosoft();
+  });
+
+  /* Already signed in - bookmarked this page, or landed here with a fragment
+     token - so go straight through. */
+  (async () => {
+    const user = await Auth.init();
+    if (user) window.location.replace('index.html');
+  })();
+</script>
+</body>
+</html>

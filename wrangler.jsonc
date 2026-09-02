@@ -1,0 +1,42 @@
+{
+  // Config for the ds160-auth Cloudflare Worker — the Microsoft 365 sign-in
+  // gate for the DS-160 worksheet. It holds no applicant data; see worker.js.
+  //
+  // ⚠️ keep_vars IS LOAD-BEARING, AND IT IS HERE BEFORE THE FIRST DEPLOY ON
+  // PURPOSE. Without it, `wrangler deploy` DELETES every var and secret set in
+  // the dashboard that is not declared in this file — and none of this
+  // Worker's secrets are declared here, because they must not be committed.
+  // A single deploy without the flag would wipe SSO_TENANT_ID, SSO_CLIENT_ID
+  // and SSO_CLIENT_SECRET and lock everyone out of the worksheet.
+  //
+  // This is not hypothetical. On 2026-08-12 exactly this destroyed the CTI
+  // Indonesia Monitoring dashboard: its CI had never once succeeded, so every
+  // change had been hand-pasted in the dashboard (which leaves secrets alone).
+  // The moment CI was repaired, the first real deploy silently emptied the
+  // Zoho credentials, and the upstream error read "You have made too many
+  // requests continuously" — indistinguishable from a rate limit, and hours
+  // were lost chasing a throttle that did not exist.
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "ds160-auth",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-02",
+  "keep_vars": true,
+  "workers_dev": true,
+
+  // The name-neutral CTI account (the one that runs api.cti-crm.workers.dev).
+  // Non-secret. If this Worker should live on a different CTI account, change
+  // this AND the WORKER_ORIGIN constant at the top of worker.js and the WORKER
+  // constant in auth.js — Microsoft compares the redirect URI exactly.
+  "account_id": "91d938b8c0bd63c4f6235ce057fdd724",
+
+  "kv_namespaces": [
+    // Holds one-time OAuth `state` values and the issued session tokens.
+    // Nothing else, and every entry carries a TTL.
+    //
+    // TODO: create the namespace and paste its ID here, then deploy:
+    //   npx wrangler kv namespace create ds160-auth-sessions
+    { "binding": "TOKEN_CACHE", "id": "PASTE_KV_NAMESPACE_ID_HERE" }
+  ],
+
+  "observability": { "enabled": true }
+}

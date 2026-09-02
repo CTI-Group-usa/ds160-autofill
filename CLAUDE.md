@@ -25,6 +25,10 @@ pdftext.js    — minimal PDF text extraction (no library)           (SHARED, te
 xlsx.js       — dependency-free .xlsx reader (ZIP + XML)  (SHARED, tested)
 style.css     — all styles, light/dark via CSS variables
 server.js     — local static preview on :7773
+login.html    — Microsoft 365 sign-in page (self-contained styles)
+auth.js       — the sign-in gate, browser half            (SHARED, tested)
+worker.js     — ds160-auth Cloudflare Worker: OAuth only, no applicant data
+wrangler.jsonc— its config; keep_vars is load-bearing, see the file
 assets/       — the app logo: logo.png (309px source), logo-32.png, logo-256.png
 extension/
   manifest.json  — MV3, host_permissions limited to ceac.state.gov
@@ -92,6 +96,92 @@ reproduces the sixteen-control size on purpose; do not trim it back.
 
 **When a `must`-guarded rule mysteriously does not fire, check the control's
 `section` first.** It is reported per control by `pageMap()`.
+
+## The sign-in gate, and what it is NOT
+Only `@cti-usa.com` Microsoft accounts can open the worksheet. Same arrangement
+as **cti-indonesia-monitoring-dashboard**, chosen deliberately by the user after
+the limitation below was put to them.
+
+`worker.js` (Worker `ds160-auth`) runs a server-side authorization-code flow:
+`/api/auth/login` redirects to Microsoft, `/api/auth/callback` exchanges the code
+with our client secret, checks **two** things, mints a session token into KV, and
+sends the browser back to `index.html#authToken=…`. `auth.js` picks the token out
+of the fragment, strips the fragment, and validates it at `/api/auth/me`.
+`index.html` keeps `body{visibility:hidden}` until that resolves.
+
+There is **no MSAL in the browser** and Microsoft's own tokens never reach the
+page — only an opaque session id that KV can revoke.
+
+### It hides the UI. It does not protect the files.
+The worksheet is a static site on GitHub Pages, so `app.js`, `normalize.js` and
+every other file are public. Someone who wants in can read the source, disable
+JavaScript, or fetch a file directly. Microsoft genuinely verifies who signs in,
+and the gate genuinely stops anyone without a CTI account from *using* the tool —
+but it is a deterrent, not a boundary, and it must not be described as one.
+
+The Indonesia dashboard's gate **is** real, and the difference is worth
+understanding: every row it shows comes from its Worker, so no session means a
+401 and an empty dashboard. This app has nothing server-side to withhold — the
+intake file is read in the browser and never leaves it. If that ever changes,
+serve the app from a Worker that checks the session before responding (or put
+Cloudflare Access in front) and the gate becomes real.
+
+### Two checks, and both are load-bearing
+```js
+if (claims.tid !== env.SSO_TENANT_ID)          // rejects a personal or
+                                              // other-organisation account
+if (!email.endsWith('@' + ALLOWED_EMAIL_DOMAIN))  // rejects a GUEST invited
+                                                  // into the CTI tenant
+```
+Either one alone leaves a way in. A guest account is a real case — the tenant
+check passes for them and their address ends in something else entirely.
+`test/auth.test.js` asserts both are still there.
+
+### Three strings must agree, or sign-in fails silently
+`WORKER_ORIGIN` in `worker.js`, the Redirect URI registered on the Entra app,
+and `WORKER` in `auth.js`. Microsoft compares the redirect URI character for
+character, and a mismatch shows up as a button that appears to do nothing.
+`SSO_REDIRECT_URI` is *derived* from `WORKER_ORIGIN` so those two cannot drift,
+and the test asserts `auth.js` names the same host. `GET /api/health` answers
+"is the Worker even up at this host", which is the first thing to check.
+
+### Setup, once
+1. **Entra app registration** (or add to an existing one): Redirect URI type
+   *Web*, value `https://<worker>/api/auth/callback`. Note the **Application
+   (client) ID** and **Directory (tenant) ID**, and create a **client secret**.
+2. **KV namespace**: `npx wrangler kv namespace create ds160-auth-sessions`,
+   paste the id into `wrangler.jsonc`.
+3. **Secrets on the Worker**: `SSO_TENANT_ID`, `SSO_CLIENT_ID`,
+   `SSO_CLIENT_SECRET`.
+4. **Repo secret** `CLOUDFLARE_API_TOKEN` so `.github/workflows/deploy-worker.yml`
+   can deploy on push.
+5. Confirm the deployed URL matches `WORKER_ORIGIN` and fix all three strings if
+   not.
+
+### Local development
+`ALLOWED_ORIGINS` includes `http://localhost:7773`, so the worksheet can be
+signed into from `node server.js`. That grants an attacker nothing — anyone can
+serve a page on their own localhost — and the sign-in still has to pass
+Microsoft.
+
+### Signing out wipes the loaded rows
+`sessionStorage['ds160.rows']` holds the whole intake export: passport numbers,
+dates of birth, addresses, parents' names. The sign-out handler clears it
+**before** calling `Auth.logout()`, so nothing is left for the next person at
+that browser. `Auth.logout()` knows nothing about the app's own storage, and
+should not.
+
+### A network error must not sign everyone out
+A **401** is proof the token is dead, so it is dropped. A **thrown fetch** is
+also exactly what a momentary offline looks like, so the token is *kept* and the
+login page says it could not reach the service. Wiping on any failure would make
+a flaky connection log the whole office out.
+
+### The extension is not gated
+`extension/popup.js` fills CEAC from a record already in `chrome.storage`. Anyone
+holding the extension and a record can use it without ever loading the
+worksheet. Gating the worksheet does not change that, and pretending otherwise
+would be worse than knowing it.
 
 ## Hard Rules (safety, not preference)
 - Never automate the CAPTCHA / security check.
@@ -1168,7 +1258,7 @@ like it did not work.
 
 ## Testing
 ```bash
-npm test   # 8 suites, ~204 assertions + background 9
+npm test   # 9 suites; auth.test.js checks the sign-in gate's invariants
 ```
 `test/make-fixture.py` regenerates `test/fixtures/sample.xlsx` (stdlib only).
 The unzip half needs a browser, so it is checked by loading that fixture in

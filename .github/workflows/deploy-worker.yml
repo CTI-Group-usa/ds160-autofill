@@ -1,0 +1,35 @@
+name: Deploy Worker
+
+# Auto-deploys the ds160-auth Worker (the Microsoft 365 sign-in gate) whenever
+# its source or config changes on main. The worksheet itself is static and
+# served by GitHub Pages, so it is unaffected by this workflow.
+#
+# Needs one repository secret: CLOUDFLARE_API_TOKEN, scoped to edit Workers on
+# the CTI account named in wrangler.jsonc.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'worker.js'
+      - 'wrangler.jsonc'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch: {}   # allow manual runs from the Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # wrangler-action's default (3.90.0) failed to read "main" out of a
+          # perfectly valid wrangler.jsonc on the Indonesia dashboard
+          # ("Missing entry-point", 2026-08-12). Pin to a modern major.
+          wranglerVersion: '4'
