@@ -56,6 +56,57 @@ eq('an already-processed FNU mononym too',
 eq('no native name ever holds punctuation',
    /[^A-Z' -]/.test(D.toRecord({ 'Name': 'I PUTU JULI, FRINDAYANA' }).nativeName), false);
 
+// -- headers are matched loosely, and a key may have several spellings
+/* The lookup used to be exact and case-sensitive, so `Start date at current
+   workplace` and `Start Date at Current Workplace` were different columns as
+   far as it was concerned - the same field, silently lost. Nobody edits a Zoho
+   form thinking about capitals. */
+const startedOn = h => { const r = { Name: 'X' }; r[h] = '28 Aug 2015'; return D.toRecord(r); };
+eq('the C1/D spelling still works',
+   startedOn('Start Date at Current Workplace').employerStart, '28-AUG-2015');
+eq('the J1 casing works too',
+   startedOn('Start date at current workplace').employerStart, '28-AUG-2015');
+eq('and so does odd spacing', startedOn('START  DATE  AT  CURRENT  WORKPLACE').employerStart,
+   '28-AUG-2015');
+
+/* ALIASES MUST NOT CLOBBER. toRecord() used to assign in MAP order, so an
+   alias the row does NOT have would overwrite a good value with ''. It now
+   takes the first NON-EMPTY candidate per key, which is the only order-
+   independent answer. */
+eq('the C1/D wording fills jobTitle',
+   D.toRecord({ Name: 'X', 'Current Employment Position': 'WAITER' }).jobTitle, 'WAITER');
+eq('the J1 wording fills the same key',
+   D.toRecord({ Name: 'X', 'Current employment job title': 'INTERN' }).jobTitle, 'INTERN');
+eq('a J1 row is not blanked by the absent C1/D alias',
+   D.toRecord({ Name: 'X', 'Current employment job title': 'INTERN',
+                'Previous workplace working job title': 'WAITER' }).prevJobTitle, 'WAITER');
+/* An empty cell must not win over a filled alias either, whichever order they
+   appear in the row. */
+eq('an empty alias loses to a filled one',
+   D.toRecord({ Name: 'X', 'Current Employment Position': '',
+                'Current employment job title': 'INTERN' }).jobTitle, 'INTERN');
+
+// -- the J1-only fields ----------------------------------------------
+const j1 = D.toRecord({ Name: 'I Ketut Juliana',
+  'SEVIS ID': 'N0037491619', 'Program Number': 'P-3-05133',
+  'National Identification Number (KTP)': '5102021411060001',
+  'Name of the person paying for your trip': 'Wijana, I Made',
+  'Phone number of the person paying for your trip': '0859-3522-1510',
+  'Relationship to you': 'Parent',
+  'Point of contact': 'Ingle, Mariah',
+  'Additional point of contact': 'Artana, I Wayan Arta',
+  'Provide a list of languages you speak': 'Indonesian, English' });
+eq('SEVIS ID', j1.sevisId, 'N0037491619');
+eq('Program Number', j1.programNumber, 'P-3-05133');
+eq('national ID (KTP)', j1.nationalId, '5102021411060001');
+eq('the payer is a person', j1.payerPersonName, 'WIJANA, I MADE');
+/* Digits only, like every other phone - CEAC refuses punctuation. */
+eq('the payer phone is digits only', j1.payerPersonPhone, '085935221510');
+eq('relationship to the payer', j1.payerRelationship, 'PARENT');
+eq('the US contact comes from the sheet on J1', j1.usPocName, 'INGLE, MARIAH');
+eq('and a second contact', j1.addPocName, 'ARTANA, I WAYAN ARTA');
+eq('languages are collected, not constant', j1.languages, 'INDONESIAN, ENGLISH');
+
 // -- names -----------------------------------------------------------
 eq('mononym surname', D.splitName('Sukarno').surname, 'SUKARNO');
 eq('mononym given',   D.splitName('Sukarno').given, 'FNU');

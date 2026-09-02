@@ -238,6 +238,64 @@
     'Appointment Date':                                              ['appointmentDate', dateStr],
     'Embassy Location':                                              ['embassy', clean],
     'Notes':                                                         ['notes', clean],
+
+    /* ---- J1 Visa Log ------------------------------------------------
+       The J1 sheet is ~90% the same form, but 108 columns instead of 95 and
+       several worded differently. Column POSITIONS differ throughout and that
+       costs nothing: this map is keyed on the header TEXT.
+
+       Aliases sit alongside the C1/D spelling rather than replacing it, and
+       toRecord() takes the first NON-EMPTY one per key, so a row only ever has
+       one of each pair. Case and punctuation are already forgiven by the loose
+       lookup, so only genuinely different WORDING is listed here. */
+    'Current employment job title':                                  ['jobTitle', upper],
+    'Previous workplace working job title':                          ['prevJobTitle', upper],
+    "Previous workplace supervisor's Name":                          ['prevSupervisor', upper],
+    'Name of Senior High School/Vocational School':                  ['hsName', upper],
+    'Address of Senior High School/Vocational School':               ['hsAddress', clean],
+    'Course of Study in Senior High School/Vocational School':       ['hsCourse', upper],
+    'Year of Senior High School/Vocational School Entry':            ['hsFrom', strictDate],
+    'Year of Senior High School/Vocational School Graduation':       ['hsTo', strictDate],
+    /* "High Collage" is the sheet's own typo. Left exactly as written - the
+       lookup matches the header the file actually has, not the one it should. */
+    'Year of High Collage/University Graduation':                    ['uniTo', strictDate],
+    'Countries you have been to in the last 5 years':                ['countries5y', clean],
+    'Date last U.S. Visa was issued':                                ['lastVisaIssued', dateStr],
+
+    /* Fields the J1 form collects that the C1/D one never does. */
+    'National Identification Number (KTP)':                          ['nationalId', clean],
+    'U.S. Social Security Number (if any)':                          ['ssn', clean],
+    'U.S. Taxpayer ID Number (if any)':                              ['taxId', clean],
+    'Monthly Salary':                                                ['monthlyIncome', clean],
+    'Provide a list of languages you speak':                         ['languages', upper],
+    'SEVIS ID':                                                      ['sevisId', upper],
+    'Program Number':                                                ['programNumber', upper],
+
+    /* J1's payer is a PERSON, not a company - a different branch of the
+       DS-160 question entirely. See constants-j1.js. */
+    'Name of the person paying for your trip':                       ['payerPersonName', upper],
+    'Phone number of the person paying for your trip':               ['payerPersonPhone', phoneAsWritten],
+    'Email address of the person paying for your trip':              ['payerPersonEmail', clean],
+    'Relationship to you':                                           ['payerRelationship', upper],
+
+    /* And its U.S. contact is the host employer, collected per applicant,
+       where C1/D has the cruise line's as a constant. */
+    'Point of contact':                                              ['usPocName', upper],
+    'Point of contact address':                                      ['usPocAddress', clean],
+    'Point of contact phone number':                                 ['usPocPhone', phoneAsWritten],
+    'Point of contact email Address':                                ['usPocEmail', clean],
+    'Additional point of contact':                                   ['addPocName', upper],
+    'Additional point of contact address':                           ['addPocAddress', clean],
+    'Additional point of contact phone number':                      ['addPocPhone', phoneAsWritten],
+    'Additional point of contact email Address':                     ['addPocEmail', clean],
+
+    /* Junior High School - a THIRD education level the C1/D sheet has no
+       columns for. CEAC's education block is one repeating set, so this is a
+       further candidate for the block chooser, not an extra block. */
+    'Name of Junior High School':                                    ['jhsName', upper],
+    'Address of Junior High School':                                 ['jhsAddress', clean],
+    'Year of Junior High School Entry':                              ['jhsFrom', strictDate],
+    'Year of Junior High School Graduation':                         ['jhsTo', strictDate],
   };
 
   /* Fields DS-160 needs that the intake form never asks. They stay
@@ -274,12 +332,49 @@
     ['tripPayer',     'Person / entity paying for the trip'],
   ];
 
+  /* HEADERS ARE MATCHED LOOSELY, AND SEVERAL MAY FEED ONE KEY.
+     Two things forced this, both found while reading the J1 Visa Log:
+
+     1. The lookup was exact and case-sensitive, so `Start date at current
+        workplace` and `Start Date at Current Workplace` are different columns
+        as far as it was concerned - the same field, silently lost. Nobody
+        edits a Zoho form thinking about capitals.
+     2. The J1 sheet words a dozen columns differently from the C1/D one
+        (`Current employment job title` vs `Current Employment Position`), so
+        one key needs several accepted spellings.
+
+     Aliases could not just be added to MAP as extra entries: `toRecord` assigns
+     in MAP order, so an alias the row does NOT have would overwrite a good
+     value with ''. Hence two passes - collect every candidate, then take the
+     first NON-EMPTY one per key. */
+  const looseKey = h => String(h == null ? '' : h)
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  function looseIndex(row) {
+    const idx = {};
+    for (const h in row) {
+      const k = looseKey(h);
+      if (!(k in idx)) idx[k] = row[h];      // first spelling in the row wins
+    }
+    return idx;
+  }
+
   function toRecord(row) {
     const rec = {};
+    const idx = looseIndex(row);
+    /* key -> the formatter to use, plus the best raw value found for it.
+       Named `chosen`, not `pick`: the education-block chooser further down this
+       function already owns that name. */
+    const chosen = {};
     for (const header in MAP) {
       const [key, fn] = MAP[header];
-      rec[key] = fn(row[header]);
+      const raw = (header in row) ? row[header] : idx[looseKey(header)];
+      const filled = raw !== undefined && raw !== null && String(raw).trim() !== '';
+      if (!(key in chosen) || (!chosen[key].filled && filled)) {
+        chosen[key] = { fn: fn, raw: raw, filled: filled };
+      }
     }
+    for (const key in chosen) rec[key] = chosen[key].fn(chosen[key].raw);
     const n = splitName(rec.fullName);
     rec.surname = n.surname;
     rec.givenNames = n.given;
