@@ -1,4 +1,16 @@
 node_modules/
-*.csv
 .DS_Store
+
+# THIS REPOSITORY IS PUBLIC. A real intake export dropped in this folder must
+# never be committed - it holds seafarer passport numbers, dates of birth,
+# addresses and parents' names. `git add -A` would otherwise take it, and
+# `git rm` afterwards does not unpublish it.
+*.csv
+*.tsv
+*.xlsx
+*.xls
 *.pdf
+
+# ...except the generated test fixture, which contains invented rows only
+# (test/make-fixture.py builds it).
+!test/fixtures/sample.xlsx
