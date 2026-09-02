@@ -28,8 +28,15 @@ eq('falls back to email', T.idOf(noPassport), 'SITI@EXAMPLE.COM');
 eq('no identity at all', T.idOf({}), '');
 
 // -- defaults ---------------------------------------------------------
-eq('purpose default', T.values(budi).purposeOfTrip, 'ALIEN IN TRANSIT (C)');
-eq('specify default', T.values(budi).specifyPurpose, 'CREWMEMBER IN TRANSIT (C1/D)');
+/* THE PURPOSE IS A VISA-CLASS ANSWER, so trip.js deliberately has no default
+   for it any more - each constants pack supplies its own. It used to carry the
+   C1/D values here, and that leaked: app.js applies trip details FIRST and
+   constants second, and DS160Const.apply() never overwrites a value already
+   set, so a J1 record was stamped ALIEN IN TRANSIT (C) by this file and the J1
+   pack could not correct it. */
+eq('purpose has no default here', T.values(budi).purposeOfTrip, '');
+eq('nor does specify', T.values(budi).specifyPurpose, '');
+eq('nor specific travel plans', T.values(budi).specificTravelPlans, '');
 eq('arrival empty by default', T.values(budi).arrivalDate, '');
 
 // -- one applicant does not affect another ----------------------------
@@ -49,7 +56,11 @@ eq('unparseable kept as typed', T.set(budi, 'departureFlight', 'GA880'), 'GA880'
 const merged = T.apply(Object.assign({ vesselName: 'OASIS OF THE SEAS' }, budi));
 eq('existing value wins', merged.vesselName, 'OASIS OF THE SEAS');
 eq('blank gets filled', T.apply(budi).vesselName, 'SYMPHONY OF THE SEAS');
-eq('default merged too', T.apply(budi).purposeOfTrip, 'ALIEN IN TRANSIT (C)');
+/* apply() does not set an empty field at all, so the key is absent rather
+   than ''. Either satisfies DS160Const.apply(), which fills when the value is
+   undefined OR '' - the point is only that this file leaves it for the class. */
+eq('and apply() leaves it for the class to fill',
+   T.apply(budi).purposeOfTrip, undefined);
 
 // -- copy is explicit and one-way -------------------------------------
 eq('copy reports success', T.copy(budi, ahmad), true);
@@ -63,7 +74,8 @@ eq('budi survives that', T.values(budi).arrivalCity, 'MIAMI');
 // -- clearing only clears one applicant -------------------------------
 T.clear(budi);
 eq('budi cleared', T.values(budi).arrivalCity, '');
-eq('budi keeps defaults', T.values(budi).purposeOfTrip, 'ALIEN IN TRANSIT (C)');
+eq('clearing leaves the purpose empty, as it always is here',
+   T.values(budi).purposeOfTrip, '');
 eq('ahmad untouched', T.values(ahmad).arrivalCity, 'PORT CANAVERAL');
 
 // -- a record with no identity is not storable ------------------------

@@ -30,6 +30,99 @@ A different visa class would need most of that re-decided with the user, not
 adapted. `letter.js` likewise parses a **C1/D supporting letter** and nothing
 else.
 
+### J1 is being built in the SAME app, and the boundary is the constants pack
+The user is adding a J1 (exchange visitor) version. Their requirement is one
+link and one login - the admin should not have to remember a second URL, a
+second account, or reload a second extension - so it is two tabs in this
+worksheet, not a second app. The DS-160 form is also the same form: Personal
+1/2, Address & Phone, Passport, Family, Previous U.S. Travel, Security and Sign
+& Submit are identical for every visa class, and **that is where every
+wrong-fill bug of 2026-09-02 lived.** Two apps would mean fixing each of those
+twice.
+
+**`constants.js` is now an engine holding ONE pack at a time**, and
+`constants-c1d.js` / `constants-j1.js` register themselves. `use('c1d')` or
+`use('j1')` selects; there is **no default and `values()` throws without one**,
+because a silent fallback is exactly the failure this prevents:
+
+| C1/D | J1 |
+|---|---|
+| `ssnNA` ticks *Does Not Apply* | column K collects an SSN |
+| `taxIdNA` ticks | column L collects a tax ID |
+| `monthlyIncomeNA` ticks | column AY collects a salary |
+
+Leaking the C1/D pack onto a J1 record would tick those boxes **over numbers the
+sheet actually holds** - a wrong sworn answer, and invisible, because a ticked
+box is not a gap. Those three are therefore **derived** for J1, not constant:
+filled when the column has a value, ticked when it does not.
+
+`apply()` also stamps `rec._class`, so the extension popup can say which pack a
+record came from. That matters because a C1/D record on a J1 application fills
+the cruise line's U.S. contact into the same fields, and nothing else would
+notice.
+
+#### The leak this found in trip.js
+`purposeOfTrip`, `specifyPurpose` and `specificTravelPlans` carried the C1/D
+values **in `trip.js`**. `app.js` applies trip details FIRST and constants
+second, and `DS160Const.apply()` never overwrites a value already set - so a J1
+record was stamped `ALIEN IN TRANSIT (C)` by `trip.js` and its own pack could
+not correct it. Those three now have **no default in `trip.js`**; each pack owns
+its own, and the agent can still override per applicant.
+
+#### What the J1 form does differently
+From the filed sample (I KETUT JULIANA) plus the 108-column J1 Visa Log:
+
+- **`specificTravelPlans` = YES**, the opposite of C1/D. CEAC then drops
+  "intended length of stay" and demands a full itinerary - arrival date, arrival
+  city, departure date - which come from the DS-2019 programme dates.
+- **The payer is `OTHER PERSON`**, not `COMPANY/ORGANIZATION`. A different
+  branch: the person's name, phone, email and relationship (columns X-AA), plus
+  a question that exists only on that branch - *is the payer's address the same
+  as your home address?*
+- **The U.S. contact is the host employer**, collected per applicant (BZ-CC),
+  and its **Organization Name is filled** where C1/D ticks *Do Not Know*. So
+  there is no `usPocOrgNA` in the J1 pack.
+- **A whole new page, Student/Exchange Visitor**: SEVIS ID and Program Number
+  (CH, CI), *do you intend to study in the U.S.?* = NO, and an **Additional
+  Point of Contact** taking two names - the first is CTI Indonesia, identical to
+  the C1/D manning-agency details, the second from the sheet (CD-CG).
+- **No Crew Visa page at all.** It exists only because the purpose is C1/D.
+- The stay address is the host employer's, so it is per applicant, not a
+  constant.
+
+One correction worth recording, because it was nearly carried forward wrong:
+the applicant's **Work Phone Number is `DOES NOT APPLY` on J1 too**. The
+`6281239399928` in that print-out is the *employer's* phone in the Present
+Employer block - a different box. `workPhoneNA` stays a constant in both packs.
+
+#### Header matching had to become tolerant first
+The J1 sheet has 108 columns against C1/D's 95, and **column positions differ
+throughout** - which costs nothing, because `normalize.js` maps on header TEXT.
+What did cost something:
+
+- the lookup was **exact and case-sensitive**, so `Start date at current
+  workplace` and `Start Date at Current Workplace` were different columns as far
+  as it was concerned. The same field, silently lost. It is matched on a
+  lowercase, punctuation-stripped key now.
+- aliases could not simply be added as extra MAP entries, because `toRecord()`
+  assigned in MAP order and an alias the row does **not** have would overwrite a
+  good value with an empty string. It collects every candidate and takes the
+  first **non-empty** one per key - the only order-independent answer.
+
+Measured against the real export rather than asserted: **92 of 108 headers
+understood**, 9 admin/workflow columns ignored on purpose, 6 document links
+still to wire, 1 leftover that is a typo of an admin column.
+
+#### Still to do for J1
+- matcher rules for the Student/Exchange Visitor block. To be written from the
+  print-out's **labels**, with **no id guessed** - the first live J1 Fill reports
+  the ids for anything the labels miss, exactly as every other page here was
+  done. No separate trial is needed for that.
+- the DS-2019 parser, for the programme dates (the J1 sheet has no
+  arrival/departure columns; `Appointment Date` is the interview).
+- the derived SSN / tax ID / salary logic.
+- the two-tab worksheet, and the class banner in the extension popup.
+
 No build tools, no framework — plain HTML/CSS/JS, same house style as the J1
 Dashboard and the Indonesia Monitoring Dashboard.
 

@@ -11,6 +11,11 @@ global.localStorage = {
 };
 
 const C = require('../constants.js');
+/* ONE PACK AT A TIME. The engine has no default class - it throws instead -
+   so a test has to say which one it means, exactly like index.html does. */
+require('../constants-c1d.js');
+require('../constants-j1.js');
+C.use('c1d');
 
 let pass = 0, fail = 0;
 function eq(label, got, want) {
@@ -88,6 +93,55 @@ eq('native name box takes the name',
    byLabel('Full Name in Native Alphabet', 'tbxAPP_FULL_NAME_NATIVE'), 'nativeName');
 eq('its Does Not Apply box matches nothing',
    byLabel('Does Not Apply/Technology Not Available', 'cbexAPP_FULL_NAME_NATIVE_NA'), undefined);
+
+// -- ONE PACK AT A TIME, NEVER MERGED --------------------------------
+/* This is the whole reason the packs are separate files rather than a
+   conditional. C1/D ticks "Does Not Apply" for the SSN, the tax ID and the
+   monthly salary because its intake form never collects them. The J1 form
+   collects all three, so leaking the C1/D pack onto a J1 record would tick
+   those boxes over numbers that exist in the sheet - a wrong answer on a sworn
+   form, and invisible, because a ticked box is not a gap. */
+C.use('j1');
+const j1rec = C.apply({ fullName: 'I KETUT JULIANA' });
+eq('a J1 record is stamped j1', j1rec._class, 'j1');
+eq('no vessel owner leaks in', j1rec.vesselOwnerCompany, undefined);
+eq('no manning agency leaks in', j1rec.agencyName, undefined);
+eq("no cruise line's U.S. contact leaks in", j1rec.usPocSurname, undefined);
+eq('no SSN tick leaks in - J1 derives it from the column', j1rec.ssnNA, undefined);
+eq('no tax ID tick leaks in', j1rec.taxIdNA, undefined);
+eq('no monthly income tick leaks in', j1rec.monthlyIncomeNA, undefined);
+eq('no ENGLISH language constant leaks in', j1rec.languageSpoken, undefined);
+eq('and no Do-Not-Know on the organisation name', j1rec.usPocOrgNA, undefined);
+
+/* The purpose is a class answer, and each pack owns its own. trip.js used to
+   carry the C1/D values, which app.js applied FIRST - and apply() never
+   overwrites - so a J1 record could not be corrected by its own pack. */
+eq('J1 purpose', j1rec.purposeOfTrip, 'EXCHANGE VISITOR (J)');
+eq('J1 specify', j1rec.specifyPurpose, 'EXCHANGE VISITOR (J1)');
+eq('J1 has specific travel plans, unlike C1/D', j1rec.specificTravelPlans, 'YES');
+eq('and the payer is a person, a different DS-160 branch', j1rec.tripPayer, 'OTHER PERSON');
+
+C.use('c1d');
+const c1drec = C.apply({ fullName: 'BUDI SANTOSO' });
+eq('a C1/D record is stamped c1d', c1drec._class, 'c1d');
+eq('nothing from the exchange-visitor page leaks the other way',
+   c1drec.intendToStudy, undefined);
+eq('nor the CTI additional contact', c1drec.addPoc1Name, undefined);
+eq('C1/D purpose is unchanged', c1drec.purposeOfTrip, 'ALIEN IN TRANSIT (C)');
+eq('and it still answers No to specific travel plans', c1drec.specificTravelPlans, 'NO');
+
+/* Overrides are per class, so switching does not carry one class's choices
+   into the other. */
+eq('the store key names the class', C.STORE, 'ds160.constants.c1d');
+C.use('j1');
+eq('and changes with it', C.STORE, 'ds160.constants.j1');
+C.use('c1d');
+
+/* There is no default class ON PURPOSE - a silent fallback to C1/D is exactly
+   the failure this split prevents. */
+let threw = false;
+try { C.use('b1b2'); } catch (e) { threw = true; }
+eq('an unregistered class is refused, not ignored', threw, true);
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

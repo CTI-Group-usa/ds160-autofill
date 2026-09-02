@@ -18,16 +18,28 @@
   const STORE = 'ds160.trip';
 
   const FIELDS = [
+    /* THESE THREE HAVE NO DEFAULT HERE, ON PURPOSE. They are visa-class
+       answers, so each constants pack supplies its own - C1/D gets
+       ALIEN IN TRANSIT (C) with specific plans NO, J1 gets
+       EXCHANGE VISITOR (J) with YES.
+
+       They used to carry the C1/D values right here, and that was a real
+       leak: app.js applies trip details FIRST and constants second, and
+       `DS160Const.apply()` never overwrites a value that is already set.
+       So a J1 record would have been stamped ALIEN IN TRANSIT (C) by this
+       file and the J1 pack could not correct it. Leaving them empty lets
+       the class fill them, and the agent can still override either one
+       per applicant in this panel. */
     { key: 'purposeOfTrip', page: 'Travel',
-      label: 'Purpose of Trip to the U.S.', def: 'ALIEN IN TRANSIT (C)',
-      hint: 'Must read exactly as the CEAC dropdown option.' },
+      label: 'Purpose of Trip to the U.S.', def: '',
+      hint: 'Filled from the visa class. Must read exactly as the CEAC dropdown option.' },
     { key: 'specifyPurpose', page: 'Travel',
-      label: 'Specify', def: 'CREWMEMBER IN TRANSIT (C1/D)',
-      hint: 'The second dropdown under Purpose of Trip.' },
+      label: 'Specify', def: '',
+      hint: 'The second dropdown under Purpose of Trip. Filled from the visa class.' },
     { key: 'specificTravelPlans', page: 'Travel', kind: 'yesno',
-      label: 'Have you made specific travel plans?', def: 'NO',
-      hint: 'No is what the filed sample uses. CEAC then asks only for an intended date ' +
-            'and a length of stay, and drops the flight and city questions entirely.' },
+      label: 'Have you made specific travel plans?', def: '',
+      hint: 'Filled from the visa class: C1/D answers No, which drops the itinerary ' +
+            'questions; J1 answers Yes, which demands arrival and departure dates.' },
     { key: 'arrivalDate', page: 'Travel', kind: 'date',
       label: 'Intended Date of Arrival in U.S.', def: '',
       hint: 'The sign-on date. Any format - it is converted to DD-MMM-YYYY.' },

@@ -81,7 +81,19 @@
 </main>
 
 <script src="auth.js?v=20260902auth"></script>
-<script src="constants.js?v=20260831t"></script>
+<script src="constants.js?v=20260902packs"></script>
+<script src="constants-c1d.js?v=20260902packs"></script>
+<script src="constants-j1.js?v=20260902packs"></script>
+<script>
+  /* ONE PACK, CHOSEN EXPLICITLY. The engine throws rather than defaulting,
+     because a silent fallback to C1/D is the exact failure the split exists
+     to prevent: the C1/D pack ticks "Does Not Apply" for the SSN, tax ID and
+     salary that a J1 sheet actually collects.
+
+     This will move to the visa-class tab once that exists. Until then the
+     worksheet is C1/D, which is what it has always been. */
+  DS160Const.use('c1d');
+</script>
 <script src="trip.js?v=20260831t"></script>
 <script src="pdftext.js?v=20260831t"></script>
 <script src="letter.js?v=20260831t"></script>
