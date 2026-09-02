@@ -380,6 +380,43 @@ eq('transit no count', transit.prevStayLength, '');
 none('transit is quiet', D.validate(transit, { today: '2026-08-31' }).warnings, 'prevStayUnit');
 eq('transit in Indonesian', QR('kurang dari 24 jam', '').prevStayUnit, 'LESS THAN 24 HOURS');
 
+/* COLUMN Q "IN DAYS" IS A SAME-DAY TRANSIT - the user's rule, 2026-09-02.
+   "In Days" is the shortest period their intake form offers, and left as
+   DAY(S) the page could not be completed: the dropdown was set, the number box
+   beside it stayed blank, and the report only said `prevStayLength - no value
+   in record` with nothing to fill it from. */
+const inDays = QR('In Days', '');
+eq('Q "In Days" with no count is LESS THAN 24 HOURS', inDays.prevStayUnit, 'LESS THAN 24 HOURS');
+eq('and the count stays empty, which CEAC greys out anyway', inDays.prevStayLength, '');
+/* AND THE REPORT MUST NOT CALL THAT A GAP. "no value in record" is the exact
+   string popup.js reads as "this record is stale, send it again", and
+   re-sending can never fill a box CEAC greys out - the banner would nag for
+   ever. `_blankOnPurpose` routes it to "left blank on purpose" instead. */
+eq('the empty count is declared deliberate',
+   (inDays._blankOnPurpose || []).indexOf('prevStayLength') >= 0, true);
+eq('a real length is not declared deliberate',
+   (QR('In Months', '8')._blankOnPurpose || []).indexOf('prevStayLength') >= 0, false);
+eq('lower case too', QR('in days', '').prevStayUnit, 'LESS THAN 24 HOURS');
+eq('and without the "in"', QR('Days', '').prevStayUnit, 'LESS THAN 24 HOURS');
+has('the interpretation is named, not silent',
+    D.validate(inDays, { today: '2026-08-31' }).warnings, 'prevStayUnit',
+    'filled as LESS THAN 24 HOURS');
+
+/* But a STATED length is not rewritten. "In Days" plus a 5 is five days, and
+   turning that into "less than 24 hours" would swear to something the sheet
+   contradicts - so that branch keeps DAY(S), and says so. */
+const fiveDays = QR('In Days', '5');
+eq('a stated count keeps DAY(S)', fiveDays.prevStayUnit, 'DAY(S)');
+eq('and keeps the number', fiveDays.prevStayLength, '5');
+has('and the difference is named too',
+    D.validate(fiveDays, { today: '2026-08-31' }).warnings, 'prevStayUnit',
+    'not LESS THAN 24 HOURS');
+
+/* The other periods are untouched by all of this. */
+eq('months unaffected', QR('In Months', '8').prevStayUnit, 'MONTH(S)');
+eq('weeks unaffected',  QR('In Weeks', '2').prevStayUnit, 'WEEK(S)');
+eq('years unaffected',  QR('In Years', '1').prevStayUnit, 'YEAR(S)');
+
 // A period typed into R instead of Q would leave a required CEAC field
 // blank, so it is named rather than silently used.
 const inR = QR('', 'MONTH(S)');

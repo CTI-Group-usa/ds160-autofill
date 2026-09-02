@@ -425,7 +425,21 @@
         continue;
       }
       const value = valueFor(rec, m.key, c);
-      if (!value) { report.skipped.push({ id: c.id, key: m.key, why: 'no value in record' }); continue; }
+      if (!value) {
+        /* A FIELD THE RECORD DELIBERATELY LEAVES EMPTY IS NOT A GAP. CEAC
+           greys out the Length of Stay number box when the period is LESS
+           THAN 24 HOURS, so `prevStayLength` is blank on purpose - but it was
+           landing in `skipped` as "no value in record", which is the exact
+           string popup.js reads as "this record is stale, send it again".
+           Re-sending can never fill it, so the banner would nag forever.
+           normalize.js names those keys in `_blankOnPurpose`. */
+        if ((rec._blankOnPurpose || []).indexOf(m.key) >= 0) {
+          report.deliberate.push({ id: c.id, key: m.key, label: c.label });
+        } else {
+          report.skipped.push({ id: c.id, key: m.key, why: 'no value in record' });
+        }
+        continue;
+      }
       if (!opts.overwrite && c.type !== 'radio' && c.type !== 'checkbox' &&
           hasRealValue(c) && !c.el.hasAttribute(MARK)) {
         report.skipped.push({ id: c.id, key: m.key, why: 'already has a value' });

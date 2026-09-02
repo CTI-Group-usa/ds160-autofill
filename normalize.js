@@ -303,6 +303,30 @@
     rec.prevStayUnit   = stayUnit(rec.stayUnit);
     rec.prevStayLength = stayCount(rec.stayLength);
 
+    /* COLUMN Q "IN DAYS" IS A SAME-DAY TRANSIT, and CEAC's answer for that is
+       LESS THAN 24 HOURS - the user's rule, 2026-09-02. CTI's crew go ashore
+       and back aboard on one tide, and "in days" is the shortest period the
+       intake form offers, so that is how it arrives.
+
+       Left as DAY(S) the page could not be completed: the dropdown was set,
+       the number box beside it stayed blank, and the report only said
+       `prevStayLength - no value in record` with nothing to fill it from.
+
+       Guarded on a number being ABSENT, and that matters: Q "In Days" with a
+       5 in column R is five days, and rewriting that to "less than 24 hours"
+       would swear to something the sheet contradicts. That branch keeps
+       DAY(S) + 5, and validate() names both outcomes so neither passes
+       unseen. */
+    rec._stayDaysNoCount = rec.prevStayUnit === 'DAY(S)' && !rec.prevStayLength;
+    if (rec._stayDaysNoCount) rec.prevStayUnit = 'LESS THAN 24 HOURS';
+
+    /* Keys this record leaves empty ON PURPOSE, so the filler reports them as
+       "left blank on purpose" instead of "no value in record" - the latter is
+       the string popup.js reads as "the record is stale, send it again", and
+       re-sending can never fill a box CEAC greys out. */
+    rec._blankOnPurpose = [];
+    if (rec.prevStayUnit === 'LESS THAN 24 HOURS') rec._blankOnPurpose.push('prevStayLength');
+
     /* "Have you ever been refused a U.S. Visa, or been refused admission, or
        withdrawn your application at the port of entry?" has no column of its
        own. At the user's direction it is answered from column X, which is
@@ -549,6 +573,18 @@
       else if (rec.prevStayUnit !== 'LESS THAN 24 HOURS' && !rec.prevStayLength)
         W('prevStayLength', 'Length of stay is "' + rec.prevStayUnit +
                             '" with no number - CEAC needs both');
+      /* The "in days" -> LESS THAN 24 HOURS rule is worth naming when it
+         fires, because it is an interpretation of a coarse intake answer and
+         not something the sheet says outright. */
+      if (rec._stayDaysNoCount)
+        W('prevStayUnit', 'Column Q reads "' + rec.stayUnit + '" with no number in column R, ' +
+                          'filled as LESS THAN 24 HOURS (a same-day transit). Change it if ' +
+                          'the stay was longer.');
+      /* And worth naming when it deliberately does NOT fire. */
+      else if (rec.prevStayUnit === 'DAY(S)' && rec.prevStayLength)
+        W('prevStayUnit', 'Column Q reads "' + rec.stayUnit + '" and column R states ' +
+                          rec.prevStayLength + ', so it is filled as ' + rec.prevStayLength +
+                          ' DAY(S) - not LESS THAN 24 HOURS. Confirm which is right.');
     }
     if (rec.beenInUs === 'NO' && rec.priorUsVisa === 'YES')
       W('lastUsArrival', 'Held a US visa but no arrival date on the intake form, so ' +

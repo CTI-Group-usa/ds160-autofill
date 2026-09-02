@@ -474,6 +474,34 @@ rather than guessing.
 For `LESS THAN 24 HOURS` the count is cleared: CEAC greys the number box out for
 that option, so writing there would fail silently or contradict the dropdown.
 
+### Column Q "IN DAYS" is a same-day transit
+The user's rule, 2026-09-02: `In Days` in column Q with **no number in column
+R** is filled as **LESS THAN 24 HOURS**. It is the shortest period their intake
+form offers, and CTI's crew go ashore and back aboard on one tide.
+
+Left as `DAY(S)` the page could not be completed: the dropdown was set, the
+number box beside it stayed blank, and the report only said `prevStayLength -
+no value in record` with nothing to fill it from.
+
+**Guarded on the number being absent.** Q `In Days` with a `5` in R is five
+days, and rewriting that to less than 24 hours would swear to something the
+sheet contradicts - that branch keeps `DAY(S) + 5`. `validate()` names **both**
+outcomes, because either one is an interpretation of a coarse intake answer
+rather than something the sheet says outright.
+
+### `_blankOnPurpose` - a field the record empties on purpose is not a gap
+Fixing the period was not enough: `prevStayLength` still appeared as
+`no value in record`, and **that exact string is what `popup.js` reads as "this
+record is stale, send it again"**. Re-sending can never fill a box CEAC greys
+out, so the red banner would have nagged for ever - the same trap
+`MISSING_FROM_INTAKE` was built for, in a different shape.
+
+`normalize.js` now publishes `rec._blankOnPurpose`, and `content.js` routes
+those keys to **"Left blank on purpose"** instead of `skipped`. It is
+record-driven where `LEAVE_BLANK` in `matcher.js` is a static id list, because
+whether the box should be blank depends on the answer above it, not on which
+control it is.
+
 ### The rest of the page (added 2026-09-01, at the user's instruction)
 - **"Applying in the same country the visa was issued, and resident there?"** —
   constant `sameCountryResidence` = YES. CTI files in Jakarta for seafarers
