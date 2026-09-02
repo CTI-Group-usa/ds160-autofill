@@ -908,5 +908,96 @@ eq('the applicant own boxes still match by label',
    (M.matchKey({ id: P + 'tbxUnknownApplicantBox', name: '', label: 'Given Names',
                  type: 'text', tag: 'input' }, {}) || {}).key, 'givenNames');
 
+// -- Previous Work / Education: the repeater prefix ---------------------
+/* THE ONLY DISCRIMINATOR IS `dtlPrevEmpl`. CEAC renders this page as two
+   ASP.NET DataLists and reuses the PRESENT employer's field names inside them,
+   so the live start-date box is `dtlPrevEmpl_ctl00_ddlEmpDateFromDay` - which
+   `employerStart`'s own /EmpDateFrom(Day|Month|Year)/ matches perfectly.
+
+   On a live Fill (2026-09-02, the first `previously employed = YES` row anyone
+   had filed) that wrote the PRESENT employer's start date, column AX, into the
+   PREVIOUS employer's box, where column BF belongs. Filled, plausible and
+   wrong on a sworn form - the worst class of bug this file can produce, and
+   invisible in the report because a filled field is not a gap.
+
+   The To date had no rule at all: the old pattern wanted `PrevEmplDateTo`,
+   which does not exist, so it came back unrecognised. */
+const prevEmplBlk = 'Previous Work/Education/Training Information Previous Employer ' +
+                    'Employer Name Employment Date From Employment Date To';
+const pe = (id, label, type) =>
+  (M.matchKey({ id: P + 'dtlPrevEmpl_ctl00_' + id, name: '', label,
+                section: prevEmplBlk, type: type || 'text',
+                tag: /^ddl/.test(id) ? 'select' : 'input' }, {}) || {}).key;
+
+eq('the previous employer start date is prevStart, NOT employerStart',
+   pe('ddlEmpDateFromDay', ''), 'prevStart');
+eq('...month too', pe('ddlEmpDateFromMonth', ''), 'prevStart');
+eq('...and year', pe('tbxEmpDateFromYear', ''), 'prevStart');
+eq('the end date now matches at all', pe('ddlEmpDateToDay', ''), 'prevEnd');
+eq('...month too', pe('ddlEmpDateToMonth', ''), 'prevEnd');
+eq('...and year', pe('tbxEmpDateToYear', ''), 'prevEnd');
+/* And the PRESENT page must keep its own date - the guard is a `not` on a
+   different block, not on a neighbour, so it may not cost employerStart its
+   own box. */
+eq('the present employer keeps its start date',
+   (M.matchKey({ id: P + 'ddlEmpDateFromDay', name: '', label: 'Start Date',
+                 section: 'Present Work/Education/Training Information ' +
+                          'Present Employer or School Address Start Date',
+                 type: 'text', tag: 'select' }, {}) || {}).key, 'employerStart');
+
+/* employerCountry sat BEFORE prevCountry in the table and its `must: /employer/i`
+   is satisfied by "Previous Employer", so in the label pass it claimed the
+   previous employer's Country/Region and left it blank - it has no constant
+   behind it. That is why the live report read `employerCountry - no value in
+   record` on a page where that field does not exist, while column BH went
+   unused. */
+eq('the previous employer country is prevCountry',
+   pe('ddlEmployerCountry', 'Country/Region', 'text'), 'prevCountry');
+eq('...and by label alone, which is where it went wrong',
+   pe('ddlUnknownCountry', 'Country/Region', 'text'), 'prevCountry');
+
+/* The live city box is `tbEmployerCity` with no ADDR in it, which the old
+   /PrevEmpl.*Addr.*City/ missed. State and postal DO carry ADDR - and each
+   sits beside an `_NA` twin sharing its whole prefix, the vessel-owner trap
+   again, so both need the lookahead. Ticking one of those would wipe an
+   address the agent typed by hand. */
+eq('previous employer city', pe('tbEmployerCity', 'City'), 'prevEmployerCity');
+eq('previous employer state', pe('tbxPREV_EMPL_ADDR_STATE', 'State/Province'), 'prevEmployerState');
+eq('previous employer postal', pe('tbxPREV_EMPL_ADDR_POSTAL_CD', 'Postal Zone/ZIP Code'),
+   'prevEmployerPostal');
+eq('the state _NA twin is not the state box',
+   pe('cbxPREV_EMPL_ADDR_STATE_NA', 'Does Not Apply', 'checkbox') === 'prevEmployerState'
+     ? 'LEAKED' : 'clear', 'clear');
+eq('the postal _NA twin is not the postal box',
+   pe('cbxPREV_EMPL_ADDR_POSTAL_CD_NA', 'Does Not Apply', 'checkbox') === 'prevEmployerPostal'
+     ? 'LEAKED' : 'clear', 'clear');
+eq('briefly describe your duties', pe('tbDescribeDuties', 'Briefly describe your duties:'),
+   'prevDuties');
+/* The supervisor boxes carry no "Prev" in the field name, so the old
+   /PrevSupervisor/ never matched and only the label was holding them. */
+eq('supervisor surname', pe('tbxSupervisorSurname', 'Surnames'), 'prevSupervisor');
+eq('the supervisor _NA twin is not the name box',
+   pe('cbxSupervisorSurname_NA', 'Do Not Know', 'checkbox') === 'prevSupervisor'
+     ? 'LEAKED' : 'clear', 'clear');
+
+// -- and the education repeater, same shape ---------------------------
+const prevEducBlk = 'Previous Work/Education/Training Information ' +
+                    'Educational Institution Name of Institution Date of Attendance';
+const ed = (id, label, type) =>
+  (M.matchKey({ id: P + 'dtlPrevEduc_ctl00_' + id, name: '', label,
+                section: prevEducBlk, type: type || 'text',
+                tag: /^ddl/.test(id) ? 'select' : 'input' }, {}) || {}).key;
+eq('school city', ed('tbxSchoolCity', 'City'), 'eduCity');
+eq('school state', ed('tbxEDUC_INST_ADDR_STATE', 'State/Province'), 'eduState');
+eq('school postal', ed('tbxEDUC_INST_POSTAL_CD', 'Postal Zone/ZIP Code'), 'eduPostal');
+eq('the school state _NA twin is not the state box',
+   ed('cbxEDUC_INST_ADDR_STATE_NA', 'Does Not Apply', 'checkbox') === 'eduState'
+     ? 'LEAKED' : 'clear', 'clear');
+eq('the school postal _NA twin is not the postal box',
+   ed('cbxEDUC_INST_POSTAL_CD_NA', 'Does Not Apply', 'checkbox') === 'eduPostal'
+     ? 'LEAKED' : 'clear', 'clear');
+
+console.log('  (previous-work repeater covered)');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

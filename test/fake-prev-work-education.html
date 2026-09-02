@@ -53,35 +53,45 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
   <legend>Previous Employer</legend>
   <table>
     <tr><td>Employer Name</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplName" size="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbEmployerName" size="40"></td></tr>
     <tr><td>Employer Street Address (Line 1)</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplAddr1" size="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbEmployerStreetAddress1" size="40"></td></tr>
     <tr><td>City</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplAddrCity"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbEmployerCity"></td></tr>
     <tr><td>Country/Region</td>
-        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplAddrCNTRY">
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_ddlEmployerCountry">
               <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
     <tr><td>Telephone Number</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplTel"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbEmployerPhone"></td></tr>
     <tr><td>Job Title</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplJobTitle"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbJobTitle"></td></tr>
     <tr><td>Supervisor Surnames</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevSupervisorSurname"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbxSupervisorSurname"></td></tr>
     <tr><td>Supervisor Given Names</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevSupervisorGivenName"></td></tr>
-    <tr><td>Employment Date From</td><td>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateFromDay">
-        <option value="">-</option><option>01</option></select>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateFromMonth">
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbxSupervisorGivenName"></td></tr>
+    <tr><td>State/Province</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE">
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_STATE_NA">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_STATE_NA">Does Not Apply</label></td></tr>
+  <tr><td>Postal Zone/ZIP Code</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD">
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_POSTAL_CD_NA">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_cbxPREV_EMPL_ADDR_POSTAL_CD_NA">Does Not Apply</label></td></tr>
+  <tr><td>Briefly describe your duties:</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbDescribeDuties" size="40"></td></tr>
+  <tr><td>Employment Date From</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_ddlEmpDateFromDay">
+        <option value="">-</option><option>01</option><option>15</option><option>28</option><option>30</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_ddlEmpDateFromMonth">
         <option value="">-</option><option value="FEB">FEB</option></select>
-      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplDateFromYear" size="4">
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbxEmpDateFromYear" size="4">
     </td></tr>
     <tr><td>Employment Date To</td><td>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateToDay">
-        <option value="">-</option><option>30</option></select>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPrevEmplDateToMonth">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_ddlEmpDateToDay">
+        <option value="">-</option><option>01</option><option>15</option><option>28</option><option>30</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_ddlEmpDateToMonth">
         <option value="">-</option><option value="JUN">JUN</option></select>
-      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPrevEmplDateToYear" size="4">
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl00_tbxEmpDateToYear" size="4">
     </td></tr>
   </table>
 </fieldset>
@@ -90,41 +100,41 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
   <legend>Educational Institution: Date of Attendance</legend>
   <table>
     <tr><td>Name of Institution</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolName" size="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolName" size="40"></td></tr>
     <tr><td>Institution Street Address (Line 1)</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddr1" size="40" maxlength="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolAddr1" size="40" maxlength="40"></td></tr>
     <tr><td>Institution Street Address (Line 2) <i>*Optional</i></td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddr2" size="40" maxlength="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolAddr2" size="40" maxlength="40"></td></tr>
     <tr><td>City</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrCity"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolCity"></td></tr>
     <!-- These two push the block past blockLabel()'s size cap, which is what
          made section '' on the live page and left every must/not guard inert. -->
     <tr><td>State/Province</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrState">
-            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrStateNA">
-            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrStateNA">Does Not Apply</label></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_cbxEDUC_INST_ADDR_STATE_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_cbxEDUC_INST_ADDR_STATE_NA">Does Not Apply</label></td></tr>
     <tr><td>Postal Zone/ZIP Code</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolAddrPostal">
-            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrPostalNA">
-            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbexSchoolAddrPostalNA">Does Not Apply</label></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_cbxEDUC_INST_POSTAL_CD_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_cbxEDUC_INST_POSTAL_CD_NA">Does Not Apply</label></td></tr>
     <tr><td>Country/Region</td>
-        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolCountry">
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolCountry">
               <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
     <tr><td>Course of Study</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolCourseOfStudy" size="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolCourseOfStudy" size="40"></td></tr>
     <tr><td>Date of Attendance From</td><td>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolFromDay">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolFromDay">
         <option value="">-</option><option>28</option></select>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolFromMonth">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolFromMonth">
         <option value="">-</option><option value="AUG">AUG</option></select>
-      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolFromYear" size="4">
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolFromYear" size="4">
     </td></tr>
     <tr><td>Date of Attendance To</td><td>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolToDay">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolToDay">
         <option value="">-</option><option>03</option><option>06</option></select>
-      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlSchoolToMonth">
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolToMonth">
         <option value="">-</option><option value="APR">APR</option><option value="AUG">AUG</option></select>
-      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSchoolToYear" size="4">
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolToYear" size="4">
     </td></tr>
   </table>
 </fieldset>

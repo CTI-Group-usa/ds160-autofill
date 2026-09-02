@@ -818,6 +818,69 @@ addresses.
 free-text addresses — so both are named by id only and join
 `MISSING_FROM_INTAKE`.
 
+### THE REPEATER PREFIX IS THE ONLY DISCRIMINATOR (2026-09-02)
+Nobody had filed a `previously employed = YES` row until the admin did, and the
+first live Fill on that branch found ten unrecognised controls and one silent
+wrong fill. CEAC renders this page as two ASP.NET **DataLists**, so every id
+carries a repeater prefix - and INSIDE them the field names are the ones the
+**Present** employer page uses:
+
+| Live id | What the old rule wanted |
+|---|---|
+| `dtlPrevEmpl_ctl00_ddlEmpDateFromDay` | `PrevEmplDateFrom…` |
+| `dtlPrevEmpl_ctl00_ddlEmpDateToDay` | `PrevEmplDateTo…` |
+| `dtlPrevEmpl_ctl00_tbEmployerCity` | `PrevEmpl.*Addr.*City` |
+| `dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_STATE` | no rule at all |
+| `dtlPrevEmpl_ctl00_tbxPREV_EMPL_ADDR_POSTAL_CD` | no rule at all |
+| `dtlPrevEmpl_ctl00_tbDescribeDuties` | no rule at all |
+| `dtlPrevEmpl_ctl00_tbxSupervisorSurname` | `PrevSupervisorSurname` |
+| `dtlPrevEduc_ctl00_tbxSchoolCity` | `School.*Addr.*City` |
+| `dtlPrevEduc_ctl00_tbxEDUC_INST_ADDR_STATE` | no rule at all |
+| `dtlPrevEduc_ctl00_tbxEDUC_INST_POSTAL_CD` | no rule at all |
+
+**The start date is the one that matters.** `employerStart` matches
+`/EmpDateFrom(Day|Month|Year)/`, which the repeater id satisfies exactly - so on
+this page it claimed the previous employer's box and wrote the **PRESENT**
+employer's start date (column AX) where column BF belongs. Filled, plausible,
+and wrong on a sworn form, and **invisible in the report because a filled field
+is not a gap**. It now carries `not: /PrevEmpl/i`; the repeater prefix is the
+only thing that separates the two.
+
+The **To** date had no working rule at all, which is what the admin saw as "the
+end date will not fill". `prevStart` / `prevEnd` now key on
+`/PrevEmpl.*EmpDateFrom|To(Day|Month|Year)/`.
+
+**`employerCountry` was quietly eating column BH too.** Its `must: /employer/i`
+is satisfied by the section text "Previous Employer", and it sits BEFORE
+`prevCountry` in the table, so in the label pass it claimed the previous
+employer's Country/Region and left it blank - it has no constant behind it.
+That is why the report read `employerCountry - no value in record` on a page
+where that field does not exist. `previous|PrevEmpl` joined its `not`.
+
+**Four `_NA` twins share their value box's whole prefix** -
+`PREV_EMPL_ADDR_STATE` vs `..._STATE_NA`, and the same for postal, on both
+repeaters. That is the vessel-owner trap again, so every one of those rules
+carries a lookahead. Ticking one of them would wipe an address the agent had
+typed by hand.
+
+Six of the new keys have **no sheet column** - `prevEmployerState`,
+`prevEmployerPostal`, `prevDuties`, `eduCity`, `eduState`, `eduPostal` (BB and
+BP are single free-text addresses, and BD is the position, not the duties). All
+six are in `MISSING_FROM_INTAKE`, so the report says "the intake form does not
+collect this" instead of raising the red re-send banner that no re-send could
+ever clear.
+
+`test/fake-prev-work-education.html` now carries the real repeater ids. Verified
+in a browser with column AX **holding a value**, which is the only way to prove
+the guard: the From box took `01-FEB-2019` (BF) and not `28-AUG-2015` (AX), the
+To box took `15-JUN-2021` (BG), column BH filled, and nothing was unrecognised.
+The Present page was re-checked in the same session and still fills its own
+start date.
+
+Its day dropdowns had one option each, so a legitimate value came back
+"no matching option" and looked like a matcher failure - they carry a realistic
+range now.
+
 ## Crew Visa: the vessel block (2026-09-01, at the user's instruction)
 Nine controls, and they describe **three different companies plus the ship**.
 

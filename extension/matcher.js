@@ -455,7 +455,16 @@
       ids: [/WorkEducTel/i, /EmpSchTel/i, /EmpSch(Addr)?(Tel|Phone)/i],
       labels: [/telephone number.*employer/i, /^phone number$/i],
       must: /employer|school/i },
-    { key: 'employerStart',   kind: 'date', ids: [/EmpDateFrom(Day|Month|Year)/i], labels: [/start date/i] },
+    /* `not: /PrevEmpl/i` IS LOAD-BEARING, and the reason is the worst bug this
+       file can produce. CEAC reuses `EmpDateFrom*` inside the PREVIOUS employer
+       repeater - the live ids are `dtlPrevEmpl_ctl00_ddlEmpDateFromDay` - so on
+       the Previous Work page this rule claimed that box and wrote the PRESENT
+       employer's start date (column AX) where the previous employer's (column
+       BF) belongs. Filled, plausible, and wrong, on a sworn form. Found
+       2026-09-02 from the first live Fill on a `previously employed = YES` row.
+       The repeater prefix is the only thing that separates them. */
+    { key: 'employerStart',   kind: 'date', ids: [/EmpDateFrom(Day|Month|Year)/i],
+      labels: [/start date/i], not: /PrevEmpl/i },
     /* "Country/Region" is bare and shared by the home address, the passport
        issue block, the manning agency and this one, so the label match has to
        see the "Present employer or school address" heading. `must` gates the
@@ -467,8 +476,15 @@
          ddlSchoolCountry - and this rule, which has no constant behind it,
          claimed that box and left it blank. The Present block's heading says
          "Present employer or school address", so "employer" alone pins it. */
+      /* `previous|PrevEmpl` joined the guard for the same reason. On the
+         Previous Work page the section says "Previous Employer", which
+         satisfies `must: /employer/i`, and this rule sits BEFORE `prevCountry`
+         in the table - so in the label pass it claimed the previous employer's
+         Country/Region and left it blank, while column BH sat unused. It has no
+         constant behind it, which is why the report read `employerCountry - no
+         value in record` on a page where that field does not belong at all. */
       labels: [/^country\s*\/?\s*region$/i], must: /employer/i,
-      not: /institution|attendance/i },
+      not: /institution|attendance|previous|PrevEmpl/i },
     /* `not: /aboard/i` keeps the sheet's position out of the Crew Visa page's
        "Specific job title aboard aircraft or vessel", which is the supporting
        letter's `jobTitleAboard`. The word is in that box's own label, so this
@@ -495,18 +511,48 @@
     { key: 'attendedEducation',   kind: 'yesno',
       ids: [/rblOtherEduc/i, /OTHER_EDUC_IND/i],
       labels: [/attended any educational institutions/i] },
-    { key: 'prevEmployerName',    kind: 'text', ids: [/PrevEmplName/i], labels: [/employer name/i] },
-    { key: 'prevEmployerAddress', kind: 'text', ids: [/PrevEmplAddr1/i], labels: [/employer street address/i] },
+    /* EVERY ID BELOW CARRIES THE REPEATER PREFIX, and that is the whole point.
+       CEAC renders this page as two ASP.NET DataLists, so the live ids are
+       `dtlPrevEmpl_ctl00_*` and `dtlPrevEduc_ctl00_*` - and INSIDE them the
+       field names are the same ones the PRESENT employer page uses
+       (`EmpDateFrom*`, `tbEmployerCity`). The prefix is the only discriminator,
+       so a rule that omits it either misses its own box or steals the other
+       page's. Read off a live Fill report on 2026-09-02, the first time a
+       `previously employed = YES` row was filed. */
+    { key: 'prevEmployerName',    kind: 'text',
+      ids: [/PrevEmpl.*Empl(oyer)?Name/i, /PrevEmplName/i], labels: [/employer name/i] },
+    { key: 'prevEmployerAddress', kind: 'text',
+      ids: [/PrevEmpl.*Addr(ess)?1/i, /PrevEmplAddr1/i], labels: [/employer street address/i] },
     /* A bare "Telephone Number" label reaches four blocks. Unscoped, this rule
        claimed the manning agency's phone box and would have written a previous
        employer's number there. `must` gates the id too, which is the safe side:
        an unfilled box is reported, a wrongly filled one is not. */
     { key: 'prevEmployerPhone',   kind: 'text', ids: [/PrevEmplTel/i],
       labels: [/telephone number/i], must: /previous|prevempl/i },
-    { key: 'prevJobTitle',        kind: 'text', ids: [/PrevEmplJobTitle/i], labels: [/job title/i] },
-    { key: 'prevSupervisor',      kind: 'text', ids: [/PrevSupervisor(Surname|GivenName)/i], labels: [/supervisor/i] },
-    { key: 'prevStart',           kind: 'date', ids: [/PrevEmplDateFrom(Day|Month|Year)/i], labels: [/employment date from/i] },
-    { key: 'prevEnd',             kind: 'date', ids: [/PrevEmplDateTo(Day|Month|Year)/i], labels: [/employment date to/i] },
+    { key: 'prevJobTitle',        kind: 'text',
+      ids: [/PrevEmpl.*JobTitle/i, /PrevEmplJobTitle/i], labels: [/job title/i] },
+    /* The live boxes are `tbxSupervisorSurname` / `tbxSupervisorGivenName` -
+       no "Prev" in the field name, so the old `/PrevSupervisor/` pattern never
+       matched and only the label was carrying it. The `_NA` boxes beside them
+       share the prefix, hence the lookahead: `cbxSupervisorSurname_NA` must not
+       be read as the name box. */
+    { key: 'prevSupervisor',      kind: 'text',
+      ids: [/PrevEmpl.*Supervisor(Surname|GivenName)(?!_NA)/i,
+            /PrevSupervisor(Surname|GivenName)/i], labels: [/supervisor/i] },
+    /* THE DATES. Live: `dtlPrevEmpl_ctl00_ddlEmpDateFromDay` and
+       `...ddlEmpDateToDay` / `tbxEmpDateToYear`. The old patterns wanted
+       `PrevEmplDateFrom`, which does not exist - so the To date matched nothing
+       at all (reported unrecognised) and the From date was claimed by
+       `employerStart`, which now carries `not: /PrevEmpl/i` for exactly this. */
+    { key: 'prevStart',           kind: 'date',
+      ids: [/PrevEmpl.*EmpDateFrom(Day|Month|Year)/i, /PrevEmplDateFrom(Day|Month|Year)/i],
+      labels: [/employment date from/i], must: /previous|prevempl/i },
+    { key: 'prevEnd',             kind: 'date',
+      ids: [/PrevEmpl.*EmpDateTo(Day|Month|Year)/i, /PrevEmplDateTo(Day|Month|Year)/i],
+      labels: [/employment date to/i], must: /previous|prevempl/i },
+    /* No column in the sheet - BD is the position, not the duties. Named by id
+       so the report points at the sheet rather than looking like a rule gap. */
+    { key: 'prevDuties',          kind: 'text', ids: [/PrevEmpl.*DescribeDuties/i] },
 
     /* CEAC's education block is ONE set of fields and the sheet carries two
        candidate blocks, so these point at the keys normalize.js derives from
@@ -537,9 +583,18 @@
       labels: [/date of attendance.*to/i, /^to$/i], must: /institution|attendance|school/i },
     { key: 'prevCountry', kind: 'text', ids: [/PrevEmpl.*(CNTRY|COUNTRY)/i],
       labels: [/^country\s*\/?\s*region$/i], must: /previous|prevempl/i },
-    /* Column BB is one free-text address, so there is no city to fill. Named
-       by id only, so the report points at the sheet rather than the rules. */
-    { key: 'prevEmployerCity', kind: 'text', ids: [/PrevEmpl.*Addr.*City/i] },
+    /* Column BB is one free-text address, so there is no city, state or postal
+       code to fill. Named by id only, so the report points at the sheet rather
+       than looking like a rule gap.
+
+       The live id is `tbEmployerCity` - no "Addr" in it, which is why the old
+       `/PrevEmpl.*Addr.*City/` missed. The state and postal boxes DO carry
+       ADDR, and each sits beside a `_NA` twin sharing its whole prefix, so both
+       need the lookahead: `PREV_EMPL_ADDR_STATE` vs `..._STATE_NA`. Ticking one
+       of those would wipe an address the agent had typed by hand. */
+    { key: 'prevEmployerCity',   kind: 'text', ids: [/PrevEmpl.*City/i] },
+    { key: 'prevEmployerState',  kind: 'text', ids: [/PrevEmpl.*ADDR_STATE(?!_NA)/i] },
+    { key: 'prevEmployerPostal', kind: 'text', ids: [/PrevEmpl.*POSTAL_CD(?!_NA)/i] },
 
     /* Additional Work/Education/Training. All seven ids come from a live Fill
        report, so these are not guesses. Six are constants; countriesVisited is
@@ -569,7 +624,13 @@
       labels: [/ever served in the military/i] },
     { key: 'insurgentOrg', kind: 'yesno', ids: [/INSURGENT_ORG_IND/i],
       labels: [/paramilitary|vigilante|insurgent organization/i] },
-    { key: 'eduCity', kind: 'text', ids: [/School.*Addr.*City/i, /EducInst.*City/i] },
+    /* Same shape as the previous employer's, and the same reason for each
+       pattern: the live city box is `dtlPrevEduc_ctl00_tbxSchoolCity` with no
+       ADDR in it, while the state and postal boxes are `EDUC_INST_ADDR_STATE`
+       and `EDUC_INST_POSTAL_CD`, each beside an `_NA` twin. */
+    { key: 'eduCity',   kind: 'text', ids: [/School.*City/i, /EducInst.*City/i] },
+    { key: 'eduState',  kind: 'text', ids: [/EDUC_INST.*ADDR_STATE(?!_NA)/i, /School.*ADDR_STATE(?!_NA)/i] },
+    { key: 'eduPostal', kind: 'text', ids: [/EDUC_INST.*POSTAL_CD(?!_NA)/i, /School.*POSTAL_CD(?!_NA)/i] },
 
     /* Sign and Submit. The filler fills the three answers CEAC asks for here
        and NOTHING else: the CAPTCHA is FORBIDDEN (/codetextbox/) and the Sign

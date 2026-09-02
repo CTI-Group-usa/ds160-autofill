@@ -253,8 +253,19 @@
     ['homeState',     'Home address - state / province'],
     ['homePostal',    'Home address - postal code'],
     ['employerCountry','Employer / school - country/region'],
+    /* Column BB is one free-text address and BP likewise, so neither block has
+       a city, state or postal code to fill - and the "Briefly describe your
+       duties" box has no column at all (BD is the position, not the duties).
+       All six are named here so the report says "the intake form does not
+       collect this" instead of the red re-send banner, which no amount of
+       re-sending would clear. */
     ['prevEmployerCity','Previous employer - city (one address column in the sheet)'],
+    ['prevEmployerState','Previous employer - state / province'],
+    ['prevEmployerPostal','Previous employer - postal code'],
+    ['prevDuties','Previous employer - briefly describe your duties'],
     ['eduCity','Educational institution - city'],
+    ['eduState','Educational institution - state / province'],
+    ['eduPostal','Educational institution - postal code'],
     ['employerCity',   'Employer / school - city (one address column in the sheet)'],
     ['employerState',  'Employer / school - state / province'],
     ['employerPostal', 'Employer / school - postal code'],
