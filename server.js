@@ -9,7 +9,7 @@ const port = Number(process.argv[2] || 7773);
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png', '.svg': 'image/svg+xml', '.csv': 'text/csv',
+  '.png': 'image/png', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.csv': 'text/csv',
 };
 
 http.createServer((req, res) => {

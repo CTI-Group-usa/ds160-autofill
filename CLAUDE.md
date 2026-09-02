@@ -1194,7 +1194,28 @@ Three details worth keeping:
 
 Regenerating them, if the source is ever replaced: PowerShell with
 `System.Drawing`, `HighQualityBicubic`, onto a transparent bitmap - the command
-is in this session's history and takes one call for all five sizes.
+is in this session's history and takes one call for all five sizes. Rebuild
+`favicon.ico` after, with the ICO writer in the same history (stdlib `struct`,
+PNG-encoded entries at 16/32/48).
+
+### The tab showed a letter tile while the header logo rendered fine
+Three things cause that, and all three are handled now:
+
+- **Chrome asks for `/favicon.ico` before it has parsed a single `<link>`**, and
+  a 404 there is remembered. `favicon.ico` is a real multi-size ICO at the repo
+  root (16/32/48, PNG-encoded entries - Chrome reads those). `server.js` had no
+  `.ico` MIME type either, so it was served as `text/plain`.
+- **The favicon cache is separate from the page cache** and a normal reload does
+  not touch it. The PNG links carry `?v=2`; bump it if the mark ever changes.
+- **Chrome shows NO favicon for a `file://` page**, whatever the page declares.
+  If the tab icon is missing, check the URL first - open the worksheet over
+  http (`node server.js`, then localhost:7773) or from GitHub Pages.
+
+The extension icons are a different mechanism entirely: Chrome reads
+`manifest.json` only when the extension is loaded or reloaded, so a new
+`icons` / `action.default_icon` needs **chrome://extensions -> Reload** on the
+card. All four files were verified to decode at 16/32/48/128 from the paths the
+manifest names.
 
 ## UI copy
 English only.
