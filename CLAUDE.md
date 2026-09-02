@@ -145,18 +145,36 @@ character, and a mismatch shows up as a button that appears to do nothing.
 and the test asserts `auth.js` names the same host. `GET /api/health` answers
 "is the Worker even up at this host", which is the first thing to check.
 
-### Setup, once
-1. **Entra app registration** (or add to an existing one): Redirect URI type
-   *Web*, value `https://<worker>/api/auth/callback`. Note the **Application
-   (client) ID** and **Directory (tenant) ID**, and create a **client secret**.
-2. **KV namespace**: `npx wrangler kv namespace create ds160-auth-sessions`,
-   paste the id into `wrangler.jsonc`.
-3. **Secrets on the Worker**: `SSO_TENANT_ID`, `SSO_CLIENT_ID`,
-   `SSO_CLIENT_SECRET`.
-4. **Repo secret** `CLOUDFLARE_API_TOKEN` so `.github/workflows/deploy-worker.yml`
-   can deploy on push.
-5. Confirm the deployed URL matches `WORKER_ORIGIN` and fix all three strings if
-   not.
+### What is deployed (2026-09-02)
+| Thing | Value |
+|---|---|
+| Worker | `ds160-auth` at **https://ds160-auth.putu-astra.workers.dev** |
+| Cloudflare account | `e9e538d5b8134729e6cd90a7cb8da53b` (`putu-astra`) |
+| KV namespace | `ds160-auth-sessions`, `ebec7827472647a2b602b4d0f0181483`, bound `TOKEN_CACHE` |
+| Entra app | *CTI DS-160 Worksheet*, single tenant |
+| Secrets set | `SSO_TENANT_ID`, `SSO_CLIENT_ID` |
+
+`GET /api/health` returns `{"ok":true,...}`.
+
+**Still outstanding:** `SSO_CLIENT_SECRET`, which only the user can set
+(`npx wrangler secret put SSO_CLIENT_SECRET`, pasted at the prompt), and the
+repo secret `CLOUDFLARE_API_TOKEN` for the CI deploy. Two client secrets have
+been through a chat transcript, so both should be deleted in Entra and a fresh
+one created that never leaves the prompt.
+
+### It is on the putu-astra account, and that is technical debt
+The August 2026 migration moved CTI's workers off `putu-astra` onto name-neutral
+accounts, and `*.putu-astra.workers.dev` now 301-redirects. This Worker was put
+back on that account on **2026-09-02 at the user's explicit choice**, to get the
+gate working without another login: `putu.astra@cti-usa.com` can only reach
+`e9e538d5…`, and the name-neutral account (`91d938b8…`, which runs
+`api.cti-crm.workers.dev`) is behind a different login.
+
+So `putu-astra` is in a URL CTI colleagues will see, and this is one more item
+for the migration cleanup. Moving it later means changing **four** things
+together: `account_id` here, `WORKER_ORIGIN` in `worker.js`, `WORKER` in
+`auth.js`, and the Redirect URI on the Entra app - and re-setting the three
+secrets on the new Worker, because secrets do not migrate.
 
 ### Local development
 `ALLOWED_ORIGINS` includes `http://localhost:7773`, so the worksheet can be

@@ -23,19 +23,22 @@
   "keep_vars": true,
   "workers_dev": true,
 
-  // The name-neutral CTI account (the one that runs api.cti-crm.workers.dev).
+  // The "putu-astra" account (Putu.astra@cti-usa.com) - the same one that runs
+  // cti-indo-proxy. NOT name-neutral: see the note in CLAUDE.md. Chosen by the
+  // user on 2026-09-02 to get the gate working without another login dance.
   // Non-secret. If this Worker should live on a different CTI account, change
   // this AND the WORKER_ORIGIN constant at the top of worker.js and the WORKER
   // constant in auth.js — Microsoft compares the redirect URI exactly.
-  "account_id": "91d938b8c0bd63c4f6235ce057fdd724",
+  "account_id": "e9e538d5b8134729e6cd90a7cb8da53b",
 
   "kv_namespaces": [
     // Holds one-time OAuth `state` values and the issued session tokens.
     // Nothing else, and every entry carries a TTL.
     //
-    // TODO: create the namespace and paste its ID here, then deploy:
-    //   npx wrangler kv namespace create ds160-auth-sessions
-    { "binding": "TOKEN_CACHE", "id": "PASTE_KV_NAMESPACE_ID_HERE" }
+    // The "ds160-auth-sessions" namespace, created 2026-09-02. Bound as
+    // TOKEN_CACHE rather than the name wrangler suggested - worker.js reads
+    // env.TOKEN_CACHE, and the binding name is ours to choose.
+    { "binding": "TOKEN_CACHE", "id": "ebec7827472647a2b602b4d0f0181483" }
   ],
 
   "observability": { "enabled": true }

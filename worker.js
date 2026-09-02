@@ -34,7 +34,7 @@
    string has to be registered as a Redirect URI on the Entra app
    registration (with /api/auth/callback on the end). Microsoft compares it
    character for character. `wrangler deploy` prints the URL it published to. */
-const WORKER_ORIGIN = 'https://ds160-auth.cti-crm.workers.dev';
+const WORKER_ORIGIN = 'https://ds160-auth.putu-astra.workers.dev';
 const SSO_REDIRECT_URI = WORKER_ORIGIN + '/api/auth/callback';
 const SSO_APP_HOME  = 'https://cti-group-usa.github.io/ds160-autofill/index.html';
 const SSO_LOGIN_PAGE = 'https://cti-group-usa.github.io/ds160-autofill/login.html';

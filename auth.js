@@ -14,7 +14,7 @@ const Auth = (() => {
   /* Must match the deployed Worker exactly. If sign-in silently does nothing,
      open <WORKER>/api/auth/health first — a wrong host here is the usual
      cause, and it is invisible otherwise. */
-  const WORKER = 'https://ds160-auth.cti-crm.workers.dev';
+  const WORKER = 'https://ds160-auth.putu-astra.workers.dev';
 
   /* Its own key. The Indonesia dashboard uses cti_indo_auth_token; sharing one
      would let a session for one app open the other. */
