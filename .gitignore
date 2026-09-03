@@ -14,3 +14,4 @@ node_modules/
 # ...except the generated test fixture, which contains invented rows only
 # (test/make-fixture.py builds it).
 !test/fixtures/sample.xlsx
+.claude/

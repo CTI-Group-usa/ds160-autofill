@@ -39,9 +39,9 @@ h2,h3{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{fon
             <div class="hint">(e.g., Juan Miguel)</div></td></tr>
     <tr><td>Date of Birth</td>
         <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlFathersDOBDay">
-              <option value="">-</option><option>05</option></select>
+              <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
             <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlFathersDOBMonth">
-              <option value="">-</option><option value="MAR">MAR</option></select>
+              <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
             <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxFathersDOBYear" size="4">
             <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersDOBUnknown">
             <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxFathersDOBUnknown">Do Not Know</label>
@@ -60,6 +60,10 @@ h2,h3{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{fon
   </table>
 </fieldset>
 
+<!-- THE DAY AND MONTH LISTS ARE FULL ON PURPOSE. They held one option each,
+     so a legitimate 31-DEC came back "no matching option on this page" and
+     read as a matcher failure while the rule was working perfectly. Same trap
+     as fake-prev-work-education.html; do not trim them back. -->
 <h3>Mother's Full Name and Date of Birth</h3>
 <fieldset>
   <table>
@@ -75,9 +79,9 @@ h2,h3{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{fon
             <div class="hint">(e.g., Juanita Miguel)</div></td></tr>
     <tr><td>Date of Birth</td>
         <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlMothersDOBDay">
-              <option value="">-</option><option>12</option></select>
+              <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
             <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlMothersDOBMonth">
-              <option value="">-</option><option value="AUG">AUG</option></select>
+              <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
             <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxMothersDOBYear" size="4">
             <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersDOBUnknown">
             <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxMothersDOBUnknown">Do Not Know</label>

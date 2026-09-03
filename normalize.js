@@ -29,7 +29,16 @@
     // "17th December 2026" - supporting letters write ordinals.
     const s = clean(raw).replace(/(\d{1,2})(st|nd|rd|th)\b/gi, '$1');
     if (!s) return null;
-    if (/^\d+(\.\d+)?$/.test(s) && Number(s) > 20000 && Number(s) < 60000) return fromSerial(Number(s));
+    /* THE FLOOR IS ABOUT DIGIT COUNT, NOT MAGNITUDE. It exists so a bare
+       four-digit year is never read as a serial, and 10000 is where five
+       digits begin (1927-05-18). It was 20000 - which is 1954-10-03 - so
+       EVERY date before that fell through to `new Date(s)` and came back as
+       a year: a father born on serial 18628 became 01-JAN-18628. Parents'
+       dates of birth live squarely in that range, and the failure was
+       silent - a five-digit year fails splitDate(), so the extension
+       reported "no value in record" while the value was right there in the
+       sheet. */
+    if (/^\d+(\.\d+)?$/.test(s) && Number(s) >= 10000 && Number(s) < 60000) return fromSerial(Number(s));
 
     let m;
     if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/)))
@@ -55,6 +64,13 @@
       if (opts && opts.monthFirst) return { y, m: a, d: b, ambiguous: a !== b };
       return { y, m: b, d: a, ambiguous: a !== b };
     }
+    /* A STRING OF DIGITS THAT REACHED HERE IS NOT A DATE. This fallback is
+       for odd textual formats; handing it bare digits is how `new Date` turns
+       18628 into the year 18628 and 1995 into 01-JAN-1995 - a day and month
+       nobody stated, on a sworn form. Any number that was a real serial was
+       taken by the branch above, so refuse the rest and let validate() quote
+       the cell. */
+    if (/^\d+(\.\d+)?$/.test(s)) return null;
     const d = new Date(s);
     return isNaN(d) ? null : { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() };
   }
@@ -374,7 +390,23 @@
         chosen[key] = { fn: fn, raw: raw, filled: filled };
       }
     }
-    for (const key in chosen) rec[key] = chosen[key].fn(chosen[key].raw);
+    /* A CELL THE SHEET FILLED IN BUT THE PARSER REJECTED IS NOT AN EMPTY
+       CELL, and only this loop can tell the two apart - by the time it is a
+       record field both are ''. Column AJ held a father's date of birth as an
+       Excel serial the parser refused, and the only trace anywhere was an
+       empty CEAC dropdown and a report line reading "no value in record".
+       validate() names these, quoting the cell. */
+    rec._unreadable = [];
+    for (const key in chosen) {
+      rec[key] = chosen[key].fn(chosen[key].raw);
+      /* Dates only. Every other transform has a legitimate reason to return
+         '' for a non-empty cell - stayUnit() on wording it cannot place, the
+        yes/no readers - and validate() already reports those in their own
+        words. Widening this would double up on them. */
+      if (chosen[key].filled && rec[key] === '' &&
+          (chosen[key].fn === dateStr || chosen[key].fn === strictDate))
+        rec._unreadable.push({ key: key, raw: clean(chosen[key].raw) });
+    }
     const n = splitName(rec.fullName);
     rec.surname = n.surname;
     rec.givenNames = n.given;
@@ -540,6 +572,14 @@
   }
 
   // -- validation ----------------------------------------------------
+  /* The worksheet already names every field once, in SECTIONS. A second list
+     here would drift from it, so look it up - and fall back to the key, which
+     is still more use than nothing. */
+  function fieldLabel(key) {
+    for (const s of SECTIONS)
+      for (const f of s.fields) if (f[0] === key) return f[1] + ' (' + s.title + ')';
+    return key;
+  }
   const REQUIRED = [
     ['fullName', 'Name'], ['gender', 'Gender'], ['maritalStatus', 'Marital status'],
     ['dob', 'Date of birth'], ['pobCity', 'Place of birth'], ['nationality', 'Nationality'],
@@ -584,6 +624,17 @@
       else if (m < 6) E('passportExpiry', 'Passport expires in ' + m + ' month(s) - under the 6-month rule');
       else if (m < 9) W('passportExpiry', 'Passport expires in ' + m + ' months - renew before the contract starts');
     }
+
+    /* A DATE THE SHEET FILLED IN AND THE PARSER REFUSED. By the time it is a
+       record field it is '', indistinguishable from a column nobody filled -
+       so toRecord() keeps `_unreadable` and this quotes the cell. Column AJ,
+       a father's date of birth held as an Excel serial, was rejected outright
+       and the only trace was an empty CEAC dropdown and a fill report saying
+       "no value in record". Loud beats silent: a date we cannot read is an
+       answer the seafarer gave that will not reach the form. */
+    for (const u of (rec._unreadable || []))
+      E(u.key, fieldLabel(u.key) + ' could not be read as a date (the cell holds "' +
+               u.raw + '") - correct the intake column, or fill it in CEAC by hand');
 
     if (rec.passportNumber && !/^[A-Z0-9]{6,12}$/.test(rec.passportNumber))
       W('passportNumber', 'Unusual passport number format - check for typos or stray spaces');

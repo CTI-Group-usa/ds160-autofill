@@ -438,6 +438,28 @@
            normalize.js names those keys in `_blankOnPurpose`. */
         if ((rec._blankOnPurpose || []).indexOf(m.key) >= 0) {
           report.deliberate.push({ id: c.id, key: m.key, label: c.label });
+        } else if ((M.MONONYM_NA_KEYS || []).indexOf(m.key) >= 0 &&
+                   /GIVEN/i.test(c.id || c.name) &&
+                   rec[m.key.replace(/Name$/, 'GivenNA')] === 'YES') {
+          /* A RELATIVE WITH ONE NAME GETS A TICKED "Do Not Know" BESIDE AN
+             EMPTY GIVEN NAMES BOX - that is the answer, not a gap. The box
+             was landing in `skipped` as "no value in record", the exact
+             string popup.js reads as "stale record, send it again", so every
+             mononym parent raised a red banner that no re-send could clear.
+             The record says so itself: fatherGivenNA / motherGivenNA is why
+             the half is blank. */
+          report.deliberate.push({ id: c.id, key: m.key, label: c.label });
+        } else if (M.KIND[m.key] === 'date' && rec[m.key] && !M.splitDate(rec[m.key])) {
+          /* A DATE THE RECORD HOLDS BUT CANNOT BE SPLIT IS NOT A MISSING
+             VALUE, and saying so sent the operator to re-send a record that
+             was never going to improve. A father's date of birth parsed out
+             of an Excel serial as the year 18628 fails splitDate() on its
+             five-digit year, and this line reported it as an empty column
+             while the sheet held it all along. Note the wording: popup.js
+             reads the exact string "no value in record" as "stale record,
+             send it again", so a malformed date must not use it. */
+          report.skipped.push({ id: c.id, key: m.key,
+            why: 'the record holds "' + rec[m.key] + '", which is not a DD-MMM-YYYY date' });
         } else {
           report.skipped.push({ id: c.id, key: m.key, why: 'no value in record' });
         }

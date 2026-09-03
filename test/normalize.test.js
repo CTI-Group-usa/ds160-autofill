@@ -482,5 +482,61 @@ has('arrived but no stay', D.validate(D.toRecord(arrived), { today: '2026-08-31'
 has('period without number', D.validate(QR('MONTH(S)', ''), { today: '2026-08-31' }).warnings,
     'prevStayLength', 'needs both');
 
+
+/* -- Excel serials below 1954 ---------------------------------------
+   The serial floor was 20000, which is 1954-10-03, so EVERY earlier date
+   fell through to `new Date(s)` and came back as a YEAR: a father born on
+   serial 18628 was recorded as 01-JAN-18628. That then failed splitDate()
+   on its five-digit year, so the extension reported "no value in record"
+   while column AJ held the date all along - filled in the sheet, absent
+   from the form, and nothing anywhere said so.
+
+   The floor is about digit count, not magnitude: a bare year is four
+   digits, and 10000 is where five begin (1927-05-18). */
+eq('serial below the old floor', D.dateStr('18628'), '31-DEC-1950');
+eq('serial at the new floor',    D.dateStr('10000'), '18-MAY-1927');
+eq('serial above the old floor still works', D.dateStr('26838'), '23-JUN-1973');
+/* A four-digit number is a year, not a serial - and a bare year is not a
+   date. 01-JAN-1995 would be a day and month nobody stated on a sworn form,
+   which is the reason strictDate exists for the "Year of ..." columns. */
+eq('four digits is not a serial', D.dateStr('9999'), '');
+eq('a bare year is not a date',   D.dateStr('1995'), '');
+eq('above the upper bound',       D.dateStr('65000'), '');
+
+/* -- a rejected cell is not an empty cell ---------------------------
+   Both are '' by the time they are record fields, so toRecord keeps the
+   difference and validate() quotes the cell. Without this the only trace of
+   an unreadable date is an empty CEAC dropdown. */
+const parentsOk = D.toRecord({
+  'Name': 'Prayayi, Prama',
+  "Father's Name": 'Machrip, Fnu',
+  "Father's Date of Birth": '18628',
+  "Mother's Date of Birth": '26838',
+});
+eq("father's serial DOB reaches the record", parentsOk.fatherDob, '31-DEC-1950');
+eq("mother's too", parentsOk.motherDob, '23-JUN-1973');
+eq('nothing unreadable in a good row', parentsOk._unreadable.length, 0);
+
+const parentsBad = D.toRecord({
+  'Name': 'Prayayi, Prama',
+  "Father's Date of Birth": 'lupa',
+});
+eq('a refused date is recorded', parentsBad._unreadable.length, 1);
+eq('with the key', parentsBad._unreadable[0].key, 'fatherDob');
+eq('and the cell as written', parentsBad._unreadable[0].raw, 'lupa');
+has('validate names it', D.validate(parentsBad).errors, 'fatherDob', 'could not be read as a date');
+has('and quotes the cell', D.validate(parentsBad).errors, 'fatherDob', '"lupa"');
+
+/* DATES ONLY. Every other transform has a legitimate reason to return ''
+   for a non-empty cell, and validate() already reports those in their own
+   words - stayUnit() on wording it cannot place is the clearest case.
+   Listing them here would double up. */
+const looseStay = D.toRecord({
+  'Name': 'Prayayi, Prama',
+  'Period Type of Stay in the US': 'sebentar saja',
+});
+eq('a non-date transform is not called unreadable',
+   looseStay._unreadable.filter(u => u.key === 'stayUnit').length, 0);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

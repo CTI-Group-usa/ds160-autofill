@@ -1113,6 +1113,55 @@ thing keeping it out of the parents' boxes is its
 without it the seafarer's own birthday goes into both parents' fields. A test
 asserts it.
 
+### THE EXCEL SERIAL FLOOR WAS 20000, SO EVERY DATE BEFORE 1954 WAS LOST
+`parseDate` took a bare number as a serial only when it was **over 20000** —
+which is **3 October 1954**. Anything earlier fell through to the final
+`new Date(s)` fallback, where JavaScript reads a number as a **year**: a father
+born on serial `18628` became `01-JAN-18628`.
+
+It then failed *silently, twice over*:
+
+- `splitDate()` requires `\d{4}`, so a five-digit year returns null, `valueFor`
+  returns `''`, and the fill report said **`fatherDob – no value in record`** —
+  naming the one cause that was not true. The date was in column AJ all along.
+- that exact string is what `popup.js` reads as "stale record, send it again",
+  so the fix it suggested could never work.
+
+Parents' dates of birth live squarely in that window. **104 cells in the live
+export were being dropped** — 72 fathers, 32 mothers, out of 813 rows that have
+them. Nothing anywhere said so; the CEAC dropdown was simply empty and the
+operator was told the record was stale.
+
+The floor is about **digit count, not magnitude**: a bare year is four digits, a
+serial for any date from 1927-05-18 is five. It is `>= 10000` now, and the
+`new Date(s)` fallback **refuses an all-digit string outright** — that fallback
+is for odd textual formats, and handing it digits is what invents a January the
+1st nobody stated on a sworn form. (`dateStr('1995')` is `''` now too, which is
+what `strictDate` already existed to enforce for the "Year of ..." columns.)
+
+Three reporting changes went with it, all of the same kind — **a value we cannot
+use must say so in its own words**:
+
+- `toRecord()` publishes **`rec._unreadable`**: cells the sheet filled in and a
+  *date* transform refused. By the time it is a record field, "rejected" and
+  "empty column" are both `''`, and only that loop can tell them apart.
+  `validate()` names each one and quotes the cell. It is scoped to `dateStr` /
+  `strictDate` on purpose — `stayUnit()` and the yes/no readers also return `''`
+  for a non-empty cell, and validate already reports those in their own words.
+- `content.js` reports a date it cannot split as **`the record holds "…", which
+  is not a DD-MMM-YYYY date`**, never as `no value in record`.
+- a **mononym relative's empty Given Names box** moved to *Left blank on
+  purpose*. `fatherGivenNA`/`motherGivenNA` is *why* it is empty, so every
+  single-named parent was raising the red re-send banner for an answer that was
+  already correct.
+
+`test/fake-family.html`'s day and month dropdowns held **one option each**, so
+`31` and `DEC` came back "no matching option on this page" and read as a matcher
+failure while the rule worked perfectly — the same trap already recorded for
+`fake-prev-work-education.html`. They carry full ranges now; do not trim them
+back. Verified in a browser: 13 filled, nothing skipped, nothing unrecognised,
+zero postbacks, `31-DEC-1950` and `23-JUN-1973` in the two blocks.
+
 ### "FNU" is a placeholder, not a name — and for a relative it is a TICK
 The live page filled the father as **Surnames FNU / Given Names SUROSO** —
 exactly backwards. The intake value was `SUROSO FNU`, and the splitter took the
