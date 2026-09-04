@@ -240,13 +240,23 @@
     { key: 'lengthOfStayUnit', kind: 'text', tag: 'select',
       ids: [/TRAVEL_LOS_CD/i, /LOS_CD/i, /STAY_LENGTH_UNIT/i],
       labels: [/intended length of stay/i], not: /PREV/i },
-    { key: 'arrivalFlight',  kind: 'text',  ids: [/ARRIVAL_FLIGHT/i], labels: [/arrival flight/i] },
+    /* `tbxArriveFlight`, not `ARRIVAL_FLIGHT` - the guessed spelling never
+       matched and the box sat in "Not recognised" until a live J1 report
+       named it. Same for the departure box below. */
+    { key: 'arrivalFlight',  kind: 'text',  ids: [/ArriveFlight/i, /ARRIVAL_FLIGHT/i],
+      labels: [/arrival flight/i] },
     { key: 'arrivalCity',    kind: 'text',  ids: [/ArriveCity/i, /ARRIVAL_CITY/i], labels: [/^arrival city/i] },
     { key: 'departureDate',  kind: 'date',
       ids: [/DEPARTURE_US_DTE(Day|Month|Year)/i, /DEPART_(Day|Month|Year)/i],
       labels: [/date of departure from u\.?s/i] },
-    { key: 'departureFlight', kind: 'text', ids: [/DEPARTURE_FLIGHT/i], labels: [/departure flight/i] },
+    { key: 'departureFlight', kind: 'text', ids: [/DepartFlight/i, /DEPARTURE_FLIGHT/i],
+      labels: [/departure flight/i] },
     { key: 'departureCity',  kind: 'text',  ids: [/DepartCity/i, /DEPARTURE_CITY/i], labels: [/^departure city/i] },
+    /* The places to be visited, a repeater on the same page. No intake column
+       collects an itinerary, so this is named only so the report says "the
+       intake form does not collect this" instead of leaving an unexplained box
+       in the unrecognised list. Its real id came from a live J1 report. */
+    { key: 'travelLocation', kind: 'text', ids: [/SPECTRAVEL_LOCATION/i] },
     { key: 'stayAddr1', kind: 'text', ids: [/STAY_ADDR_LN1/i],
       labels: [/street address \(line ?1\)|^street address$/i], must: /will stay/i },
     { key: 'stayAddr2', kind: 'text', ids: [/STAY_ADDR_LN2/i],
@@ -359,6 +369,19 @@
       labels: [/^state\/?province$|^state$/i], must: /pay/i, not: /DNA|_NA\b/i },
     { key: 'payerZip',          kind: 'text', ids: [/tbxPayerPostalZIPCode/i, /PAYER_ADDR_POSTAL/i],
       labels: [/postal zone|zip code/i], must: /pay/i, not: /DNA|_NA\b/i },
+    /* THE PAYER'S EMAIL, and its id is the only signal - "Email Address" also
+       labels the applicant's own box, the U.S. contact's and both additional
+       points of contact. The live report had it in "Not recognised" while
+       column Z held the address. */
+    { key: 'payerEmail',        kind: 'text', ids: [/PAYER_EMAIL_ADDR/i] },
+    /* J1 ONLY, and it exists only on the OTHER PERSON branch: "Is the address
+       of the party paying for your trip the same as your Home or Mailing
+       Address?" A Yes hides the payer address block, which is why none of
+       payerAddr1..payerCountry appears in a J1 report. The constant was in the
+       J1 pack from the start; nothing matched the control. */
+    { key: 'payerAddressSameAsHome', kind: 'yesno',
+      ids: [/PayerAddrSameAsInd/i, /PAYER_ADDR_SAME/i],
+      labels: [/address of the party paying.*same as/i] },
     { key: 'payerCountry',      kind: 'text', ids: [/ddlPayerCountry/i, /PAYER_ADDR_CNTRY/i],
       labels: [/country\/?region/i], must: /pay/i },
     { key: 'travelCompanions',  kind: 'yesno', ids: [/OTHER_PERS_TRAVELING/i, /TravelingWith/i],

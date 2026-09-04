@@ -219,5 +219,57 @@ ok('no cross-check against an empty document', /if \(!pr\.hint\) for \(const i o
    human check - and it is the same one that settles whether pdftext.js can
    read a DS-7002 or a SEVIS receipt at all. */
 
+
+/* -- A GATE THIS FILE NO LONGER OWNS --------------------------------
+   `specificTravelPlans` moved to the constants packs on 2026-09-02 - C1/D
+   answers NO and J1 answers YES - and its default here was emptied. But
+   `visible()` kept reading it from HERE, where it is now always '', so every
+   `showWhen` field was hidden on BOTH classes.
+
+   On C1/D that looked correct, because the answer really is NO and those
+   fields really should be hidden. On J1 the answer is YES, and it silently hid
+   the whole itinerary: a live report read `departureDate - no value in record`
+   while the DS-2019 had supplied it, `arrivalCity` and `departureCity` the
+   same, and the trip block did not even offer the boxes to type into. FOUR of
+   the fifteen skipped lines, one cause.
+
+   The gates are DERIVED from the table, never listed by hand, so adding a
+   `showWhen` cannot forget to register one. */
+ok('the gate keys come from the table itself',
+   /const GATE_KEYS = FIELDS\.filter\(f => f\.showWhen\)/.test(
+     require('fs').readFileSync(require('path').join(__dirname, '..', 'trip.js'), 'utf8')));
+
+const gateRec = { passportNumber: 'GATE1' };
+T.set(gateRec, 'arrivalDate', '25-MAY-2026');
+T.set(gateRec, 'departureDate', '24-MAY-2027');
+T.set(gateRec, 'arrivalCity', 'RIDGEDALE');
+
+/* THE RECORD IS ONE SOURCE OF THE GATE, and the one that matters for apply():
+   constants have not been applied yet when trip.apply() runs, so on the real
+   path the pack answers - which needs constants.js loaded. Here the record
+   carries it, which exercises the same branch without that dependency. */
+const openGate = T.apply(Object.assign({ specificTravelPlans: 'YES' }, gateRec));
+eq('the itinerary reaches the record', openGate.departureDate, '24-MAY-2027');
+eq('and the arrival city',             openGate.arrivalCity, 'RIDGEDALE');
+eq('the arrival date always did',      openGate.arrivalDate, '25-MAY-2026');
+
+/* SHUT, AND CORRECTLY SO. C1/D answers NO, CEAC never asks for an itinerary,
+   and `apply()` must not send a value for a question that is not on the page. */
+const shutGate = T.apply(Object.assign({ specificTravelPlans: 'NO' }, gateRec));
+eq('a closed gate keeps the departure out', shutGate.departureDate, undefined);
+eq('and the arrival city',                  shutGate.arrivalCity, undefined);
+eq('but the arrival date is asked either way', shutGate.arrivalDate, '25-MAY-2026');
+
+/* AN OPERATOR'S OWN ANSWER BEATS EVERYTHING. If they set the gate for this
+   applicant in the trip block, that is the answer - a per-applicant entry must
+   never lose to a constant. */
+T.set(gateRec, 'specificTravelPlans', 'YES');
+eq('their own entry opens it', T.apply(Object.assign({}, gateRec)).departureDate, '24-MAY-2027');
+
+/* values() MUST NOT THROW without constants.js. trip.js is loaded on its own
+   here and in the extension, and a gate lookup that threw would take the whole
+   record with it. */
+ok('no pack in play is survivable', !!T.values({ passportNumber: 'GATE1' }));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

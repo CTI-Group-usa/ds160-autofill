@@ -81,9 +81,42 @@
     try { localStorage.setItem(STORE, JSON.stringify(store)); } catch (e) { /* private mode */ }
   }
 
+  /* Keys some field's visibility depends on. DERIVED from the table, never
+     listed by hand, so adding a `showWhen` cannot forget to register its gate
+     - the same reason the popup stopped keeping its own copy of the constant
+     keys. */
+  const GATE_KEYS = FIELDS.filter(f => f.showWhen).map(f => f.showWhen.key)
+                          .filter((k, i, a) => a.indexOf(k) === i);
+
   function values(rec) {
     const mine = all()[idOf(rec)] || {}, out = {};
     for (const f of FIELDS) out[f.key] = (f.key in mine) ? mine[f.key] : f.def;
+
+    /* A GATE THIS FILE NO LONGER OWNS.
+       `specificTravelPlans` moved to the constants packs on 2026-09-02 -
+       C1/D answers NO and J1 answers YES - and its default here was emptied.
+       But `visible()` kept reading it from HERE, where it is now always '',
+       so every `showWhen` field was hidden on both classes.
+
+       On C1/D that looked correct, because the answer really is NO and those
+       fields really should be hidden. On J1 the answer is YES, and it silently
+       hid the whole itinerary: a live report read `departureDate - no value in
+       record` while the DS-2019 had supplied it, `arrivalCity` and
+       `departureCity` the same, and the trip block did not even offer the
+       boxes to type into. Four of the fifteen skipped lines, one cause.
+
+       Read in precedence order: this applicant's own entry first, because an
+       operator's answer must beat a constant; then the record; then the active
+       pack. The pack is asked LAST and defensively - trip.js is loaded without
+       constants.js in the node tests, and values() must not throw there. */
+    for (const k of GATE_KEYS) {
+      if (out[k]) continue;
+      if (rec && rec[k]) { out[k] = rec[k]; continue; }
+      try {
+        const c = (typeof DS160Const !== 'undefined') && DS160Const.values();
+        if (c && c[k]) out[k] = c[k];
+      } catch (e) { /* no pack in play; leave the gate closed */ }
+    }
     return out;
   }
 

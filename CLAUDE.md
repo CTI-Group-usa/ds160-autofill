@@ -360,6 +360,114 @@ rather than treated as an error.
 `test/trip.test.js` asserts the wiring textually, the arrangement
 `auth.test.js` and `extension-auth.test.js` already use.
 
+## The J1 Travel page, from its first live Fill (2026-09-04)
+One report - fifteen skipped lines and five unrecognised controls - and it
+found four separate faults. Every id below is read off that report, not
+guessed.
+
+### A GATE THIS FILE NO LONGER OWNED
+`specificTravelPlans` moved to the constants packs on 2026-09-02 (C1/D answers
+NO, J1 answers YES) and its default in `trip.js` was emptied. But
+`visible(f, v)` kept reading it **from there**, where it is now always `''` -
+so **every `showWhen` field was hidden on both classes.**
+
+On C1/D that looked correct: the answer really is NO and those fields really
+should be hidden. On J1 the answer is YES, and it silently hid the whole
+itinerary. The report read `departureDate - no value in record` **while the
+DS-2019 had supplied it**, `arrivalCity` and `departureCity` the same, and the
+trip block did not even offer the boxes to type into. **Four of the fifteen
+skipped lines, one cause** - and invisible on the class that gets exercised
+every day.
+
+`values(rec)` now resolves a gate in precedence order: **this applicant's own
+entry** (an operator's answer must beat a constant), then **the record**, then
+**the active pack** - asked last and inside a `try`, because `trip.js` is
+loaded without `constants.js` in the node tests and a gate lookup that threw
+would take the whole record with it.
+
+`GATE_KEYS` is **derived from the field table**, never listed by hand, so
+adding a `showWhen` cannot forget to register its gate.
+
+### Column AA is plain English; CEAC's dropdown is a closed set
+The report quoted the page back:
+
+> `payerRelationship – no matching option on this page`
+> wanted `FATHER`
+> page offers: `- SELECT ONE - | CHILD | PARENT | SPOUSE | OTHER RELATIVE | FRIEND | OTHER`
+
+**Not one value in the export is an option:**
+
+| Column AA | Rows | Option |
+|---|---|---|
+| Father 35, Mother 20 | **55** | `PARENT` |
+| Uncle 6, Brother 4, Sister 2, Aunt 1, Cousin 1 | **14** | `OTHER RELATIVE` |
+
+69 of 69, every one leaving a required dropdown unset. `payerRelation()` maps
+them, Indonesian wording included (`Ibu`, `Kakak`, `Teman`) because the applicant
+fills the intake form in.
+
+**Anything unplaced is passed through, not blanked.** On a closed dropdown an
+unmapped word fails either way - but it fails as *"no matching option, wanted
+X, page offers ..."*, which is how this became visible at all. `''` would
+report *"no value in record"*, which is untrue and names the wrong cause.
+C1/D's own `EMPLOYER` constant survives the same way.
+
+### The payer boxes take ONE set of keys, and the class decides the source
+CEAC shows one name box, one phone and one email whichever branch of *who is
+paying* was answered. C1/D fills them from constants - the payer is the cruise
+line - and J1's payer is a **person**, in columns X, Y and Z.
+
+`payerPhone - no value in record` on a row whose column Y holds a number:
+`normalize.js` named it `payerPersonPhone` and the matcher looked for
+`payerPhone`. **A value sitting in the sheet, landing nowhere, with the report
+naming a cause that was not true.**
+
+Derived the same way as the SSN - only the positive case is asserted, so a
+sheet without those columns leaves the keys alone and each pack's constants
+still fill them. No branch on `_class`, and none wanted.
+
+### Five real ids
+| Control | Was | Real |
+|---|---|---|
+| payer's email | *(no rule)* | `tbxPAYER_EMAIL_ADDR` |
+| payer address same as home? | *(no rule)* | `rblPayerAddrSameAsInd` |
+| arrival flight | `ARRIVAL_FLIGHT` | **`tbxArriveFlight`** |
+| departure flight | `DEPARTURE_FLIGHT` | **`tbxDepartFlight`** |
+| places you will visit | *(no rule)* | `dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION` |
+
+`payerAddressSameAsHome` was in the J1 pack from the start; nothing matched the
+control. Its Yes is a real postback - it *hides* the payer address block, which
+is why none of `payerAddr1..payerCountry` appears in a J1 report at all.
+
+**The payer's email is matched on its id alone.** "Email Address" also labels
+the applicant's own box, the U.S. contact's and both additional points of
+contact, so a label rule here would be one renamed control away from putting
+the wrong address on a sworn form.
+
+### What the J1 Travel page genuinely has no source for
+`arrivalCity`, `departureCity`, both flights, the places-to-visit repeater, and
+the five stay-address boxes. C1/D fills the stay block from constants (the
+cruise line's address); **J1's stay address is the host organisation**, which is
+per applicant and which the sheet holds only as one free-text string in column
+CA. The user's standing rule for the home address applies here too - they
+arrange City, State/Province and Postal Zone by hand, and no address parser is
+to be reintroduced.
+
+All ten are in `MISSING_FROM_INTAKE`, which turns a red *"send the applicant
+again"* banner - that no re-send could ever clear - into the calm *"the intake
+form does not collect this"*. They are reported only when **empty**, so C1/D's
+stay constants keep it quiet there.
+
+### `test/fake-travel-j1.html`
+The J1 branch is a different *shape* of page, so it has its own fixture, and
+the relationship dropdown carries **CEAC's option list verbatim** - that list
+is the evidence for the mapping above, so do not tidy it.
+
+Verified: ten fields filled, **nothing unrecognised**, the payer address
+question correctly deferred as a postback with `remaining: 0`. The
+cross-fixture sweep confirms **no page's unmatched list changed** - only the
+filled counts rose, because the sweep record now carries the J1 travel keys.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

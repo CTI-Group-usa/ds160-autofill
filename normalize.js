@@ -208,6 +208,42 @@
      an unusual one is better filled and flagged than silently gone. One row
      of the export holds it as a float, which xlsx.js now expands. */
   const normSevis = raw => upper(deExp(raw)).replace(/[^A-Z0-9]/g, '');
+  /* WHO IS PAYING, IN CEAC'S OWN WORDS. Its dropdown is a closed set -
+     - SELECT ONE - | CHILD | PARENT | SPOUSE | OTHER RELATIVE | FRIEND | OTHER
+     - and column AA holds the relationship in plain English. Not one of its
+     values is an option:
+
+       Father 35, Mother 20            -> PARENT
+       Uncle 6, Brother 4, Sister 2,
+       Aunt 1, Cousin 1                -> OTHER RELATIVE
+
+     That is 69 rows of 69, every one leaving a required dropdown unset. The
+     live report is what found it: "wanted FATHER, page offers - SELECT ONE - |
+     CHILD | PARENT | SPOUSE | OTHER RELATIVE | FRIEND | OTHER".
+
+     Indonesian wording is mapped too, because the intake form is filled in by
+     the applicant and nothing stops them writing `Ibu`.
+
+     ANYTHING UNPLACED IS PASSED THROUGH, not blanked. On a closed dropdown an
+     unmapped word is guaranteed to fail - but it fails as "no matching option,
+     wanted X, page offers ...", which is how this bug became visible in the
+     first place. Returning '' would report "no value in record" instead, which
+     is not true and names the wrong cause. validate() quotes it as well. */
+  const PAYER_RELATIONS = [
+    [/\bPARENT|FATHER|MOTHER|\bDAD\b|\bMUM\b|\bMOM\b|AYAH|IBU|BAPAK|ORANG\s*TUA/, 'PARENT'],
+    [/\bSPOUSE|HUSBAND|\bWIFE\b|SUAMI|ISTRI/, 'SPOUSE'],
+    [/\bCHILD|\bSON\b|DAUGHTER|\bANAK\b/, 'CHILD'],
+    [/UNCLE|\bAUNT|BROTHER|SISTER|COUSIN|NEPHEW|NIECE|GRAND|IN.?LAW|SAUDARA|KAKAK|ADIK|\bOM\b|TANTE|SEPUPU|KAKEK|NENEK|PAMAN|BIBI/,
+     'OTHER RELATIVE'],
+    [/FRIEND|TEMAN|SAHABAT/, 'FRIEND'],
+  ];
+  function payerRelation(raw) {
+    const t = upper(raw);
+    if (!t) return '';
+    for (const [re, out] of PAYER_RELATIONS) if (re.test(t)) return out;
+    return t;
+  }
+
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
     let s = deExp(raw).replace(PHONE_DIGITS, '');
@@ -362,7 +398,7 @@
     'Name of the person paying for your trip':                       ['payerPersonName', upper],
     'Phone number of the person paying for your trip':               ['payerPersonPhone', phoneAsWritten],
     'Email address of the person paying for your trip':              ['payerPersonEmail', clean],
-    'Relationship to you':                                           ['payerRelationship', upper],
+    'Relationship to you':                                           ['payerRelationship', payerRelation],
 
     /* And its U.S. contact is the host employer, collected per applicant,
        where C1/D has the cruise line's as a constant. */
@@ -415,6 +451,31 @@
     ['employerCity',   'Employer / school - city (one address column in the sheet)'],
     ['employerState',  'Employer / school - state / province'],
     ['employerPostal', 'Employer / school - postal code'],
+    /* THE J1 TRAVEL PAGE, from the first live Fill on it (2026-09-04).
+       C1/D fills the five stay-address boxes from constants - the cruise
+       line's address - and J1's stay address is the HOST ORGANISATION, which
+       is per applicant and which the sheet holds only as one free-text string
+       in column CA. The user's standing rule for the home address applies
+       here too: they arrange City, State/Province and Postal Zone by hand in
+       CEAC, and no address parser is to be reintroduced.
+
+       The flights and the "places you will visit" repeater have no column on
+       either sheet at all.
+
+       Naming them here is what turns a red "send the applicant again" banner -
+       which no re-send could ever clear - into the calm "the intake form does
+       not collect this". They are only reported when EMPTY, so C1/D's
+       constants still fill the stay block and it stays quiet there. */
+    ['arrivalCity',   'Arrival city (J1: the host organisation is in one address column)'],
+    ['departureCity', 'Departure city'],
+    ['arrivalFlight', 'Arrival flight (no column on either sheet)'],
+    ['departureFlight','Departure flight (no column on either sheet)'],
+    ['travelLocation','Places you will visit (no column on either sheet)'],
+    ['stayAddr1',     'Address where you will stay - street (J1: the host organisation)'],
+    ['stayAddr2',     'Address where you will stay - second line'],
+    ['stayCity',      'Address where you will stay - city'],
+    ['stayState',     'Address where you will stay - state'],
+    ['stayZip',       'Address where you will stay - ZIP'],
     ['arrivalDate',   'Intended date of arrival in the US'],
     ['stayAddress',   'Address where you will stay in the US'],
     ['tripPayer',     'Person / entity paying for the trip'],
@@ -705,6 +766,26 @@
        This is the wrong-fill shape that made one app with two packs the
        right answer: a ticked box over a number the seafarer gave is a wrong
        sworn answer, and a ticked box is not a gap, so nothing would notice. */
+    /* THE PAYER BOXES TAKE ONE SET OF KEYS, AND THE CLASS DECIDES THE SOURCE.
+       CEAC shows one name box, one phone and one email whichever branch of
+       "who is paying" was answered, so the matcher has one key each -
+       `payerCompany`, `payerPhone`, `payerEmail`. C1/D fills them from
+       constants, because the payer is the cruise line. J1's payer is a PERSON
+       and the sheet collects them in columns X, Y and Z.
+
+       The live report is what caught this: `payerPhone - no value in record`
+       on a row whose column Y holds a number. normalize named it
+       `payerPersonPhone` and the matcher looked for `payerPhone` - a value
+       sitting in the sheet, landing nowhere, with the report naming a cause
+       that was not true.
+
+       Same shape as the SSN derivation: only the positive case is asserted, so
+       a sheet without those columns leaves the keys alone and each pack's own
+       constants still fill them. No branch on `_class`, and none wanted. */
+    if (rec.payerPersonName)  rec.payerCompany = rec.payerPersonName;
+    if (rec.payerPersonPhone) rec.payerPhone   = rec.payerPersonPhone;
+    if (rec.payerPersonEmail) rec.payerEmail   = rec.payerPersonEmail;
+
     if (rec.ssn)           rec.ssnNA = 'NO';
     if (rec.taxId)         rec.taxIdNA = 'NO';
     if (rec.monthlyIncome) rec.monthlyIncomeNA = 'NO';
@@ -881,6 +962,16 @@
       W('monthlyIncome', 'Monthly salary reads ' + rec.monthlyIncome + ' in local currency - ' +
                          'too small for a monthly wage in IDR. Check the intake cell for a ' +
                          'missing thousand or a different unit.');
+
+    /* CEAC's relationship dropdown is a closed set and column AA is free text.
+       Everything in the export maps, but a new word would land here rather
+       than silently leaving a sworn answer unset. */
+    if (rec.payerRelationship &&
+        ['PARENT', 'SPOUSE', 'CHILD', 'OTHER RELATIVE', 'FRIEND', 'OTHER', 'EMPLOYER']
+          .indexOf(rec.payerRelationship) < 0)
+      W('payerRelationship', 'Relationship to the person paying reads "' +
+                             rec.payerRelationship + '", which is not one of CEAC\'s ' +
+                             'options - pick the closest on the page');
 
     /* THE DS-2019 PROGRAMME NUMBER AND THE SEVIS ID, both from the sheet and
        both sworn on the form. normProgram() repairs the one shape it can read

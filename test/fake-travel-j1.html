@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Travel - J1 branch</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- THE J1 TRAVEL PAGE. Every id below came from a live Fill report on
+     2026-09-04 - the ones that were in "Not recognised", plus the ones the
+     report named by key so their rules were already matching.
+
+     This page is a different SHAPE from the C1/D one, which is why it needs
+     its own fixture. J1 answers "Have you made specific travel plans?" YES,
+     so CEAC asks for a whole itinerary - arrival and departure dates, cities,
+     flights, the places to be visited, and the address where the participant
+     will stay - none of which the C1/D branch shows.
+
+     And "who is paying" is answered OTHER PERSON rather than
+     COMPANY/ORGANIZATION, which reveals its own boxes: the person's name,
+     phone, email, relationship, and a question that exists only on that
+     branch - "Is the address of the party paying the same as your Home or
+     Mailing Address?"
+
+     THE RELATIONSHIP OPTION LIST IS VERBATIM from that report:
+       - SELECT ONE - | CHILD | PARENT | SPOUSE | OTHER RELATIVE | FRIEND | OTHER
+     It is the whole reason a fix was needed: column AA holds "Father" for 35
+     rows and "Mother" for 20, and neither is an option. Do not "tidy" this
+     list; it is evidence. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Travel Information</h2>
+
+<fieldset>
+  <legend>Provide a complete itinerary for your travel to the U.S.</legend>
+  <table>
+    <tr><td>Date of Arrival in U.S.</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlARRIVAL_US_DTEDay">
+        <option value="">-</option><option>24</option><option>25</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlARRIVAL_US_DTEMonth">
+        <option value="">-</option><option value="MAY">MAY</option><option value="NOV">NOV</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxARRIVAL_US_DTEYear" size="4">
+    </td></tr>
+    <tr><td>Arrival Flight (if known)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxArriveFlight"></td></tr>
+    <tr><td>Arrival City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxArriveCity"></td></tr>
+    <tr><td>Date of Departure from U.S.</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlDEPARTURE_US_DTEDay">
+        <option value="">-</option><option>23</option><option>24</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_ddlDEPARTURE_US_DTEMonth">
+        <option value="">-</option><option value="MAY">MAY</option><option value="NOV">NOV</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxDEPARTURE_US_DTEYear" size="4">
+    </td></tr>
+    <tr><td>Departure Flight (if known)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxDepartFlight"></td></tr>
+    <tr><td>Departure City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxDepartCity"></td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Provide the location(s) you will be visiting in the U.S.</legend>
+  <table>
+    <tr><td>Location</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION"></td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Address where you will stay in the U.S.</legend>
+  <table>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_LN1" maxlength="40"></td></tr>
+    <tr><td>Street Address (Line 2) <i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_LN2" maxlength="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_CITY"></td></tr>
+    <tr><td>State</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_STATE"></td></tr>
+    <tr><td>ZIP Code (if known)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_POSTAL_CD"></td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Person/Entity Paying for Your Trip</legend>
+  <table>
+    <tr><td>Surnames of Person Paying for Trip</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPayerName"></td></tr>
+    <tr><td>Telephone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPayerPhone"></td></tr>
+    <tr><td>Email Address</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPAYER_EMAIL_ADDR">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_cbxDNAPAYER_EMAIL_ADDR_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_cbxDNAPAYER_EMAIL_ADDR_NA">Does Not Apply</label></td></tr>
+    <!-- The rule matched this in the live report, so the id carries one of its
+         two fragments; only `PAYER_REL` fits a dropdown. -->
+    <tr><td>Relationship to You</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlPAYER_REL">
+              <option>- SELECT ONE -</option>
+              <option>CHILD</option><option>PARENT</option><option>SPOUSE</option>
+              <option>OTHER RELATIVE</option><option>FRIEND</option><option>OTHER</option>
+            </select></td></tr>
+    <tr><td>Q:</td><td>Is the address of the party paying for your trip the same as your Home or Mailing Address?</td></tr>
+    <tr><td>A:</td><td>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPayerAddrSameAsInd_0"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblPayerAddrSameAsInd" value="Y"
+             onclick="javascript:setTimeout('__doPostBack(&#39;p&#39;,&#39;&#39;)', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPayerAddrSameAsInd_0">Yes</label>
+      <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblPayerAddrSameAsInd_1"
+             name="ctl00$SiteContentPlaceHolder$FormView1$rblPayerAddrSameAsInd" value="N"
+             onclick="javascript:setTimeout('__doPostBack(&#39;p&#39;,&#39;&#39;)', 0)">
+      <label for="ctl00_SiteContentPlaceHolder_FormView1_rblPayerAddrSameAsInd_1">No</label>
+    </td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

@@ -861,5 +861,84 @@ const css2 = fs2.readFileSync(path2.join(__dirname, '..', 'style.css'), 'utf8');
 ok2('the note style is the quietest of the three',
     /\.issue\.n\{background:transparent;color:var\(--muted\)/.test(css2));
 
+
+/* -- who is paying, in CEAC's own words -----------------------------
+   Its dropdown is a closed set and column AA is plain English. A live Fill
+   report is what found it, quoting the page back:
+
+     payerRelationship - no matching option on this page
+     wanted FATHER
+     page offers: - SELECT ONE - | CHILD | PARENT | SPOUSE | OTHER RELATIVE | FRIEND | OTHER
+
+   Not one value in the export is an option. Father 35, Mother 20, Uncle 6,
+   Brother 4, Sister 2, Aunt 1, Cousin 1 - all 69 rows, every one leaving a
+   required dropdown unset. */
+const rel = v => D.toRecord({ 'Relationship to you': v }).payerRelationship;
+eq('Father is a parent',  rel('Father'), 'PARENT');
+eq('and Mother',          rel('Mother'), 'PARENT');
+eq('Uncle is other',      rel('Uncle'), 'OTHER RELATIVE');
+eq('Brother too',         rel('Brother'), 'OTHER RELATIVE');
+eq('Sister',              rel('Sister'), 'OTHER RELATIVE');
+eq('Aunt',                rel('Aunt'), 'OTHER RELATIVE');
+eq('Cousin',              rel('Cousin'), 'OTHER RELATIVE');
+/* The intake form is filled in by the applicant and nothing stops them
+   writing Indonesian. */
+eq('Ibu',                 rel('Ibu'), 'PARENT');
+eq('Kakak',               rel('Kakak'), 'OTHER RELATIVE');
+eq('Teman',               rel('Teman'), 'FRIEND');
+eq('Suami',               rel('Suami'), 'SPOUSE');
+/* C1/D's OWN CONSTANT MUST SURVIVE. Its payer is the cruise line and the
+   relationship is EMPLOYER, which is not in the person branch's option list -
+   so the mapping must not rewrite it. It never runs on a C1/D row (no column
+   AA there), and passing it through is the belt to that brace. */
+eq('EMPLOYER is left alone', rel('Employer'), 'EMPLOYER');
+/* ANYTHING UNPLACED IS PASSED THROUGH, not blanked. On a closed dropdown an
+   unmapped word fails either way - but it fails as "no matching option,
+   wanted X, page offers ...", which is how this became visible. Returning ''
+   would report "no value in record", which is not true. */
+eq('an unknown word survives', rel('Godparent'), 'GODPARENT');
+has('and validate names it', D.validate(D.toRecord({
+  'Name': 'A, B', 'Relationship to you': 'Godparent' })).warnings,
+  'payerRelationship', "not one of CEAC");
+none('a mapped one is not flagged', D.validate(D.toRecord({
+  'Name': 'A, B', 'Relationship to you': 'Father' })).warnings, 'payerRelationship');
+
+/* -- the payer boxes take one set of keys ----------------------------
+   CEAC shows one name box, one phone and one email whichever branch of "who is
+   paying" was answered, so the matcher has one key each. C1/D fills them from
+   constants - the payer is the cruise line - and J1's payer is a PERSON, in
+   columns X, Y and Z.
+
+   The live report caught the mismatch: `payerPhone - no value in record` on a
+   row whose column Y holds a number, because normalize named it
+   `payerPersonPhone` and the matcher looked for `payerPhone`. A value sitting
+   in the sheet, landing nowhere, with the report naming a cause that was not
+   true. */
+const payer = D.toRecord({
+  'Name': 'A, B',
+  'Name of the person paying for your trip': 'I Made, Wijana',
+  'Phone number of the person paying for your trip': '8.5935221510E10',
+  'Email address of the person paying for your trip': 'cimut@gmail.com',
+});
+eq('the person fills the name box',  payer.payerCompany, 'I MADE, WIJANA');
+eq('and the phone box',              payer.payerPhone, '85935221510');
+eq('and the email box',              payer.payerEmail, 'cimut@gmail.com');
+/* Only the positive case is asserted, so a sheet without those columns leaves
+   the keys alone and each pack's own constants still fill them - no branch on
+   `_class`, exactly as with the SSN. */
+const noPayer = D.toRecord({ 'Name': 'A, B' });
+eq('no column, no assertion', noPayer.payerCompany, undefined);
+eq('nor the phone',           noPayer.payerPhone, undefined);
+eq('nor the email',           noPayer.payerEmail, undefined);
+
+/* -- the J1 travel page's fields are not collected ------------------
+   Named so the report says "the intake form does not collect this" instead of
+   the red re-send banner, which no re-send could ever clear. Reported only
+   when EMPTY, so C1/D's five stay-address constants keep it quiet there. */
+const gaps = D.MISSING_FROM_INTAKE.map(x => x[0]);
+for (const k of ['arrivalCity', 'departureCity', 'arrivalFlight', 'departureFlight',
+                 'travelLocation', 'stayAddr1', 'stayAddr2', 'stayCity', 'stayState', 'stayZip'])
+  eq(k + ' is named as not collected', gaps.indexOf(k) >= 0, true);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

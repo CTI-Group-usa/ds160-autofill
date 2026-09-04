@@ -24,7 +24,7 @@
 const PAGES = ['personal1','personal2','travel','travel-initial','travel-noplans','travel-stay',
   'prev-us-travel','address-phone','passport','us-contact','family','family-spouse','crew-visa',
   'sign','work-education','prev-work-education','additional-work','security','payer','payer-block',
-  'edu-no-fieldset','student-exchange'];
+  'edu-no-fieldset','student-exchange','travel-j1'];
 /* One record carrying every field the guarded rules read, so a leak shows up as
    a filled box rather than a skip. */
 const REC = {
@@ -37,6 +37,11 @@ const REC = {
   usPocSurname:'INGLE', usPocGiven:'MARIAH', usPocEmail:'mingle@big-cedar.com',
   usPocAddress:'612 DEVILS POOL RD', agencyName:'CTI INDONESIA',
   sevisId:'N0037491619', programNumber:'P-3-05133', intendToStudy:'NO',
+  /* The J1 travel branch. `specificTravelPlans` is the gate: without it the
+     itinerary fields are hidden and the page would look empty. */
+  specificTravelPlans:'YES', arrivalDate:'25-MAY-2026', departureDate:'24-MAY-2027',
+  payerCompany:'I MADE, WIJANA', payerPhone:'85935221510', payerEmail:'cimut@gmail.com',
+  payerRelationship:'PARENT', payerAddressSameAsHome:'YES',
 };
 const out = document.getElementById('out');
 (async () => {

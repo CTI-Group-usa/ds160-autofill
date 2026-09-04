@@ -1158,5 +1158,26 @@ eq('the rule matches any row', key('dtlPrevEduc_ctl00_tbxSchoolName'), 'eduName'
 eq('including the second',     key('dtlPrevEduc_ctl01_tbxSchoolName'), 'eduName');
 eq('and the third',            key('dtlPrevEduc_ctl02_tbxSchoolName'), 'eduName');
 
+
+/* -- the J1 Travel page, from its first live Fill --------------------
+   Five controls came back in "Not recognised" and every id below is the real
+   one, read off that report rather than guessed. */
+eq('the payer email',  key('tbxPAYER_EMAIL_ADDR'), 'payerEmail');
+eq('the payer address question', key('rblPayerAddrSameAsInd_0'), 'payerAddressSameAsHome');
+/* `tbxArriveFlight`, not `ARRIVAL_FLIGHT` - the guessed spelling never matched
+   and both flight boxes sat unrecognised. */
+eq('the arrival flight',   key('tbxArriveFlight'), 'arrivalFlight');
+eq('the departure flight', key('tbxDepartFlight'), 'departureFlight');
+eq('the places to visit',  key('dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION'), 'travelLocation');
+/* The old spellings stay accepted: they cost nothing and another CEAC page may
+   yet use them. */
+eq('the old arrival spelling still works', key('tbxARRIVAL_FLIGHT'), 'arrivalFlight');
+
+/* THE PAYER'S EMAIL IS MATCHED ON ITS ID ALONE. "Email Address" also labels
+   the applicant's own box, the U.S. contact's and both additional points of
+   contact, so a label rule here would be one renamed control away from putting
+   the wrong address in. */
+eq("the applicant's own email box is still its own", key('tbxAPP_EMAIL_ADDR'), 'email');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
