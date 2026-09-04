@@ -697,5 +697,82 @@ eq('a digit still warns',                mrz('BUDI 2 SANTOSO'), 1);
    start now. */
 eq('a hyphenated name is fine',          mrz("ANNE-MARIE O'BRIEN"), 0);
 
+
+/* -- the two templates feed the education block differently ----------
+   CEAC's education block is a REPEATER - Name of Institution, Address, Course
+   of Study, Attendance From/To, then "Add Another".
+
+   C1/D ASKS which one to fill: column BI, "Please select your highest level of
+   education", picks between two candidate blocks. That is the user's rule and
+   it stands.
+
+   THE J1 TEMPLATE DOES NOT ASK. Checked against the template supplied on
+   2026-09-04: it has no such column, and BI there is *Previous Workplace
+   Country*. It carries THREE blocks - junior high, senior high/vocational,
+   college/university - and the filed sample lists them ALL, chronologically:
+
+     Name of Institution (1): SMP NEGERI 11 DENPASAR  Course: JUNIOR HIGH SCHOOL
+     Name of Institution (2): SMK NEGERI 3 DENPASAR   Course: KULINER
+
+   So on J1 the blocks are a list, not a choice. */
+const j1edu = D.toRecord({
+  'Name': 'Putu Yuda, Pratama',
+  'Name of Junior High School': 'Smp Negeri 2 Seririt',
+  'Year of Junior High School Entry': '15-Jul-2019',
+  'Name of Senior High School/Vocational School': 'Smk Negeri 1 Seririt',
+  'Course of Study in Senior High School/Vocational School': 'Perhotelan',
+  'Name of College/University': 'Overseas Training Center',
+});
+eq('the J1 template does not ask for a level', j1edu._asksEducationLevel, false);
+/* CHRONOLOGICAL, matching the order the filed application used. */
+eq('so the first school is the earliest', j1edu.eduName, 'SMP NEGERI 2 SERIRIT');
+eq('and the source says which block', j1edu._eduSource, 'junior high school');
+/* THE COURSE OF STUDY IS TAKEN FROM THE FILED APPLICATION, not invented: the
+   template has no course column for junior high, and "JUNIOR HIGH SCHOOL" is
+   what was typed there. */
+eq('the junior-high course comes from the filed convention',
+   j1edu.eduCourse, 'JUNIOR HIGH SCHOOL');
+/* THE REST ARE HANDED BACK, NOT FILLED. Each "Add Another" is a postback and
+   the WAF has blocked this agent three times over bursts of them - the same
+   arrangement languageSpoken and firstCountryVisited already use. */
+eq('the other two are listed', j1edu._eduMore.length, 2);
+has('and validate names them', D.validate(j1edu).warnings, 'eduName', 'Add Another');
+has('quoting the schools', D.validate(j1edu).warnings, 'eduName', 'SMK NEGERI 1 SERIRIT');
+
+/* THE C1/D PATH IS UNCHANGED: BI names one block, the others are not filled,
+   and nothing is handed back. */
+const c1dedu = D.toRecord({
+  'Name': 'Budi, Santoso',
+  'Please select your highest level of education': 'SMK',
+  'Name of high school/vocational school': 'SMK NEGERI 3',
+  'Name of College/University': 'UNIVERSITAS UDAYANA',
+});
+eq('the C1/D template does ask', c1dedu._asksEducationLevel, true);
+eq('and BI picks the block', c1dedu.eduName, 'SMK NEGERI 3');
+eq('the other block is not filled', c1dedu._eduMore.length, 0);
+none('and nothing is handed back', D.validate(c1dedu).warnings, 'eduName');
+
+/* BI PRESENT BUT UNREADABLE, with both candidates named, is still not ours to
+   guess - and the message now names the HEADER. It said "column BI", which on
+   a J1 row points at Previous Workplace Country: a message aimed at the wrong
+   data is worse than a vague one. */
+const ambig = D.toRecord({
+  'Name': 'Budi, Santoso',
+  'Please select your highest level of education': '',
+  'Name of high school/vocational school': 'SMK NEGERI 3',
+  'Name of College/University': 'UNIVERSITAS UDAYANA',
+});
+eq('nothing is chosen', ambig.eduName, '');
+has('and it asks by hand', D.validate(ambig).warnings, 'eduName', 'choose the institution by hand');
+has('naming the header', D.validate(ambig).warnings, 'eduName', 'highest level of education');
+none('never a column letter, which differs between templates',
+     D.validate(ambig).warnings.filter(w => /column BI/.test(w.msg)), 'eduName');
+
+/* A J1 row with no school at all gets the plain answer, not a question about a
+   column its template does not have. */
+const noschool = D.toRecord({ 'Name': 'P, Y', 'Name of Junior High School': '' });
+has('no school named is said plainly', D.validate(noschool).warnings, 'eduName',
+    'secondary level or above');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

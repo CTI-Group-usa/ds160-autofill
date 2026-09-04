@@ -1312,24 +1312,60 @@ one per pass.
 A Yes on the first fills the employer block from **BA–BH** — note BH, the
 previous workplace country, which had no rule before.
 
-**Column BI picks the education block**, not column AZ. CEAC's education block is
-*one* set of fields — Name of Institution, Address, Course of Study, Date of
-Attendance From/To — and the sheet carries two candidates:
+### THE TWO TEMPLATES FEED THE EDUCATION BLOCK DIFFERENTLY (corrected 2026-09-04)
+CEAC's education block is a **repeater** - Name of Institution, Address, Course
+of Study, Attendance From/To, then *Add Another* - and C1/D and J1 fill it in
+opposite ways. Getting this wrong showed up as a warning on **every J1 row**
+naming a column that holds something else entirely.
+
+**C1/D asks which one.** Column BI, *"Please select your highest level of
+education"*, picks between two candidates at the user's instruction:
 
 | Column BI | Source |
 |---|---|
-| High School / Vocational School | BJ–BN |
-| College / University | BO–BS |
+| High School / Vocational School | BJ-BN |
+| College / University | BO-BS |
 
-`normalize.js` derives `eduName` / `eduAddress` / `eduCourse` / `eduFrom` /
-`eduTo` from that choice, and `_eduSource` records which block ran. Matching is
-tolerant of loose wording — `SMK`, `Diploma III`, `Sarjana (S1)` all land
-correctly. The three old rules pointed at the **high-school columns directly**;
-they now point at the derived keys.
+That rule stands, unchanged. (It is **not** keyed on column AZ; that mistake was
+made on 2026-09-01 and corrected. AZ only decides whether the previous-*employer*
+block is filled.) Matching is tolerant of loose wording - `SMK`, `Diploma III`,
+`Sarjana (S1)` all land. If BI is unreadable **and both** candidates hold a name,
+nothing is chosen and `validate()` asks: picking an institution to swear to is
+not ours to do. One candidate is no ambiguity, so it is used.
 
-If BI is unreadable **and both** candidate blocks hold a name, nothing is chosen
-and `validate()` asks — picking an institution to swear to is not ours to do.
-With only one block filled there is no ambiguity, so it is used.
+**The J1 template does not ask, and has three blocks.** Checked against the
+template the user supplied on 2026-09-04: there is no such column, and **BI on
+the J1 sheet is `Previous Workplace Country`**. It carries junior high (BJ-BM),
+senior high / vocational (BN-BR) and college / university (BS-BW), and the filed
+sample lists them **all**, chronologically:
+
+> Name of Institution (1): SMP NEGERI 11 DENPASAR - Course of Study: **JUNIOR HIGH SCHOOL**
+> Name of Institution (2): SMK NEGERI 3 DENPASAR - Course of Study: KULINER
+
+Note the first one's course of study. The template has **no course column for
+junior high**, and those words were typed in. That is CTI's own convention,
+taken from the filed application rather than invented.
+
+So on J1 the blocks are a **list**, not a choice: the first is filled and
+`validate()` hands back the rest, exactly as `languageSpoken` and
+`firstCountryVisited` do - each *Add Another* costs a postback and CEAC's WAF
+has blocked this agent three times over bursts of them.
+
+`rec._asksEducationLevel` is what separates the two paths, and it is keyed on
+**the header being present, not on its value**: an empty BI on a C1/D row is a
+question that was asked and not answered, which is worth a warning; a missing BI
+is a question the template never asks, which is not.
+
+#### Never put a column letter in a message
+The warning read *"Highest level of education (column BI) reads ..."* and fired
+on J1 rows, where BI is Previous Workplace Country. **A message pointing at the
+wrong data is worse than a vague one.** `_eduSource` had the same fault from the
+other direction - its `BJ-BM` labels were the *J1* template's letters, so they
+were wrong for every C1/D row.
+
+Both name the block or the header now. This file already says mapping is by
+header **text** precisely because positions differ between the templates; a
+letter in a user-facing string quietly contradicts that.
 
 `attendedEducation` = YES because CEAC's own help counts *any* secondary school
 attended for any length of time, and every seafarer CTI files has at least an SMA

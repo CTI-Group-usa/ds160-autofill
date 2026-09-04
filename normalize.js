@@ -468,6 +468,19 @@
        Excel serial the parser refused, and the only trace anywhere was an
        empty CEAC dropdown and a report line reading "no value in record".
        validate() names these, quoting the cell. */
+    /* WHICH TEMPLATE THIS ROW CAME FROM, in the only terms that matter below:
+       does the sheet ASK for the highest level of education? C1/D does - its
+       column BI - and the J1 template does not. Checked against the template
+       the user supplied on 2026-09-04, and it is not a detail: on the J1 sheet
+       BI is *Previous Workplace Country*, so a message naming "column BI"
+       there is pointing at the wrong data.
+
+       Keyed on the header being PRESENT, not on its value. An empty BI on a
+       C1/D row is a question that was asked and not answered, which is worth a
+       warning; a missing BI is a question this template never asks, which is
+       not. */
+    rec._asksEducationLevel = !!(chosen.educationLevel && chosen.educationLevel.raw !== undefined);
+
     rec._unreadable = [];
     for (const key in chosen) {
       rec[key] = chosen[key].fn(chosen[key].raw);
@@ -560,37 +573,85 @@
        validate() flags a non-Indonesian value, where the two really can differ. */
     rec.spousePobCountry = rec.spouseNationality || '';
 
-    /* CEAC's education block is ONE set of fields - Name of Institution,
-       Address, Course of Study, Date of Attendance From / To - and the sheet
-       carries two candidate blocks. Column BI picks which, at the user's
+    /* CEAC's education block is a REPEATER - Name of Institution, Address,
+       Course of Study, Date of Attendance From/To, then "Add Another" - and
+       the two templates feed it completely differently.
+
+       C1/D ASKS WHICH ONE. Column BI, "Please select your highest level of
+       education", picks between two candidate blocks at the user's
        instruction:
          BI = High School / Vocational School -> BJ..BN
          BI = College / University            -> BO..BS
-       This is NOT keyed on column AZ; that mistake was made earlier today and
-       corrected. AZ only decides whether the previous-EMPLOYER block is
-       filled (from BA..BH). */
+       That is their rule and it stands. (It is NOT keyed on column AZ; that
+       mistake was made on 2026-09-01 and corrected. AZ only decides whether
+       the previous-EMPLOYER block is filled.)
+
+       THE J1 TEMPLATE DOES NOT ASK, and carries THREE blocks: junior high
+       (BJ-BM), senior high / vocational (BN-BR) and college / university
+       (BS-BW). There is nothing to choose, and the filed sample shows why -
+       I KETUT JULIANA's application lists them ALL, chronologically:
+
+         Name of Institution (1): SMP NEGERI 11 DENPASAR   Course: JUNIOR HIGH SCHOOL
+         Name of Institution (2): SMK NEGERI 3 DENPASAR    Course: KULINER
+
+       Note the first one's course of study: the template has no course column
+       for junior high, and the words "JUNIOR HIGH SCHOOL" were typed in. That
+       is CTI's own convention, taken from the filed application rather than
+       invented here.
+
+       So on J1 the blocks are a LIST. The first is filled and validate() hands
+       back the rest, exactly as `languageSpoken` and `firstCountryVisited`
+       already do - each "Add Another" costs a postback, and CEAC's WAF has
+       blocked this agent three times over bursts of them. */
     const lvl = upper(rec.educationLevel);
     let pick = /COLLEGE|UNIVERS|DIPLOMA|SARJANA|POLITEKNIK|AKADEMI/.test(lvl) ? 'uni'
              : /HIGH SCHOOL|VOCATION|SMA\b|SMK\b|SEKOLAH MENENGAH/.test(lvl) ? 'hs' : '';
-    if (!pick) {
-      /* BI unreadable. One block with a name is no ambiguity; both or neither
-         is not ours to guess - validate() asks instead. */
-      if (rec.uniName && !rec.hsName) pick = 'uni';
-      else if (rec.hsName && !rec.uniName) pick = 'hs';
-    }
-    if (pick === 'uni') {
-      rec.eduName = rec.uniName; rec.eduAddress = rec.uniAddress;
-      rec.eduCourse = rec.uniCourse; rec.eduFrom = rec.uniFrom; rec.eduTo = rec.uniTo;
-    } else if (pick === 'hs') {
-      rec.eduName = rec.hsName; rec.eduAddress = rec.hsAddress;
-      rec.eduCourse = rec.hsCourse; rec.eduFrom = rec.hsFrom; rec.eduTo = rec.hsTo;
+
+    const BLOCKS = [
+      { key: 'jhs', label: 'junior high school',
+        name: rec.jhsName, address: rec.jhsAddress,
+        /* No course column for this block on either template; the filed
+           application types the level itself. */
+        course: rec.jhsCourse || (rec.jhsName ? 'JUNIOR HIGH SCHOOL' : ''),
+        from: rec.jhsFrom, to: rec.jhsTo },
+      { key: 'hs', label: 'senior high / vocational school',
+        name: rec.hsName, address: rec.hsAddress, course: rec.hsCourse,
+        from: rec.hsFrom, to: rec.hsTo },
+      { key: 'uni', label: 'college / university',
+        name: rec.uniName, address: rec.uniAddress, course: rec.uniCourse,
+        from: rec.uniFrom, to: rec.uniTo },
+    ].filter(b => b.name);
+
+    let chosenBlocks;
+    if (rec._asksEducationLevel) {
+      /* The C1/D path, unchanged. BI names one block and the others are not
+         filled; if BI is unreadable, one candidate is no ambiguity and two is
+         not ours to guess - validate() asks. */
+      if (!pick) {
+        const cands = BLOCKS.filter(b => b.key !== 'jhs');
+        if (cands.length === 1) pick = cands[0].key;
+      }
+      chosenBlocks = BLOCKS.filter(b => b.key === pick);
     } else {
-      rec.eduName = ''; rec.eduAddress = ''; rec.eduCourse = '';
-      rec.eduFrom = ''; rec.eduTo = '';
+      /* The J1 path: chronological, all of them, first one filled. */
+      chosenBlocks = BLOCKS;
     }
-    rec._eduSource = pick === 'uni' ? 'college / university (columns BO-BS)'
-                   : pick === 'hs'  ? 'high school / vocational (columns BJ-BN)'
-                   : '';
+
+    const first = chosenBlocks[0] || null;
+    rec.eduName = first ? first.name : '';
+    rec.eduAddress = first ? first.address : '';
+    rec.eduCourse = first ? first.course : '';
+    rec.eduFrom = first ? first.from : '';
+    rec.eduTo = first ? first.to : '';
+    /* NO COLUMN LETTERS HERE EITHER. They were 'BJ-BM' and friends, which are
+       the J1 template's letters - on a C1/D sheet the senior-high block is
+       BJ-BN, so the string would have been wrong for half the rows. The block
+       name is true on both templates; the letters are the part that lies. */
+    rec._eduSource = first ? first.label : '';
+    /* The ones CEAC still needs, for validate() to hand back. Names only: the
+       operator is typing them into an Add Another block, and the addresses and
+       dates are in the applicant's own detail view beside them. */
+    rec._eduMore = chosenBlocks.slice(1).map(b => b.label + ': ' + b.name);
 
     /* "Have you traveled to any countries/regions within the last five years?"
        comes from column M. The user's rule: the literal "NONE" means No, and
@@ -879,17 +940,38 @@
 
     if (rec.prevEmployed === 'YES' && !rec.prevEmployerName)
       E('prevEmployerName', 'Marked as previously employed but no previous employer given');
-    /* The education block is chosen by column BI. If BI is unreadable and both
-       candidate blocks carry a name, picking one is not ours to do. */
+    /* NAMES THE HEADER, NOT A COLUMN LETTER. This said "column BI" and fired
+       on J1 rows, where BI is *Previous Workplace Country* - the two templates
+       put different things in the same letter, which is exactly why this file
+       maps on header TEXT everywhere else. A message that points at the wrong
+       data is worse than a vague one.
+
+       And it only asks about the level on a template that ASKS: a missing
+       column is not an unanswered question. */
     if (!rec.eduName) {
-      const both = rec.hsName && rec.uniName;
-      W('eduName', both
-          ? 'Highest level of education (column BI) reads "' + clean(rec.educationLevel) +
-            '", which matches neither High School/Vocational nor College/University, ' +
-            'and both blocks hold a name - choose the institution by hand'
-          : 'No institution for the education block: column BI reads "' +
-            clean(rec.educationLevel) + '" and columns BJ-BN / BO-BS are empty');
+      if (rec._asksEducationLevel) {
+        const both = rec.hsName && rec.uniName;
+        W('eduName', both
+            ? '"Please select your highest level of education" reads "' +
+              clean(rec.educationLevel) + '", which matches neither High School/' +
+              'Vocational nor College/University, and both blocks hold a name - ' +
+              'choose the institution by hand'
+            : 'No institution for the education block: "highest level of education" ' +
+              'reads "' + clean(rec.educationLevel) + '" and both school blocks are empty');
+      } else {
+        W('eduName', 'No school named in any of the three education blocks - ' +
+                     'CEAC asks for any institution at secondary level or above');
+      }
     }
+    /* THE REST OF THE SCHOOLS. CEAC's block is a repeater and the J1 template
+       carries three, so the ones after the first are handed back rather than
+       filled - each "Add Another" is a postback, and the WAF has blocked this
+       agent three times over bursts of them. Same arrangement as
+       `languageSpoken` and `firstCountryVisited`. */
+    if ((rec._eduMore || []).length)
+      W('eduName', 'Only the first school is filled (' + rec.eduName + '). Add ' +
+                   (rec._eduMore.length === 1 ? 'this one' : 'these') +
+                   ' by hand with "Add Another": ' + rec._eduMore.join('; '));
     /* CEAC requires both of these on the Work/Education page, and both come
        from columns AX and AV. A blank has to be visible rather than silent. */
     if (!rec.employerStart)
@@ -1037,7 +1119,7 @@
       ['prevStart','Employment From'], ['prevEnd','Employment To'],
       ['prevCountry','Country'] ] },
     { title: 'Additional Education', fields: [
-      ['educationLevel','Highest Level Completed (column BI)'], ['_eduSource','Education block sourced from'],
+      ['educationLevel','Highest Level Completed'], ['_eduSource','Education block sourced from'],
       ['eduName','Name of Institution'], ['eduAddress','Institution Address'],
       ['eduCourse','Course of Study'], ['eduCountry','Country/Region'], ['eduFrom','Attendance From'], ['eduTo','Attendance To'],
       ['hsName','School Name'], ['hsAddress','School Address'], ['hsCourse','Course of Study'],
