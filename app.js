@@ -285,18 +285,57 @@
     return h;
   }
 
+  /* ONE DOCUMENT PER VISA CLASS, and the same machinery for both. Each class
+     has exactly one attachment carrying answers the intake sheet does not:
+
+       C1/D  the supporting letter - vessel, IMO, joining date, US port
+       J1    the DS-2019 - the programme period, which is the itinerary CEAC
+             demands once "specific travel plans" is YES
+
+     THE TAB CHOOSES, not the record. index.html says the tab is the authority
+     for which class is in play, and the trip block belongs to whichever tab is
+     open - so a J1 applicant can never be offered the C1/D letter reader, and
+     a C1/D one is never asked for a DS-2019 that does not exist.
+
+     Both go through the extension for the fetch: the page cannot read a Zoho
+     URL itself - cross-origin, and behind the user's login. */
+  const DOCS = {
+    c1d: {
+      kind: 'letter', urlKey: 'supportingLetterUrl',
+      button: 'Read supporting letter', what: 'supporting letter',
+      paste: 'Paste the whole letter',
+      none: 'No supporting letter link in this row &mdash; paste it below.',
+      notFound: 'None of the expected lines were found - is this a C1/D supporting letter?',
+      parser: () => DS160Letter,
+    },
+    j1: {
+      kind: 'ds2019', urlKey: 'ds2019Url',
+      button: 'Read DS-2019', what: 'DS-2019',
+      paste: 'Paste the DS-2019 text',
+      none: 'No DS-2019 link in this row &mdash; paste it below. Without it there ' +
+            'is no arrival or departure date: the sheet has no column for either.',
+      notFound: 'No programme period found - is this a Form DS-2019? Item 3 of the ' +
+                'form is the part this reads.',
+      parser: () => DS160Ds2019,
+    },
+  };
+
+  const activeDoc = () => DOCS[DS160Const.activeClass()] || null;
+
   /* Fetching is the normal path; pasting is the fallback for when the
      link is a viewer page or the extension is not installed. */
   function letterBox(rec) {
-    const url = rec.supportingLetterUrl;
+    const doc = activeDoc();
+    if (!doc) return '';
+    const url = rec[doc.urlKey];
     return '<div class="letter">' +
       (url
-        ? '<button id="letterFetch" class="primary">Read supporting letter</button> ' +
+        ? '<button id="letterFetch" class="primary">' + doc.button + '</button> ' +
           '<a href="' + esc(url) + '" target="_blank" rel="noopener">open it</a>'
-        : '<b>No supporting letter link in this row &mdash; paste it below.</b>') +
+        : '<b>' + doc.none + '</b>') +
       ' <span id="letterMsg"></span>' +
       '<details><summary>paste it instead</summary>' +
-      '<textarea id="letterText" placeholder="Paste the whole letter"></textarea>' +
+      '<textarea id="letterText" placeholder="' + esc(doc.paste) + '"></textarea>' +
       '<button id="letterParse" class="tiny">Read pasted text</button></details></div>';
   }
 
@@ -322,19 +361,22 @@
     });
     $('tripClear').addEventListener('click', () => { DS160Trip.clear(rec); rebuild(); });
 
+    /* Same three steps for either document: parse, write the answers into the
+       trip block, and report the cross-check. The parser differs, the wording
+       differs, nothing else does - so the C1/D letter and the J1 DS-2019 share
+       this rather than having two copies to keep in step. */
     function useLetterText(text) {
-      const parsed = DS160Letter.parse(text);
-      if (!parsed.found) {
-        letterMsg('err', 'None of the expected lines were found - is this a C1/D supporting letter?');
-        return;
-      }
-      const answers = DS160Letter.answers(parsed);
+      const doc = activeDoc();
+      if (!doc) return;
+      const parsed = doc.parser().parse(text);
+      if (!parsed.found) { letterMsg('err', doc.notFound); return; }
+      const answers = doc.parser().answers(parsed);
       for (const k in answers) DS160Trip.set(rec, k, answers[k]);
-      const issues = DS160Letter.crossCheck(parsed, rec);
+      const issues = doc.parser().crossCheck(parsed, rec);
       pendingLetter = {
         kind: issues.length ? 'err' : 'ok',
-        text: Object.keys(answers).length + ' field(s) read from the letter' +
-          (parsed.missing.length ? '; not in this letter: ' + parsed.missing.join(', ') : '') +
+        text: Object.keys(answers).length + ' field(s) read from the ' + doc.what +
+          (parsed.missing.length ? '; not in this ' + doc.what + ': ' + parsed.missing.join(', ') : '') +
           (issues.length ? ' — CHECK: ' + issues.map(i => i.msg).join(' | ') : ''),
       };
       rebuild();
@@ -342,21 +384,30 @@
 
     /* The page cannot fetch a Zoho URL itself - cross-origin, and behind
        the user's login - so the extension does it and hands back bytes. */
-    if ($('letterFetch')) $('letterFetch').addEventListener('click', () => fetchLetter(rec.supportingLetterUrl));
+    if ($('letterFetch'))
+      $('letterFetch').addEventListener('click', () => fetchLetter(rec[activeDoc().urlKey]));
 
     function fetchLetter(url) {
+      /* CAPTURED ONCE, not read again inside the handlers below. The fetch is
+         asynchronous - the extension answers on a message, up to 20s later -
+         and switching tabs in the meantime would change what activeDoc()
+         returns, so the reply would be parsed with the OTHER class's parser
+         and reported in the other document's words. */
+      const doc = activeDoc();
+      if (!doc) return;
       if (!hasExtension()) {
-        letterMsg('err', 'The extension is not loaded on this page, so the letter cannot be fetched. Paste it instead.');
+        letterMsg('err', 'The extension is not loaded on this page, so the ' +
+                          doc.what + ' cannot be fetched. Paste it instead.');
         return;
       }
-      letterMsg('', 'Fetching the letter...');
+      letterMsg('', 'Fetching the ' + doc.what + '...');
       const id = 'f' + (letterSeq++);
       const done = ev => {
         const d = ev.data;
         if (!d || d.channel !== 'cti-ds160' || d.type !== 'fetch-letter-result' || d.id !== id) return;
         window.removeEventListener('message', done);
         clearTimeout(timer);
-        if (!d.ok) { letterMsg('err', d.error || 'The letter could not be fetched.'); return; }
+        if (!d.ok) { letterMsg('err', d.error || 'The ' + doc.what + ' could not be fetched.'); return; }
         letterMsg('', 'Reading ' + Math.round(d.bytes / 1024) + ' KB...');
         const bin = atob(d.b64);
         const bytes = new Uint8Array(bin.length);
@@ -368,14 +419,18 @@
       window.addEventListener('message', done);
       const timer = setTimeout(() => {
         window.removeEventListener('message', done);
-        letterMsg('err', 'The extension did not answer. Reload it, refresh this page, or paste the letter.');
+        letterMsg('err', 'The extension did not answer. Reload it, refresh this page, ' +
+                          'or paste the ' + doc.what + '.');
       }, 20000);
       window.postMessage({ channel: 'cti-ds160', type: 'fetch-letter', url, id }, '*');
     }
 
-    $('letterParse').addEventListener('click', () => {
+    /* Guarded like letterFetch: with no class in play letterBox() renders
+       nothing, and addEventListener on null throws before anything else on
+       the page gets wired. */
+    if ($('letterParse')) $('letterParse').addEventListener('click', () => {
       const text = $('letterText').value.trim();
-      if (!text) { letterMsg('err', 'Paste the letter text, or its link.'); return; }
+      if (!text) { letterMsg('err', 'Paste the ' + activeDoc().what + ' text, or its link.'); return; }
       // Pasting the link is the obvious thing to do; treat it as one.
       const url = text.match(/^https?:\/\/\S+$/i);
       if (url) { fetchLetter(url[0]); return; }

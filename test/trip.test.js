@@ -87,5 +87,67 @@ const ruleKeys = new Set(M.RULES.map(r => r.key));
 eq('all trip fields are fillable',
    T.FIELDS.filter(f => !ruleKeys.has(f.key)).map(f => f.key), []);
 
+
+/* -- one attachment per visa class, one code path -------------------
+   app.js is browser-only (an IIFE, no exports), so these are text assertions
+   on the file - the same arrangement test/auth.test.js and
+   test/extension-auth.test.js use for the gate and the popup. They cannot
+   prove the button works; they can prove the two documents did not drift into
+   two copies of the same logic, which is the thing that rots.
+
+   Each class has exactly one attachment carrying answers the sheet does not:
+   C1/D the supporting letter (vessel, IMO, joining date, US port), J1 the
+   DS-2019 (the programme period, which is the itinerary CEAC demands once
+   "specific travel plans" is YES). */
+const fs = require('fs');
+const path = require('path');
+const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8')
+              .split('\r\n').join('\n');
+/* This file has eq() but no ok(). */
+const ok = (label, cond) => eq(label, !!cond, true);
+
+ok('app.js declares a document per class', /const DOCS = \{[\s\S]{0,200}c1d:[\s\S]{0,400}j1:/.test(app));
+ok('C1/D reads the supporting letter', /urlKey: 'supportingLetterUrl'/.test(app));
+ok('J1 reads the DS-2019',             /urlKey: 'ds2019Url'/.test(app));
+ok('and each names its own parser',
+   /parser: \(\) => DS160Letter/.test(app) && /parser: \(\) => DS160Ds2019/.test(app));
+
+/* THE TAB CHOOSES, NOT THE RECORD. index.html says the tab is the authority
+   for which class is in play, and the trip block belongs to whichever tab is
+   open - so a J1 applicant is never offered the C1/D letter reader, and a
+   C1/D one is never asked for a DS-2019 that does not exist. */
+ok('the active class picks the document', /DOCS\[DS160Const\.activeClass\(\)\]/.test(app));
+
+/* ONE PARSE PATH, not two copies. The parser differs, the wording differs,
+   nothing else does. */
+ok('the parse path goes through the descriptor',
+   /doc\.parser\(\)\.parse\(text\)/.test(app) &&
+   /doc\.parser\(\)\.answers\(parsed\)/.test(app) &&
+   /doc\.parser\(\)\.crossCheck\(parsed, rec\)/.test(app));
+ok('nothing calls DS160Letter directly any more',
+   (app.match(/DS160Letter/g) || []).length === 1);
+
+/* CAPTURED ONCE, BEFORE THE ASYNC FETCH. The extension answers on a message
+   up to 20s later; switching tabs in between would change what activeDoc()
+   returns, and the reply would be parsed with the OTHER class's parser and
+   reported in the other document's words. */
+const fetchFn = app.slice(app.indexOf('function fetchLetter(url) {'));
+const fetchBody = fetchFn.slice(0, fetchFn.indexOf("window.postMessage({ channel: 'cti-ds160'"));
+ok('fetchLetter captures the document first',
+   /function fetchLetter\(url\) \{\s*\/\*[\s\S]*?\*\/\s*const doc = activeDoc\(\);/.test(fetchFn));
+ok('and never re-reads it inside the async handlers',
+   !/activeDoc\(\)/.test(fetchBody.slice(fetchBody.indexOf('const doc = activeDoc();') + 24)));
+
+/* Both handlers are guarded: with no class in play letterBox() renders
+   nothing, and addEventListener on null throws before the rest of the detail
+   view gets wired. */
+ok('the fetch button is guarded',  /if \(\$\('letterFetch'\)\)/.test(app));
+ok('the paste button too',         /if \(\$\('letterParse'\)\)/.test(app));
+
+/* NOT VERIFIED IN A BROWSER, and it cannot be from here: the worksheet is
+   behind the Microsoft sign-in. Pressing "Read DS-2019" on a real J1 row is a
+   human check - and it is the same one that settles whether pdftext.js can
+   read a DS-2019 PDF at all, which ds2019.js flags as unproven. */
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

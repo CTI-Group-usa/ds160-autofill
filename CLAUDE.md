@@ -164,6 +164,39 @@ available is a third party's and **this repo is public**. The test therefore
 quotes the labels inline rather than committing a fixture - the labels are the
 government's own and stable, which is the part that matters.
 
+### One attachment per class, one code path
+Each class has exactly one attachment carrying answers the intake sheet does
+not, so `app.js` holds a `DOCS` descriptor rather than two copies of the same
+logic:
+
+| | C1/D | J1 |
+|---|---|---|
+| document | supporting letter | **DS-2019** |
+| column | Supporting Letter | **CO** |
+| gives | vessel, IMO, joining date, US port | the programme period |
+| parser | `letter.js` | `ds2019.js` |
+
+**The tab chooses, not the record.** `index.html` says the tab is the authority
+for which class is in play, and the trip block belongs to whichever tab is open
+- so a J1 applicant is never offered the C1/D letter reader, and a C1/D one is
+never asked for a DS-2019 that does not exist.
+
+`parse` / `answers` / `crossCheck` all go through `doc.parser()`, and the fetch,
+the paste box, and every message the operator sees are shared. Only the parser
+and the wording differ.
+
+**`fetchLetter` captures the descriptor ONCE, before the fetch.** The extension
+answers on a message up to 20 seconds later, and switching tabs in between would
+change what `activeDoc()` returns - so the reply would be parsed with the *other*
+class's parser and reported in the other document's words. A test asserts that
+nothing re-reads it inside the async handlers.
+
+**Not verified in a browser, and it cannot be from here:** the worksheet is
+behind the Microsoft sign-in. `test/trip.test.js` asserts the wiring textually,
+the same arrangement `auth.test.js` and `extension-auth.test.js` use - which
+proves the two documents have not drifted into two copies, not that the button
+works.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it
@@ -365,9 +398,9 @@ still to wire, 1 leftover that is a typo of an admin column.
 #### Still to do for J1
 - the Additional Point of Contact block on the Student/Exchange Visitor page -
   blocked on one live J1 Fill report, see below.
-- feeding the DS-2019 parser: a **Read DS-2019** button in the J1 trip block,
-  mirroring the supporting letter's fetch-through-the-extension path. The
-  parser itself is done - see below.
+- **one human check**: press *Read DS-2019* on a real J1 row. It needs the
+  Microsoft sign-in and a real form, and it settles the one thing marked
+  unproven below - whether `pdftext.js` can read a DS-2019 PDF at all.
 
 No build tools, no framework — plain HTML/CSS/JS, same house style as the J1
 Dashboard and the Indonesia Monitoring Dashboard.
