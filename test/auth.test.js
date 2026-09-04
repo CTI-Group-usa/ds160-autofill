@@ -101,7 +101,12 @@ ok('a network error does NOT clear it', !/removeItem/.test(catchBlock.slice(0, 4
 ok('the body starts hidden', /<style>body\{visibility:hidden\}<\/style>/.test(index));
 ok('and is only revealed after requireAuth resolves',
    index.indexOf('Auth.requireAuth()') < index.indexOf("style.visibility = 'visible'"));
-ok('auth.js loads before app.js', index.indexOf('auth.js') < index.indexOf('app.js'));
+/* THE SCRIPT TAGS, not the bare names. This was `indexOf('auth.js') <
+   indexOf('app.js')` and broke the moment a COMMENT in the header mentioned
+   app.js - prose before the tags won the indexOf. Same trap the login.html
+   stylesheet assertion below already carries a note about. */
+ok('auth.js loads before app.js',
+   index.indexOf('src="auth.js') < index.indexOf('src="app.js'));
 /* Signing out has to leave nothing behind: sessionStorage holds the whole
    intake export - passport numbers, dates of birth, parents' names. */
 ok('sign-out wipes the loaded rows before redirecting',
@@ -141,6 +146,61 @@ ok('the github.io origin is allowed',
    /'https:\/\/cti-group-usa\.github\.io'/.test(worker));
 ok('localhost:7773 is allowed for local runs', /localhost:7773/.test(worker));
 ok('no wildcard origin', !/Allow-Origin[^\n]*\*/.test(worker));
+
+
+// -- the hard refresh button -----------------------------------------
+/* A normal reload revalidates the HTML but is free to hand back the cached
+   app.js, and the script tags carry their own ?v= tokens - so a deploy that
+   changed a file without bumping its token keeps serving the old one, and the
+   fix looks like it did not work. That has cost this project several rounds of
+   "reload the worksheet". */
+ok('the header has a hard refresh button', /id="btnHardRefresh"/.test(index));
+ok('and it says what it does, and what it keeps',
+   /Hard refresh[\s\S]{0,200}bypassing the browser cache[\s\S]{0,80}applicants are kept/.test(index));
+/* An icon alone says nothing to a screen reader, and `title` is not reliably
+   announced. */
+ok('with a text label for a screen reader', /class="sr">Hard refresh</.test(index));
+
+/* `fetch(url, {cache:'reload'})` is what does the work: it bypasses the HTTP
+   cache and REPLACES the stored entry, so the reload straight after picks up
+   the fresh copy. `location.reload(true)` has forced nothing in any current
+   browser for years - it is ignored - so its presence would mean the button
+   does not work. */
+ok("it re-fetches with cache:'reload'", /fetch\(u, \{ cache: 'reload' \}\)/.test(index));
+/* Matched as a CALL - with the semicolon - because the comment beside the
+   handler names `location.reload(true)` in order to explain why it is not
+   used, and a bare substring test cannot tell prose from code. */
+ok('and does NOT rely on reload(true), which browsers ignore',
+   !/location\.reload\(true\)\s*;/.test(index));
+ok('the reload comes after the re-fetches',
+   index.indexOf("cache: 'reload'") < index.lastIndexOf('location.reload()'));
+
+/* THE ASSET LIST COMES FROM THE DOM, never a list kept by hand: it is exactly
+   the tags the page loaded, so it cannot drift from them. The popup already
+   learned this lesson the hard way with its copy of the constant keys. */
+ok('the assets come from the page itself',
+   /querySelectorAll\('script\[src\], link\[rel="stylesheet"\]\[href\]'\)/.test(index));
+ok('and no hand-written asset list sits beside it',
+   !/\['app\.js'|'normalize\.js',\s*'constants\.js'/.test(index));
+/* Same origin only. A CDN or a Google font is not ours to invalidate, and
+   fetching it here would fail on CORS and look like a broken refresh. */
+ok('only same-origin assets are touched', /u\.origin === location\.origin/.test(index));
+
+/* Cache Storage is empty today - there is no service worker - but clearing it
+   costs one call and means adding one later cannot quietly defeat the button. */
+ok('cache storage is cleared too', /caches\.delete\(k\)/.test(index));
+/* One asset that 404s must not stop the reload, which is the part the operator
+   actually pressed the button for. */
+ok('a failed asset fetch is swallowed', /\.catch\(\(\) => null\)/.test(index));
+/* Disabled while it works, so a second click cannot start a second run. */
+ok('the button disables itself', /hard\.disabled = true/.test(index));
+ok('and refuses a click while disabled', /if \(hard\.disabled\) return/.test(index));
+
+/* `css` is already read further up, for the signed-in chip's own class. */
+ok('the spin animation exists', /button\.icon\.spin svg\{animation:spin/.test(css));
+/* A spinner is decoration; the disabled button is what actually says "busy". */
+ok('and is dropped for reduced motion',
+   /prefers-reduced-motion:reduce\)\{button\.icon\.spin svg\{animation:none/.test(css));
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 if (fail) process.exit(1);

@@ -713,6 +713,43 @@ signed into from `node server.js`. That grants an attacker nothing — anyone ca
 serve a page on their own localhost — and the sign-in still has to pass
 Microsoft.
 
+### The hard refresh button (2026-09-04)
+A normal reload revalidates the HTML but is free to hand back the cached
+`app.js`, and the script tags carry their own `?v=` tokens - so a deploy that
+changed a file **without** bumping its token keeps serving the old one, and the
+fix looks like it did not work. That has cost this project several rounds of
+"reload the worksheet".
+
+The icon button in the header re-fetches every asset the page loaded with
+**`fetch(url, {cache: 'reload'})`** and then reloads. That call is what does the
+work: it bypasses the HTTP cache *and replaces the stored entry*, so the reload
+straight after picks up the fresh copy. `location.reload(true)` has forced
+nothing in any current browser for years - it is ignored, and a test asserts it
+is not relied on.
+
+- **the asset list comes from the DOM**, never a list kept by hand: it is
+  exactly the tags the page loaded, so it cannot drift from them. The popup
+  already learned that lesson with its copy of the constant keys.
+- **same origin only.** A CDN or a Google font is not ours to invalidate, and
+  fetching it here fails on CORS and looks like a broken refresh.
+- **Cache Storage is cleared too.** It is empty today - there is no service
+  worker - but the call costs nothing and means adding one later cannot quietly
+  defeat the button.
+- **a failed asset fetch is swallowed**, because one 404 must not stop the
+  reload, which is the part the operator actually pressed.
+- **nothing is lost.** The loaded applicants are in `sessionStorage`, which a
+  reload in the same tab keeps, and trip details and constant answers are in
+  `localStorage`. The `title` says so, because a button that might lose an
+  hour of typing is a button nobody presses.
+
+Two of `auth.test.js`'s assertions had to be tightened when this went in, and
+the reason is worth keeping: both tested a **bare substring** of `index.html`,
+and a comment beside the new button broke them - one names `app.js` while
+explaining the caching problem, the other names `location.reload(true)` while
+explaining why it is not used. They now match the script **tag** and the
+**call** respectively. A test that cannot tell prose from code will eventually
+be broken by prose.
+
 ### Signing out wipes the loaded rows
 `sessionStorage['ds160.rows']` holds the whole intake export: passport numbers,
 dates of birth, addresses, parents' names. The sign-out handler clears it

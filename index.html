@@ -41,6 +41,24 @@
   <div class="tools">
     <span id="signedIn" class="signed-in" hidden></span>
     <span id="extBadge" class="badge off">extension not detected</span>
+    <!-- HARD REFRESH. After a deploy a normal reload can still hand back the
+         cached app.js, and this session alone has ended with "refresh the
+         worksheet" half a dozen times. This one re-fetches every asset the
+         page loaded with cache:'reload' before reloading, so the code really
+         is the code that was pushed.
+
+         The loaded applicants survive it - they live in sessionStorage, which
+         a reload in the same tab keeps - and the title says so, because a
+         button that might lose an hour of typing is a button nobody presses. -->
+    <button id="btnHardRefresh" class="icon"
+            title="Hard refresh - reload the app's own code, bypassing the browser cache. The loaded applicants are kept.">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <path d="M23 4v6h-6M1 20v-6h6"/>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </svg>
+      <span class="sr">Hard refresh</span>
+    </button>
     <button id="btnLoad">Load data</button>
     <button id="btnLogout" hidden>Sign out</button>
   </div>
@@ -122,6 +140,57 @@
   who.textContent = user.name || user.email;
   who.title = user.email;
   who.hidden = false;
+
+  /* HARD REFRESH.
+     A normal reload revalidates the HTML but is free to hand back the cached
+     app.js, and the script tags carry their own ?v= tokens - so if a deploy
+     changed a file without bumping its token, the browser keeps serving the
+     old one and the fix looks like it did not work. That has cost this project
+     several rounds of "reload the worksheet".
+
+     THE ASSET LIST COMES FROM THE DOM, never from a list kept by hand. It is
+     exactly the tags this page loaded, so it cannot drift from them - the same
+     reason the popup stopped keeping its own copy of the constant keys.
+
+     `fetch(url, {cache:'reload'})` is what does the work: it bypasses the HTTP
+     cache and REPLACES the stored entry, so the reload straight after picks up
+     the fresh copy. `location.reload(true)` has not forced anything in any
+     current browser for years - it is ignored.
+
+     Nothing is lost. The loaded applicants are in sessionStorage, which a
+     reload in the same tab keeps, and the trip details and constant answers
+     are in localStorage. */
+  const hard = document.getElementById('btnHardRefresh');
+  if (hard) hard.addEventListener('click', async () => {
+    if (hard.disabled) return;
+    hard.disabled = true;
+    hard.classList.add('spin');
+    const urls = new Set([location.pathname]);
+    document.querySelectorAll('script[src], link[rel="stylesheet"][href]').forEach(el => {
+      const raw = el.getAttribute('src') || el.getAttribute('href');
+      if (!raw) return;
+      try {
+        const u = new URL(raw, location.href);
+        /* Same origin only. A CDN or a Google font is not ours to invalidate,
+           and fetching it here would fail on CORS and look like a broken
+           refresh. */
+        if (u.origin === location.origin) urls.add(u.href);
+      } catch (e) { /* not a URL we can resolve; skip it */ }
+    });
+    /* Cache Storage is empty today - there is no service worker - but clearing
+       it costs one call and means adding one later cannot quietly defeat this
+       button. */
+    try {
+      if (window.caches) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    } catch (e) { /* unavailable in some privacy modes; the fetches still work */ }
+    /* Each failure is swallowed on purpose: an asset that 404s must not stop
+       the reload, which is the part the operator actually asked for. */
+    await Promise.all([...urls].map(u => fetch(u, { cache: 'reload' }).catch(() => null)));
+    location.reload();
+  });
 
   const out = document.getElementById('btnLogout');
   out.hidden = false;
