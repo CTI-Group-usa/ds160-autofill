@@ -17,11 +17,34 @@
      added, and it then told the agent the record was current when it was
      not. When the record is behind, the fill report says so per field -
      that cannot drift. */
+  /* WHICH VISA CLASS THIS RECORD IS. apply() stamps `_class`, and the whole
+     reason to show it is that a record of one class filled into the other
+     class's application is otherwise invisible: a C1/D record on a J1 form
+     writes the cruise line's U.S. contact and the manning agency into boxes
+     that take them happily, and a filled field appears in no report.
+
+     An older record predates the stamp entirely, and guessing its class from
+     the fields it happens to carry would be exactly the wrong instinct - say
+     "not stated" and let the operator re-send. */
+  const CLASS_LABEL = { c1d: 'C1/D &middot; seafarer', j1: 'J1 &middot; exchange visitor' };
+
+  /* Kept beside the record rather than read from it inside showReport: the
+     popup is a fresh document each time it opens, and the report is rendered
+     from chrome.storage in the same pass as the record. */
+  let lastClass = null;
+
   function showWho(rec) {
+    /* Cleared BEFORE the early return, so a record that is unloaded cannot
+       leave its class behind for the next report to compare against. */
+    lastClass = (rec && rec._class) || null;
     if (!rec) { $('who').innerHTML = 'No applicant loaded.'; return; }
     let when = '';
     try { when = rec._sentAt ? new Date(rec._sentAt).toLocaleTimeString() : ''; } catch (e) { /* ignore */ }
-    let h = '<b>' + esc(rec.surname + ', ' + rec.givenNames) + '</b>' +
+    const cls = rec._class;
+    let h = '<div class="cls' + (cls ? ' ' + esc(cls) : ' unknown') + '">' +
+      (cls ? CLASS_LABEL[cls] || esc(cls) : 'visa class not stated - re-send this applicant') +
+      '</div>' +
+      '<b>' + esc(rec.surname + ', ' + rec.givenNames) + '</b>' +
       '<span>' + esc(rec.passportNumber || 'no passport no.') + ' &middot; ' +
       esc(rec.dob || '') + ' &middot; ' + esc(rec.cruiseLine || '') + '</span>' +
       (when ? '<span>sent ' + esc(when) + '</span>' : '');
@@ -41,6 +64,20 @@
   function showReport(rep) {
     if (rep.error) { $('report').innerHTML = '<div class="err">' + esc(rep.error) + '</div>'; return; }
     let h = '';
+    /* THE PAGE AND THE RECORD DISAGREE. This is the one thing the class chip
+       exists to catch, and it goes FIRST and loud: a C1/D record on the
+       exchange-visitor page - or the reverse - fills boxes that accept the
+       wrong principal's details without complaint, and a filled field appears
+       in no report. content.js infers the page's class only from rules that
+       actually fired on class-exclusive pages, and says nothing when the page
+       belongs to no class, which is most of them. */
+    if (rep.pageClass && lastClass && rep.pageClass !== lastClass) {
+      h += '<div class="err"><b>This page belongs to a different visa class.</b> ' +
+           'The applicant loaded here is <b>' + esc(lastClass.toUpperCase()) + '</b>, ' +
+           'but this is a <b>' + esc(rep.pageClass.toUpperCase()) + '</b> page. ' +
+           'Nothing on this page should be filled from that record &mdash; open the ' +
+           'worksheet, switch to the right tab and send the applicant again.</div>';
+    }
     if (rep.security && rep.security.length) {
       h += '<div class="sweep"><b>Answered &ldquo;No&rdquo; to ' + rep.security.length +
            ' Security and Background question(s).</b> These are sworn answers &mdash; ' +

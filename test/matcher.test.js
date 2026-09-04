@@ -1093,5 +1093,37 @@ eq('given names still match',
 eq("the US contact's email is still its own",
    keyIn('tbxUS_POC_EMAIL_ADDR', 'Email Address', 'Contact Person in the United States'), 'usPocEmail');
 
+
+/* -- which visa class a page belongs to ------------------------------
+   The popup can show which pack a record came from, but a label alone is
+   decoration. The failure worth catching is a record of one class being
+   filled into the other class's application, and that is invisible today: a
+   C1/D record on a J1 form puts the cruise line's U.S. contact and the
+   manning agency into boxes that accept them happily, and a filled field
+   appears in no report.
+
+   So the page's class is inferred from the keys that actually matched on it -
+   no URL and no page heading guessed. */
+eq('a vessel key is C1/D only', M.classOfKey('vesselName'), 'c1d');
+eq('the manning agency too',    M.classOfKey('agencyName'), 'c1d');
+eq('SEVIS is J1 only',          M.classOfKey('sevisId'), 'j1');
+eq('and the programme number',  M.classOfKey('programNumber'), 'j1');
+/* MOST OF THE FORM BELONGS TO NO CLASS, and must not be labelled - Personal,
+   Passport, Family, Address, Security and Sign are identical for every visa
+   class. That is the whole reason this is one app with two packs. */
+eq('a shared field belongs to neither', M.classOfKey('surname'), null);
+eq('nor the passport',                  M.classOfKey('passportNumber'), null);
+eq('nor the home address',              M.classOfKey('homeAddress'), null);
+/* THE TWO SETS MUST NOT OVERLAP. An overlapping key would make a page report
+   both classes at once, which content.js treats as a contradiction and
+   answers with silence - so the guard would quietly stop guarding. */
+const overlap = M.CLASS_ONLY.c1d.filter(k => M.CLASS_ONLY.j1.indexOf(k) >= 0);
+eq('the class sets are disjoint', overlap.join(',') || 'none', 'none');
+/* And every key named must be a key some rule actually produces, or the
+   inference is looking for something that can never match. */
+const ruleKeys = new Set(M.RULES.map(r => r.key));
+const unknown = [].concat(M.CLASS_ONLY.c1d, M.CLASS_ONLY.j1).filter(k => !ruleKeys.has(k));
+eq('every class-only key has a rule', unknown.join(',') || 'none', 'none');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

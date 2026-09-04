@@ -392,7 +392,10 @@
   function fillPage(rec, overrides, opts) {
     opts = opts || {};
     const report = { filled: [], already: [], skipped: [], unmatched: [], deliberate: [],
-                     postbackPending: null, url: location.href };
+                     postbackPending: null, url: location.href,
+                     /* Which visa class's page this is, inferred from the rules
+                        that actually fired - see CLASS_ONLY in matcher.js. */
+                     classSeen: { c1d: 0, j1: 0 }, pageClass: null };
     const all = controls();
 
     // Radios sharing a name are one logical question.
@@ -427,6 +430,10 @@
         if (c.type === 'radio') done.add(c.name);
         continue;
       }
+      /* Counted on the MATCH, not on the fill: a Crew Visa page whose boxes
+         are all already correct is still a Crew Visa page. */
+      const kc = M.classOfKey && M.classOfKey(m.key);
+      if (kc && report.classSeen[kc] !== undefined) report.classSeen[kc]++;
       const value = valueFor(rec, m.key, c);
       if (!value) {
         /* A FIELD THE RECORD DELIBERATELY LEAVES EMPTY IS NOT A GAP. CEAC
@@ -514,6 +521,14 @@
       }
       record(report, st, d.c, d.m, d.value);
     }
+
+    /* ONE CLASS ONLY, OR NOTHING. Most DS-160 pages - Personal, Passport,
+       Family, Security - belong to no class at all and must not be labelled;
+       and if both sets somehow fired, that is a contradiction rather than an
+       answer, so say nothing rather than pick one. */
+    const cs = report.classSeen;
+    if (cs.c1d && !cs.j1) report.pageClass = 'c1d';
+    else if (cs.j1 && !cs.c1d) report.pageClass = 'j1';
     return report;
   }
 

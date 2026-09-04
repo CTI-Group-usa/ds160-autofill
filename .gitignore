@@ -15,3 +15,7 @@ node_modules/
 # (test/make-fixture.py builds it).
 !test/fixtures/sample.xlsx
 .claude/
+
+# DS-2019 / DS-7002 samples are third-party documents and this repo is
+# public. test/ds2019.test.js runs against one only if it is present locally.
+*.docx

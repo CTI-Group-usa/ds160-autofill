@@ -192,5 +192,40 @@ ok('background.js calls /api/auth/me on that host',
 ok('ceac.state.gov is still there', manifest.host_permissions.includes('https://ceac.state.gov/*'));
 ok('no wildcard host permission', !manifest.host_permissions.some(h => /^https:\/\/\*\/|<all_urls>/.test(h)));
 
+
+// -- the visa-class chip, and the warning that earns it --------------
+/* apply() stamps `_class`. Showing it is the easy half; the half that matters
+   is the mismatch warning, because a C1/D record on a J1 application fills
+   boxes that accept the wrong principal's details without complaint, and a
+   filled field appears in no report. */
+ok('the popup shows the record class', /CLASS_LABEL/.test(popup));
+ok('and warns when the page disagrees',
+   /rep\.pageClass && lastClass && rep\.pageClass !== lastClass/.test(popup));
+/* IT GOES FIRST IN THE REPORT. Below the Filled list it would be read after
+   the damage it is warning about. */
+ok('the warning is rendered before the filled list',
+   popup.indexOf('different visa class') < popup.indexOf("list('Filled'"));
+/* A RECORD WITH NO STAMP MUST NOT BE GUESSED AT. An older record predates
+   `_class` entirely, and inferring it from whichever fields it happens to
+   carry is exactly the wrong instinct - the chip says "not stated" and the
+   mismatch check stands down, because `lastClass` is null. */
+ok('an unstamped record is labelled, not guessed', /visa class not stated/.test(popup));
+/* Cleared BEFORE the early return, so unloading a record cannot leave its
+   class behind for the next report to compare against. */
+ok('the class is reset even when no record is loaded',
+   /lastClass = \(rec && rec\._class\) \|\| null;[\s\S]{0,120}if \(!rec\)/.test(popup));
+
+/* `content` is already read further up, for the auto-continue assertions. */
+ok('the page class is inferred from rules that fired',
+   /classSeen\[kc\]\+\+/.test(content));
+/* Counted on the MATCH, not on the fill: a Crew Visa page whose boxes are
+   all already correct is still a Crew Visa page. */
+ok('and counted before the value is looked up',
+   content.indexOf('classSeen[kc]++') < content.indexOf('const value = valueFor'));
+/* ONE CLASS ONLY, OR NOTHING. Most DS-160 pages belong to no class, and if
+   both sets fired that is a contradiction rather than an answer. */
+ok('one class only, or nothing',
+   /if \(cs\.c1d && !cs\.j1\)[\s\S]{0,120}else if \(cs\.j1 && !cs\.c1d\)/.test(content));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 if (fail) process.exit(1);

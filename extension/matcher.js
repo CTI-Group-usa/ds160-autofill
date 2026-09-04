@@ -928,6 +928,35 @@
       String(rec[b.na] || '').toUpperCase() === 'YES' && b.ids.test(hay));
   }
 
+  /* KEYS THAT EXIST ON ONE VISA CLASS'S PAGES ONLY.
+
+     The popup can say which constants pack a record came from - apply()
+     stamps `_class` - but a label on its own is decoration. The failure worth
+     catching is a record of one class being filled into the other class's
+     application, and that is invisible today: a C1/D record on a J1 form puts
+     the cruise line's U.S. contact and the manning agency into boxes that
+     accept them happily, and nothing reports a filled field.
+
+     So the class is inferred from THE PAGE ITSELF, out of the keys that
+     matched on it. These two sets cannot overlap, because each of these pages
+     exists only because of the visa class: CEAC never shows Crew Visa to an
+     exchange visitor and never shows Student/Exchange Visitor to a
+     crewmember. No URL and no page heading is guessed - only rules that
+     actually fired.
+
+     Matched keys only. The vessel-name and IMO ids are still unknown, so
+     counting unmatched controls would make this depend on a guess. */
+  const CLASS_ONLY = {
+    c1d: ['vesselName', 'vesselImo', 'vesselOwnerCompany', 'vesselOwnerPhone',
+          'servingAboardVessel', 'usedAgency', 'jobTitleAboard', 'agencyName',
+          'agencyContactSurname', 'agencyContactGiven', 'agencyPhone'],
+    j1: ['sevisId', 'programNumber', 'intendToStudy'],
+  };
+
+  function classOfKey(key) {
+    for (const cls in CLASS_ONLY) if (CLASS_ONLY[cls].indexOf(key) >= 0) return cls;
+    return null;
+  }
   function isDoesNotApply(ctl) {
     if (String(ctl.type || '').toLowerCase() !== 'checkbox') return false;
     return /does not apply|do not know|no expiration/i.test(String(ctl.label || '')) ||
@@ -937,7 +966,7 @@
   const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, MONONYM_NA_KEYS,
                 ADDRESS_KEYS, addressHalf,
                 matchKey, datePart, splitDate, isDoesNotApply, isLeftBlank, LEAVE_BLANK,
-                BLANK_WHEN_TICKED,
+                BLANK_WHEN_TICKED, CLASS_ONLY, classOfKey,
                 isForbidden, nameHalf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160Matcher = api;

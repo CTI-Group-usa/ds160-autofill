@@ -653,10 +653,20 @@
        mononym is the single name alone - never "FNU SUROSO". */
     rec.nativeName = n.mononym ? n.surname : (n.given + ' ' + n.surname).trim();
 
+    /* DOCUMENT LINKS. The cell renders empty in Zoho Sheet because it holds a
+       hyperlink rather than text, so xlsx.js attaches both storage forms as
+       `_links` - and the real workbook turned out to store some of them as the
+       cell's own text, hence the fallback. */
     const links = row._links || {};
-    const cell = clean(row['Supporting Letter']);
-    rec.supportingLetterUrl = links['Supporting Letter'] ||
-                              (/^https?:\/\//i.test(cell) ? cell : '');
+    const docUrl = header => {
+      const cell = clean(row[header]);
+      return links[header] || (/^https?:\/\//i.test(cell) ? cell : '');
+    };
+    rec.supportingLetterUrl = docUrl('Supporting Letter');
+    /* J1: column CO. It is the ONLY source of the programme dates - the J1
+       sheet has no arrival or departure column at all - and CEAC demands a full
+       itinerary once specific travel plans are YES. See ds2019.js. */
+    rec.ds2019Url = docUrl('DS-2019');
     for (const [k] of MISSING_FROM_INTAKE) if (!(k in rec)) rec[k] = '';
     rec._raw = row;
     return rec;

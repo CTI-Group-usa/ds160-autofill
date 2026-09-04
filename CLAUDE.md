@@ -107,6 +107,100 @@ them on the record's own NA answer: quiet while greyed out, **loud the moment it
 is not**, which is how their real ids will get read off the page. A static
 `LEAVE_BLANK` entry would have been wrong half the time.
 
+## The DS-2019 parser (`ds2019.js`, 2026-09-04)
+J1 answers *specific travel plans* **YES** - the opposite of C1/D - and CEAC
+then demands a full itinerary. The J1 sheet has **no column for any of it**:
+`When did you arrive in the US?` is 0 of 69 rows filled and `Appointment Date`
+is the interview, not the trip. The dates exist in one place only: the
+participant's Form DS-2019, linked from **column CO**.
+
+### From / To are the itinerary, and here is the evidence
+Item 3 of the form, *Form Covers Period*, gives From and To. Two independent
+documents agree:
+
+| Source | From / arrival | To / departure |
+|---|---|---|
+| the blank DS-2019 sample | 05-25-2026 | 05-24-2027 |
+| the filed DS-160 (JULIANA) | 24 NOVEMBER 2026 | 23 NOVEMBER 2027 |
+
+Both spans are **one year minus a day** - the shape a DS-2019 period has - and
+since the sheet holds no arrival or departure column, the DS-2019 is the only
+place those dates could have come from. So `programFrom` → `arrivalDate` and
+`programTo` → `departureDate`.
+
+Both stay **editable** in the trip block: a participant may enter the U.S. up to
+30 days before the programme starts, and if they do, the arrival date is theirs
+and not the form's.
+
+### Two kinds of extraction, deliberately
+- **The dates are label-anchored**, because only the label says which order they
+  are written in. The form prints `(mm-dd-yyyy)` beside them, and `parseDate`'s
+  default is day-first (the Indonesian convention) - so without the
+  `monthFirst` hint, `05-12-2026` would come out as **5 December instead of 12
+  May**. A test pins exactly that case, because the sample's own dates happen to
+  be unambiguous and would not catch it.
+- **The SEVIS ID and programme number are found by pattern** (`N` + digits,
+  `P-n-nnnnn`). Nothing else on the page is shaped like either, and in the
+  sample the SEVIS ID arrives with **no label at all**.
+
+### It cross-checks the sheet, like `letter.js` does
+Columns CH and CI are typed in by hand *from this document*, so a disagreement
+means one of them is wrong on a sworn application and nothing else here would
+notice. Also caught: a period that **ends before it starts**, which is a misread
+rather than a fact.
+
+One detail worth keeping: **a redacted sample must not report a mismatch.**
+`N00375XXXXX` is a blanked-out id, not a contradiction, and reporting it would
+train the operator to ignore the check.
+
+### What is NOT proven
+That `pdftext.js` can extract anything from a real DS-2019 **PDF**. It returned
+**zero characters** from the CEAC print-out. `parse` takes text and where the
+text comes from is the caller's problem, exactly as with `letter.js`;
+`test/ds2019.test.js` runs end-to-end against a local form if one is present.
+
+The samples are **gitignored** (`*.docx` joined `*.pdf`): the only DS-2019
+available is a third party's and **this repo is public**. The test therefore
+quotes the labels inline rather than committing a fixture - the labels are the
+government's own and stable, which is the part that matters.
+
+## The visa-class banner in the popup (2026-09-04)
+`apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
+above the applicant's name. **That half is decoration.** The half that earns it
+is the mismatch warning:
+
+> **This page belongs to a different visa class.** The applicant loaded here is
+> **C1D**, but this is a **J1** page.
+
+Because *that* is the failure worth catching. A C1/D record on a J1 application
+writes the cruise line's U.S. contact and the manning agency into boxes that
+accept them without complaint, and **a filled field appears in no report**.
+
+### The page's class comes from the rules that fired
+`CLASS_ONLY` in `matcher.js` names the keys that exist on one class's pages
+only - the vessel and manning-agency block for C1/D, SEVIS / programme number /
+intend-to-study for J1 - and `fillPage` counts which sets matched. **No URL and
+no page heading is guessed**, and only *matched* keys count: the vessel-name and
+IMO ids are still unknown, so counting unmatched controls would make the whole
+thing rest on a guess.
+
+Three rules it follows:
+
+- **counted on the match, not the fill.** A Crew Visa page whose boxes are all
+  already correct is still a Crew Visa page.
+- **one class only, or nothing.** Most of the form - Personal, Passport, Family,
+  Address, Security, Sign - belongs to no class at all and must not be labelled;
+  and if both sets fired, that is a contradiction rather than an answer.
+  Verified: Crew Visa → `c1d` (11 keys), Student/Exchange → `j1` (3), Personal 1
+  → **null**.
+- **an unstamped record is never guessed at.** An older record predates
+  `_class`; the chip says *not stated*, and the mismatch check stands down.
+
+`matcher.test.js` asserts the two sets are disjoint - an overlapping key would
+make a page report both classes, which `fillPage` answers with silence, so the
+guard would quietly stop guarding - and that every key named has a rule that can
+actually produce it.
+
 ## Student / Exchange Visitor - J1 only (2026-09-04)
 CEAC shows this page for a J class and never for C1/D, so nothing on it can
 collide with the seafarer side. Labels taken verbatim from the filed sample:
@@ -271,9 +365,9 @@ still to wire, 1 leftover that is a typo of an admin column.
 #### Still to do for J1
 - the Additional Point of Contact block on the Student/Exchange Visitor page -
   blocked on one live J1 Fill report, see below.
-- the DS-2019 parser, for the programme dates (the J1 sheet has no
-  arrival/departure columns; `Appointment Date` is the interview).
-- the two-tab worksheet, and the class banner in the extension popup.
+- feeding the DS-2019 parser: a **Read DS-2019** button in the J1 trip block,
+  mirroring the supporting letter's fetch-through-the-extension path. The
+  parser itself is done - see below.
 
 No build tools, no framework — plain HTML/CSS/JS, same house style as the J1
 Dashboard and the Indonesia Monitoring Dashboard.
