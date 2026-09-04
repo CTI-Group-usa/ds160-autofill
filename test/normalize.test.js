@@ -736,7 +736,24 @@ eq('the junior-high course comes from the filed convention',
    the WAF has blocked this agent three times over bursts of them - the same
    arrangement languageSpoken and firstCountryVisited already use. */
 eq('the other two are listed', j1edu._eduMore.length, 2);
+/* THE MESSAGE IS AN INSTRUCTION WITH A PROMISE, not a chore. It used to say
+   "add these by hand", which stopped being true when the filler learned to
+   fill repeater rows: press Add Another, press Fill, done. Still a warning
+   rather than silence, because a page showing one school out of three looks
+   finished and Next is right there. */
 has('and validate names them', D.validate(j1edu).warnings, 'eduName', 'Add Another');
+has('and promises the filler does it', D.validate(j1edu).warnings, 'eduName', 'puts them in order');
+none('it no longer says to type them by hand',
+     D.validate(j1edu).warnings.filter(w => /by hand/.test(w.msg)), 'eduName');
+
+/* THE STRUCTURED LIST IS WHAT THE REPEATER READS, in order, one row each. */
+eq('the list carries all three', j1edu._eduList.length, 3);
+eq('in chronological order',
+   j1edu._eduList.map(b => b.name).join(' | '),
+   'SMP NEGERI 2 SERIRIT | SMK NEGERI 1 SERIRIT | OVERSEAS TRAINING CENTER');
+eq('each with its own course',
+   j1edu._eduList.map(b => b.course).join(' | '),
+   'JUNIOR HIGH SCHOOL | PERHOTELAN | ');
 has('quoting the schools', D.validate(j1edu).warnings, 'eduName', 'SMK NEGERI 1 SERIRIT');
 
 /* THE C1/D PATH IS UNCHANGED: BI names one block, the others are not filled,
@@ -751,6 +768,12 @@ eq('the C1/D template does ask', c1dedu._asksEducationLevel, true);
 eq('and BI picks the block', c1dedu.eduName, 'SMK NEGERI 3');
 eq('the other block is not filled', c1dedu._eduMore.length, 0);
 none('and nothing is handed back', D.validate(c1dedu).warnings, 'eduName');
+/* ON C1/D THE LIST HOLDS EXACTLY ONE. Column BI names the block to fill and
+   the user's rule is that the others are not filled - so pressing Add Another
+   there leaves the new row alone, which is the honest answer: nothing in the
+   sheet says to swear to a second institution. */
+eq('C1/D has one entry only', c1dedu._eduList.length, 1);
+eq('and it is the chosen block', c1dedu._eduList[0].name, 'SMK NEGERI 3');
 
 /* BI PRESENT BUT UNREADABLE, with both candidates named, is still not ours to
    guess - and the message now names the HEADER. It said "column BI", which on

@@ -124,17 +124,118 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolCourseOfStudy" size="40"></td></tr>
     <tr><td>Date of Attendance From</td><td>
       <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolFromDay">
-        <option value="">-</option><option>28</option></select>
+        <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
       <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolFromMonth">
-        <option value="">-</option><option value="AUG">AUG</option></select>
+        <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
       <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolFromYear" size="4">
     </td></tr>
     <tr><td>Date of Attendance To</td><td>
       <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolToDay">
-        <option value="">-</option><option>03</option><option>06</option></select>
+        <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
       <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_ddlSchoolToMonth">
-        <option value="">-</option><option value="APR">APR</option><option value="AUG">AUG</option></select>
+        <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
       <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl00_tbxSchoolToYear" size="4">
+    </td></tr>
+  </table>
+</fieldset>
+<!-- TWO MORE REPEATER ROWS, and they are the point of this addition.
+
+     CEAC's education block is an ASP.NET DataList: only ctl00 is on the page
+     until the operator presses "Add Another", which is a postback and is THEIR
+     click, not ours. Then ctl01 appears, and the next Fill press has to fill it
+     with the SECOND school - not the first one again, which is what every rule
+     here did before, because they match `SchoolName` without a row index.
+
+     The J1 template names three schools for all 69 of its rows - junior high,
+     senior high/vocational, college/university - so this is the normal case,
+     not an edge one.
+
+     ctl02 is here as well on purpose. A DataList with separator templates
+     numbers its DATA rows ctl00, ctl02, ctl04, so the row's POSITION is what
+     decides which school it gets, never the number in its id. Filling the
+     college into the senior-high row would be silent and wrong on a sworn
+     form. Do not renumber these to be consecutive; the gap is the test. -->
+<fieldset>
+  <legend>Educational Institution: Date of Attendance</legend>
+  <table>
+    <tr><td>Name of Institution</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxSchoolName" size="40"></td></tr>
+    <tr><td>Institution Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxSchoolAddr1" size="40" maxlength="40"></td></tr>
+    <tr><td>Institution Street Address (Line 2) <i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxSchoolAddr2" size="40" maxlength="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxSchoolCity"></td></tr>
+    <!-- These two push the block past blockLabel()'s size cap, which is what
+         made section '' on the live page and left every must/not guard inert. -->
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxEDUC_INST_ADDR_STATE">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_cbxEDUC_INST_ADDR_STATE_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_cbxEDUC_INST_ADDR_STATE_NA">Does Not Apply</label></td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxEDUC_INST_POSTAL_CD">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_cbxEDUC_INST_POSTAL_CD_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_cbxEDUC_INST_POSTAL_CD_NA">Does Not Apply</label></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_ddlSchoolCountry">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+    <tr><td>Course of Study</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxSchoolCourseOfStudy" size="40"></td></tr>
+    <tr><td>Date of Attendance From</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_ddlSchoolFromDay">
+        <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_ddlSchoolFromMonth">
+        <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxSchoolFromYear" size="4">
+    </td></tr>
+    <tr><td>Date of Attendance To</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_ddlSchoolToDay">
+        <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_ddlSchoolToMonth">
+        <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl01_tbxSchoolToYear" size="4">
+    </td></tr>
+  </table>
+</fieldset>
+<fieldset>
+  <legend>Educational Institution: Date of Attendance</legend>
+  <table>
+    <tr><td>Name of Institution</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxSchoolName" size="40"></td></tr>
+    <tr><td>Institution Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxSchoolAddr1" size="40" maxlength="40"></td></tr>
+    <tr><td>Institution Street Address (Line 2) <i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxSchoolAddr2" size="40" maxlength="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxSchoolCity"></td></tr>
+    <!-- These two push the block past blockLabel()'s size cap, which is what
+         made section '' on the live page and left every must/not guard inert. -->
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxEDUC_INST_ADDR_STATE">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_cbxEDUC_INST_ADDR_STATE_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_cbxEDUC_INST_ADDR_STATE_NA">Does Not Apply</label></td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxEDUC_INST_POSTAL_CD">
+            <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_cbxEDUC_INST_POSTAL_CD_NA">
+            <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_cbxEDUC_INST_POSTAL_CD_NA">Does Not Apply</label></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_ddlSchoolCountry">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+    <tr><td>Course of Study</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxSchoolCourseOfStudy" size="40"></td></tr>
+    <tr><td>Date of Attendance From</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_ddlSchoolFromDay">
+        <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_ddlSchoolFromMonth">
+        <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxSchoolFromYear" size="4">
+    </td></tr>
+    <tr><td>Date of Attendance To</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_ddlSchoolToDay">
+        <option value="">-</option><option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option><option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option><option>17</option><option>18</option><option>19</option><option>20</option><option>21</option><option>22</option><option>23</option><option>24</option><option>25</option><option>26</option><option>27</option><option>28</option><option>29</option><option>30</option><option>31</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_ddlSchoolToMonth">
+        <option value="">-</option><option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option><option value="APR">APR</option><option value="MAY">MAY</option><option value="JUN">JUN</option><option value="JUL">JUL</option><option value="AUG">AUG</option><option value="SEP">SEP</option><option value="OCT">OCT</option><option value="NOV">NOV</option><option value="DEC">DEC</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEduc_ctl02_tbxSchoolToYear" size="4">
     </td></tr>
   </table>
 </fieldset>

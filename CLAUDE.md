@@ -1367,6 +1367,60 @@ Both name the block or the header now. This file already says mapping is by
 header **text** precisely because positions differ between the templates; a
 letter in a user-facing string quietly contradicts that.
 
+### REPEATER ROWS: the filler fills all three schools (2026-09-04)
+The message then said *"add these by hand"*, and the user's answer was the
+right one: the information is already uploaded, so why retype it. CEAC's
+education block is an ASP.NET DataList - one visible row plus **Add Another** -
+and the J1 template names three schools for **all 69 of its rows**, so this was
+the normal case, not an edge one.
+
+**The pacing is the operator's own click, which is why this adds no risk.**
+They press *Add Another* - that click **is** the postback - the next row
+appears, and the next Fill press fills it. Nothing here puts extra traffic on
+CEAC: it is the same one-postback-per-press discipline the rest of the filler
+follows, and the postback is theirs, not ours.
+
+| | |
+|---|---|
+| `REPEATED` in `matcher.js` | key → `{ list, field }`. A key listed there reads `rec[list][ordinal][field]` instead of `rec[key]`. |
+| `_eduList` in `normalize.js` | the schools in order, each with name, address, course, from, to. |
+| `repeaterOrdinals()` in `content.js` | which row of a repeater each control belongs to. |
+
+**THE ROW'S POSITION, NEVER THE NUMBER IN ITS ID.** ASP.NET numbers DataList
+rows `ctl00, ctl01, ctl02` - but a repeater with **separator templates** numbers
+its *data* rows `ctl00, ctl02, ctl04`. Using the raw number as a list index
+would then put the college in the senior-high row: filled, plausible, wrong on
+a sworn form, and invisible. So the rows present are collected per repeater,
+sorted, and their **ordinal position** is used. That is correct whatever the
+numbering and needs no guess about how CEAC numbers anything. A browser check
+deletes `ctl01` to reproduce the gap and asserts `ctl02` gets the *second*
+school.
+
+**A row with no entry is left alone** - the right answer for an *Add Another*
+pressed one time too many.
+
+**On C1/D `_eduList` holds exactly one entry.** Column BI names the block to
+fill and the user's rule is that the others are not; pressing Add Another there
+leaves the new row alone, because nothing in the sheet says to swear to a second
+institution.
+
+`test/fake-prev-work-education.html` carries **three** education rows -
+`ctl00`, `ctl01`, `ctl02` - and its date dropdowns got real ranges at the same
+time (they had one option each, the trap already recorded for this page). Do not
+renumber the rows to be consecutive: the gap between 01 and 02 is not tidiness,
+it is what the ordinal test needs.
+
+Verified in a browser: three rows get their own school, course and dates; C1/D's
+single entry fills row 1 and leaves 2 and 3 empty; a gapped repeater puts the
+senior high in `ctl02`; **zero postbacks** throughout. The cross-fixture sweep
+(`test/sweep-fixtures.html`) confirms all twenty-one other pages are unchanged.
+
+**The same mechanism now fits three more places that are still "first only":**
+languages spoken, countries visited in the last five years, and the second
+Additional Point of Contact. Each needs its list published the way `_eduList`
+is, plus - for the point of contact - the repeater ids that only a live Fill
+report can give.
+
 `attendedEducation` = YES because CEAC's own help counts *any* secondary school
 attended for any length of time, and every seafarer CTI files has at least an SMA
 or SMK. Answering No would hide the block entirely.

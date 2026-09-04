@@ -648,9 +648,22 @@
        BJ-BN, so the string would have been wrong for half the rows. The block
        name is true on both templates; the letters are the part that lies. */
     rec._eduSource = first ? first.label : '';
-    /* The ones CEAC still needs, for validate() to hand back. Names only: the
-       operator is typing them into an Add Another block, and the addresses and
-       dates are in the applicant's own detail view beside them. */
+    /* THE WHOLE LIST, IN ORDER, for the repeater to read row by row.
+       CEAC's education block is an ASP.NET DataList: one visible row plus an
+       "Add Another" button. The operator presses Add Another - that click is
+       the postback - the next row appears, and the next Fill press fills it
+       from `_eduList[1]`, then `[2]`. See REPEATED in matcher.js.
+
+       On C1/D this holds exactly ONE entry: column BI names the block to fill
+       and the user's rule is that the others are not filled. Pressing Add
+       Another there leaves the new row alone, which is the honest answer -
+       nothing in the sheet says to swear to a second institution. */
+    rec._eduList = chosenBlocks.map(b => ({
+      label: b.label, name: b.name, address: b.address,
+      course: b.course, from: b.from, to: b.to,
+    }));
+    /* Names only, for the message. The addresses and dates are in the
+       applicant's detail view beside it. */
     rec._eduMore = chosenBlocks.slice(1).map(b => b.label + ': ' + b.name);
 
     /* "Have you traveled to any countries/regions within the last five years?"
@@ -963,15 +976,20 @@
                      'CEAC asks for any institution at secondary level or above');
       }
     }
-    /* THE REST OF THE SCHOOLS. CEAC's block is a repeater and the J1 template
-       carries three, so the ones after the first are handed back rather than
-       filled - each "Add Another" is a postback, and the WAF has blocked this
-       agent three times over bursts of them. Same arrangement as
-       `languageSpoken` and `firstCountryVisited`. */
+    /* THE REST OF THE SCHOOLS - and this used to say "add these by hand",
+       which stopped being true on 2026-09-04. CEAC's block is an ASP.NET
+       DataList, so only the first row is on the page until the operator
+       presses "Add Another"; the filler now fills whatever rows ARE there,
+       matching each to its school by position. So this is an instruction with
+       a promise, not a chore: press Add Another, press Fill, done.
+
+       Still a warning rather than silence, because a page showing one school
+       out of three looks finished, and Next is right there. */
     if ((rec._eduMore || []).length)
-      W('eduName', 'Only the first school is filled (' + rec.eduName + '). Add ' +
-                   (rec._eduMore.length === 1 ? 'this one' : 'these') +
-                   ' by hand with "Add Another": ' + rec._eduMore.join('; '));
+      W('eduName', rec._eduList.length + ' schools, and CEAC shows one row at a ' +
+                   'time. Press "Add Another" and Fill again for each - the filler ' +
+                   'puts them in order. After ' + rec.eduName + ' comes: ' +
+                   rec._eduMore.join('; '));
     /* CEAC requires both of these on the Work/Education page, and both come
        from columns AX and AV. A blank has to be visible rather than silent. */
     if (!rec.employerStart)

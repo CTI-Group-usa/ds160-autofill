@@ -957,6 +957,34 @@
     for (const cls in CLASS_ONLY) if (CLASS_ONLY[cls].indexOf(key) >= 0) return cls;
     return null;
   }
+  /* CONTROLS THAT REPEAT, AND THE LIST BEHIND THEM.
+
+     CEAC renders its education block as an ASP.NET DataList - one visible row
+     plus an "Add Another" button - and the J1 template names THREE schools for
+     every one of its 69 rows: junior high, senior high/vocational, and
+     college/university. Filling only the first meant the operator retyped two
+     schools whose details are already in the sheet.
+
+     The pacing is the operator's own click. They press "Add Another" - which
+     is the postback - the next row appears, and the next Fill press fills it.
+     Nothing here adds traffic to CEAC: the same one-postback-per-press
+     discipline the rest of the filler already follows, and the postback is
+     theirs, not ours.
+
+     A key listed here reads its value from `rec[list][ordinal][field]` instead
+     of `rec[key]`, where the ordinal is the row's POSITION on the page - see
+     repeaterOrdinals() in content.js for why position and not the number in
+     the id. When the list has no entry for that row the box is left alone,
+     which is the right answer for an "Add Another" pressed one time too
+     many. */
+  const REPEATED = {
+    eduName:    { list: '_eduList', field: 'name' },
+    eduAddress: { list: '_eduList', field: 'address' },
+    eduCourse:  { list: '_eduList', field: 'course' },
+    eduFrom:    { list: '_eduList', field: 'from' },
+    eduTo:      { list: '_eduList', field: 'to' },
+  };
+
   function isDoesNotApply(ctl) {
     if (String(ctl.type || '').toLowerCase() !== 'checkbox') return false;
     return /does not apply|do not know|no expiration/i.test(String(ctl.label || '')) ||
@@ -966,7 +994,7 @@
   const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, MONONYM_NA_KEYS,
                 ADDRESS_KEYS, addressHalf,
                 matchKey, datePart, splitDate, isDoesNotApply, isLeftBlank, LEAVE_BLANK,
-                BLANK_WHEN_TICKED, CLASS_ONLY, classOfKey,
+                BLANK_WHEN_TICKED, CLASS_ONLY, classOfKey, REPEATED,
                 isForbidden, nameHalf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160Matcher = api;

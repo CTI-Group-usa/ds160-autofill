@@ -1125,5 +1125,38 @@ const ruleKeys = new Set(M.RULES.map(r => r.key));
 const unknown = [].concat(M.CLASS_ONLY.c1d, M.CLASS_ONLY.j1).filter(k => !ruleKeys.has(k));
 eq('every class-only key has a rule', unknown.join(',') || 'none', 'none');
 
+
+/* -- controls that repeat, and the list behind them ------------------
+   CEAC renders its education block as an ASP.NET DataList: one visible row
+   plus an "Add Another" button. The J1 template names THREE schools for all 69
+   of its rows, so filling only the first meant retyping two schools whose
+   details are already in the sheet.
+
+   The pacing is the operator's own click - they press Add Another, which IS
+   the postback, and the next Fill press fills the row that appeared. Nothing
+   here adds traffic to CEAC. */
+eq('the school name reads its row',   M.REPEATED.eduName.list, '_eduList');
+eq('and knows which field',           M.REPEATED.eduName.field, 'name');
+eq('the address too',                 M.REPEATED.eduAddress.field, 'address');
+eq('the course',                      M.REPEATED.eduCourse.field, 'course');
+eq('and both dates',
+   M.REPEATED.eduFrom.field + '/' + M.REPEATED.eduTo.field, 'from/to');
+/* Every repeated key must name a field the list actually carries, or the row
+   silently fills with undefined. */
+const FIELDS = ['name', 'address', 'course', 'from', 'to'];
+const strayField = Object.keys(M.REPEATED).filter(k => FIELDS.indexOf(M.REPEATED[k].field) < 0);
+eq('no repeated key names a field the list lacks', strayField.join(',') || 'none', 'none');
+/* And it must be a key some rule can produce, or nothing ever reaches it. */
+const ruleKeys2 = new Set(M.RULES.map(r => r.key));
+const strayKey = Object.keys(M.REPEATED).filter(k => !ruleKeys2.has(k));
+eq('every repeated key has a rule', strayKey.join(',') || 'none', 'none');
+/* THE ROW-INDEX-FREE RULES ARE THE WHOLE REASON THIS EXISTS. `eduName` matches
+   `SchoolName` with no row number in it, so on a page with three rows it
+   matches all three - and before REPEATED it wrote the same school into every
+   one of them. */
+eq('the rule matches any row', key('dtlPrevEduc_ctl00_tbxSchoolName'), 'eduName');
+eq('including the second',     key('dtlPrevEduc_ctl01_tbxSchoolName'), 'eduName');
+eq('and the third',            key('dtlPrevEduc_ctl02_tbxSchoolName'), 'eduName');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

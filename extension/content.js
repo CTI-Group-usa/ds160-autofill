@@ -355,8 +355,50 @@
   }
 
   // -- the fill pass --------------------------------------------------
-  function valueFor(rec, key, ctl) {
+  /* THE ROW'S POSITION, NOT THE NUMBER IN ITS ID.
+
+     ASP.NET numbers DataList rows ctl00, ctl01, ctl02 ... but a repeater with
+     separator templates numbers the DATA rows ctl00, ctl02, ctl04. Using the
+     raw number as a list index would then put the college in the senior-high
+     row - filled, plausible and wrong on a sworn form, which is the worst
+     thing this project produces.
+
+     So the rows actually present are collected per repeater, sorted, and their
+     ordinal position is used. That is correct whatever the numbering, and it
+     needs no guess about how CEAC numbers anything. */
+  function repeaterOrdinals(all) {
+    const seen = {};
+    for (const c of all) {
+      const m = /^(.*)_ctl(\d+)_/.exec(String(c.id || ''));
+      if (!m) continue;
+      (seen[m[1]] = seen[m[1]] || {})[m[2]] = true;
+    }
+    const ord = {};
+    for (const name in seen) {
+      Object.keys(seen[name])
+        .sort((a, b) => Number(a) - Number(b))
+        .forEach((n, i) => { ord[name + '_ctl' + n] = i; });
+    }
+    /* id -> ordinal, so valueFor needs nothing but the control it is filling. */
+    const byId = {};
+    for (const c of all) {
+      const m = /^(.*_ctl\d+)_/.exec(String(c.id || ''));
+      if (m && ord[m[1]] !== undefined) byId[c.id] = ord[m[1]];
+    }
+    return byId;
+  }
+
+  function valueFor(rec, key, ctl, ordinals) {
     let v = rec[key];
+    /* A REPEATED KEY READS ITS ROW, not a single record field. The list is
+       resolved FIRST so everything below - the date split, the address wrap -
+       works on the value that is actually going into this row. */
+    const rep = M.REPEATED && M.REPEATED[key];
+    if (rep) {
+      const i = (ordinals && ordinals[ctl.id] !== undefined) ? ordinals[ctl.id] : 0;
+      const list = rec[rep.list] || [];
+      v = list[i] ? list[i][rep.field] : '';
+    }
     if (v === undefined || v === null || v === '') return '';
     if (M.KIND[key] === 'date') {
       const parts = M.splitDate(v);
@@ -397,6 +439,8 @@
                         that actually fired - see CLASS_ONLY in matcher.js. */
                      classSeen: { c1d: 0, j1: 0 }, pageClass: null };
     const all = controls();
+    /* Which row of a repeater each control belongs to, by position. */
+    const ordinals = repeaterOrdinals(all);
 
     // Radios sharing a name are one logical question.
     const radioGroups = {};
@@ -434,7 +478,7 @@
          are all already correct is still a Crew Visa page. */
       const kc = M.classOfKey && M.classOfKey(m.key);
       if (kc && report.classSeen[kc] !== undefined) report.classSeen[kc]++;
-      const value = valueFor(rec, m.key, c);
+      const value = valueFor(rec, m.key, c, ordinals);
       if (!value) {
         /* A FIELD THE RECORD DELIBERATELY LEAVES EMPTY IS NOT A GAP. CEAC
            greys out the Length of Stay number box when the period is LESS
