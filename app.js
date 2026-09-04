@@ -15,7 +15,7 @@
      in the loader saves the "which file was it?" round trip. */
   const CLASSES = [
     { id: 'c1d', label: 'C1/D',
-      sub: 'Seafarers &middot; crewmember in transit',
+      sub: 'Seafarers',
       sheet: 'Visa Registration Log', worksheet: 'VISA APPLICATIONS' },
     { id: 'j1', label: 'J1',
       sub: 'Exchange visitors',
