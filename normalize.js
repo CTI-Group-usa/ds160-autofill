@@ -128,6 +128,29 @@
      invalid on a live page - fifteen digits, within range, refused for the
      plus alone. So no phone value this file produces carries one, and neither
      does any phone constant. */
+  /* MONTHLY SALARY: THE SHEET WRITES A CURRENCY, CEAC WANTS A NUMBER.
+     Every one of the 69 rows in the J1 export reads like "4200000.00 IDR",
+     and CEAC's Monthly Income in Local Currency box takes digits - the
+     currency is implied by the question. So strip the code and the decimal
+     fraction and keep the amount.
+
+     Separators are the awkward part: Indonesian writes 4.200.000,00 while
+     this export writes 4200000.00, and "." means opposite things in the two.
+     A trailing group of ONE OR TWO digits after a separator is a fraction and
+     is dropped; three digits is a thousands group and is kept. Then every
+     remaining separator goes.
+
+     ZERO IS NOT AN AMOUNT. Fifteen of those 69 rows hold 0.00 IDR, which is
+     the sheet saying "no salary" - the same answer as an empty cell, and the
+     derivation below reads it that way. Returning '0' would type a zero
+     income onto a sworn form. */
+  function normMoney(raw) {
+    let t = clean(raw).replace(/[^0-9.,]/g, '');
+    t = t.replace(/[.,](\d{1,2})$/, '');
+    t = t.replace(/[.,]/g, '');
+    if (!/^\d+$/.test(t)) return '';
+    return String(Number(t)) === '0' ? '' : String(Number(t));
+  }
   const PHONE_DIGITS = /[^0-9]/g;
 
   /* Third-party numbers keep the sheet's own digits. `normPhone` below is
@@ -282,7 +305,7 @@
     'National Identification Number (KTP)':                          ['nationalId', clean],
     'U.S. Social Security Number (if any)':                          ['ssn', clean],
     'U.S. Taxpayer ID Number (if any)':                              ['taxId', clean],
-    'Monthly Salary':                                                ['monthlyIncome', clean],
+    'Monthly Salary':                                                ['monthlyIncome', normMoney],
     'Provide a list of languages you speak':                         ['languages', upper],
     'SEVIS ID':                                                      ['sevisId', upper],
     'Program Number':                                                ['programNumber', upper],
@@ -543,6 +566,25 @@
        beside Given Names. Typing the literal "FNU" there was wrong: CEAC
        prints those letters BECAUSE the box is ticked. The applicant's own
        Given Names on Personal 1 has no such box, so `givenNames` keeps FNU. */
+    /* SSN, U.S. TAXPAYER ID AND MONTHLY SALARY - DERIVED, AND THE DERIVATION
+       DOES NOT NEED TO KNOW THE VISA CLASS. The C1/D sheet has no columns for
+       these three, so every application ticks Does Not Apply; the J1 sheet
+       collects all three ("if any" - columns K, L and AY). The answer follows
+       from whether the cell holds an amount, which is the same question in
+       both classes, so there is no branch on `_class` here and none is wanted.
+
+       ONLY THE POSITIVE CASE IS ASSERTED. 'NO' means \"leave this box
+       unticked\" and blocks the pack's default, because apply() treats '' as
+       unset and would tick over it. An empty cell leaves the key alone, so
+       each pack's own constant still ticks it and the panel switch stays
+       live - a toggle that silently does nothing is worse than no toggle.
+
+       This is the wrong-fill shape that made one app with two packs the
+       right answer: a ticked box over a number the seafarer gave is a wrong
+       sworn answer, and a ticked box is not a gap, so nothing would notice. */
+    if (rec.ssn)           rec.ssnNA = 'NO';
+    if (rec.taxId)         rec.taxIdNA = 'NO';
+    if (rec.monthlyIncome) rec.monthlyIncomeNA = 'NO';
     rec.fatherGivenNA = splitName(rec.fatherName).mononym ? 'YES' : '';
     rec.motherGivenNA = splitName(rec.motherName).mononym ? 'YES' : '';
     /* CEAC greys the number box out for this option, so writing a count
@@ -610,6 +652,20 @@
     if (rawDob && rawDob.ambiguous)
       W('dob', 'Ambiguous date format (day and month both 12 or less) - confirm against the passport');
 
+    /* A PARENT BORN AFTER THE APPLICANT IS A TYPO, NOT A DATE. Found in the
+       J1 export: one row gives the mother 2026-05-15 against an applicant born
+       2006-11-14. It parses cleanly, so nothing else catches it - it would go
+       onto a sworn form and be read at the counter. One row in 69, and the
+       check is four lines. */
+    for (const [k, who] of [['fatherDob', "Father's"], ['motherDob', "Mother's"]]) {
+      const p = toJs(parseDate(rec[k]));
+      if (!p) continue;
+      if (p > today) W(k, who + ' date of birth is in the future (' + rec[k] + ')');
+      else if (dob && p >= dob)
+        W(k, who + ' date of birth (' + rec[k] + ') is not before the applicant, born (' +
+             rec.dob + ') - check the intake cell');
+    }
+
     const iss = toJs(parseDate(rec.passportIssued));
     const exp = toJs(parseDate(rec.passportExpiry));
     if (rec.passportIssued && !iss) E('passportIssued', 'Passport issue date could not be read');
@@ -657,6 +713,33 @@
         E(k, what + ' is ' + v.length + ' digits (' + v +
              ') - CEAC accepts 5 to 15, and refuses the page otherwise');
     }
+    /* AN AMOUNT TOO SMALL TO BE A MONTHLY WAGE. Six of the 69 rows in the J1
+       export hold 1.5, 2, 200, 3300, 25000 and 40000 - against a median of
+       about 3,000,000 IDR. Whether 40000 is a mistyped 40,000,000 or a real
+       figure in some other unit is not ours to decide, so it is filled and
+       named rather than corrected. (0.00 is different: normMoney treats it as
+       no salary at all, which ticks Does Not Apply.) */
+    if (rec.monthlyIncome && Number(rec.monthlyIncome) < 100000)
+      W('monthlyIncome', 'Monthly salary reads ' + rec.monthlyIncome + ' in local currency - ' +
+                         'too small for a monthly wage in IDR. Check the intake cell for a ' +
+                         'missing thousand or a different unit.');
+
+    /* THE TOOL CANNOT FILL THESE YET, AND SAYING SO BEATS FAILING QUIETLY.
+       CEAC splits the SSN across three boxes and no live J1 Fill report has
+       named their ids, so no rule has been written - guessing CEAC ids has
+       never once worked on this project. The derivation above already leaves
+       the Does Not Apply box CLEAR when a number is present, which is the
+       right way round: a visible gap on the page, not a ticked box swearing
+       the participant has no SSN. Every row of the export has both columns
+       empty, so this fires for nobody today. */
+    for (const [k, what] of [['ssn', 'A U.S. Social Security Number'],
+                             ['taxId', 'A U.S. Taxpayer ID Number']]) {
+      if (!rec[k]) continue;
+      W(k, what + ' is in the sheet (' + rec[k] + ') but the DS-160 box ids for it ' +
+           'are not known yet - type it into CEAC by hand, then send the Fill report ' +
+           'so the rule can be written.');
+    }
+
     if (rec.phone && /^[0-9]+$/.test(rec.phone) && !/^62[0-9]{8,12}$/.test(rec.phone))
       W('phone', 'Phone number does not look like a valid Indonesian number (' + rec.phone +
                  ') - check the intake cell for a stray digit or two numbers in one cell');

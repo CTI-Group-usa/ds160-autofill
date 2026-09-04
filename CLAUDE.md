@@ -45,16 +45,82 @@ twice.
 `use('j1')` selects; there is **no default and `values()` throws without one**,
 because a silent fallback is exactly the failure this prevents:
 
-| C1/D | J1 |
-|---|---|
-| `ssnNA` ticks *Does Not Apply* | column K collects an SSN |
-| `taxIdNA` ticks | column L collects a tax ID |
-| `monthlyIncomeNA` ticks | column AY collects a salary |
+Each pack carries a block that describes **the wrong principal entirely** - the
+vessel owner, the manning agency, the cruise line's U.S. contact - and those must
+not cross. That is what the split is for.
 
-Leaking the C1/D pack onto a J1 record would tick those boxes **over numbers the
-sheet actually holds** - a wrong sworn answer, and invisible, because a ticked
-box is not a gap. Those three are therefore **derived** for J1, not constant:
-filled when the column has a value, ticked when it does not.
+The SSN, tax ID and monthly salary **used to be the headline reason** and are no
+longer, because the fix moved somewhere better - see below.
+
+#### SSN / tax ID / monthly salary: derived, and the derivation needs no class
+| | C1/D | J1 |
+|---|---|---|
+| SSN | no column | **column K**, `(if any)` |
+| U.S. Taxpayer ID | no column | **column L** |
+| Monthly Salary | no column | **column AY** |
+
+The original arrangement ticked *Does Not Apply* for all three in the C1/D pack
+and omitted them from the J1 pack, so **leaking one pack onto the other class
+would tick a box over a number the sheet actually holds** - a wrong sworn answer,
+invisible, because a ticked box is not a gap and appears in no report.
+
+That is now fixed at the source instead of by keeping the packs apart:
+
+- **`normalize.js` asserts only the positive case.** `if (rec.ssn) rec.ssnNA =
+  'NO'`, and the same for the other two. The answer follows from whether the cell
+  holds an amount, which is the **same question in both classes** - so there is
+  no branch on `_class` here and none is wanted.
+- **`'NO'`, not `''`.** `apply()` reads `''` as unset and would tick straight over
+  it; `'NO'` blocks the pack's default and `setCheckbox` leaves the box clear.
+- **An empty cell leaves the key alone**, so each pack's own constant still ticks
+  it and the panel switch stays live. A toggle that silently does nothing is
+  worse than no toggle.
+- **Both packs now carry the tick as their default**, which is the common answer:
+  all 69 rows of the J1 export have K and L empty, and 15 of them hold `0.00 IDR`
+  in AY. `constants.test.js` asserts the leak case with the **wrong pack
+  deliberately active** - the salary and the SSN both survive it.
+
+**`normMoney` - the sheet writes a currency, CEAC wants a number.** Every AY value
+reads `4200000.00 IDR`. Separators are the trap: this export writes `4200000.00`
+while Indonesian writes `4.200.000,00`, and `.` means opposite things in the two.
+A trailing group of **one or two** digits after a separator is a fraction and is
+dropped; three digits is a thousands group and is kept.
+
+**`0.00 IDR` is not an amount** - it is the sheet saying there is no salary, the
+same answer as an empty cell, so `normMoney` returns `''` and the box gets ticked.
+Passing `'0'` through would type a zero income onto a sworn form. Six further rows
+hold 1.5, 2, 200, 3300, 25000 and 40000 against a median near 3,000,000, so
+`validate()` **names them and fills them anyway** - whether 40000 is a mistyped
+40,000,000 is not ours to decide.
+
+**No rule fills the SSN or tax ID boxes yet, on purpose.** CEAC splits the SSN
+across three boxes and no live J1 Fill has named their ids; guessing CEAC ids has
+never once worked here. The derivation leaves the tick **clear** when a number
+exists, which is the right way round - a visible gap on the page, not a box
+swearing the participant has no SSN - and `validate()` says so in words. It fires
+for nobody today.
+
+**`isLeftBlank(ctl, rec)` took a second argument for this.** With the tick on,
+CEAC greys those four boxes out and all four were landing in *Not recognised* on
+every C1/D Fill, burying the real gaps. `BLANK_WHEN_TICKED` in `matcher.js` keys
+them on the record's own NA answer: quiet while greyed out, **loud the moment it
+is not**, which is how their real ids will get read off the page. A static
+`LEAVE_BLANK` entry would have been wrong half the time.
+
+#### A filed print-out is one application, not the rule
+The J1 sample (I KETUT JULIANA) is **row 22 of the export** - the KTP matches - and
+the two disagree:
+
+| | Sheet | What was filed |
+|---|---|---|
+| Present Employer or School | `Grand Hyatt Bali` (AU) | `OVERSEAS TRAINING CENTER BALI` (**BS**, his college) |
+| Primary Occupation | `Daily Worker` (AZ) | `STUDENT` |
+| Monthly Salary | `3600000.00 IDR` (AY) | **DOES NOT APPLY** |
+
+Whoever filed it framed him as a **student**, not an employee, and the salary tick
+follows from that. Most rows are not students - AZ holds Cook Helper, Butler,
+Internship - so this is one case, not a rule, and **the two readings put different
+answers in the same boxes.** It needs the user's decision, not an inference.
 
 `apply()` also stamps `rec._class`, so the extension popup can say which pack a
 record came from. That matters because a C1/D record on a J1 application fills
@@ -120,7 +186,6 @@ still to wire, 1 leftover that is a typo of an admin column.
   done. No separate trial is needed for that.
 - the DS-2019 parser, for the programme dates (the J1 sheet has no
   arrival/departure columns; `Appointment Date` is the interview).
-- the derived SSN / tax ID / salary logic.
 - the two-tab worksheet, and the class banner in the extension popup.
 
 No build tools, no framework — plain HTML/CSS/JS, same house style as the J1

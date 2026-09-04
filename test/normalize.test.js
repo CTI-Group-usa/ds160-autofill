@@ -538,5 +538,71 @@ const looseStay = D.toRecord({
 eq('a non-date transform is not called unreadable',
    looseStay._unreadable.filter(u => u.key === 'stayUnit').length, 0);
 
+
+/* -- monthly salary: a currency string becomes a number --------------
+   Every one of the 69 rows in the J1 export reads "4200000.00 IDR", and
+   CEAC's Monthly Income in Local Currency box takes digits - the currency is
+   implied by the question. Separators are the trap: this export writes
+   4200000.00 while Indonesian writes 4.200.000,00, and "." means opposite
+   things in the two. A trailing one-or-two-digit group is a fraction and goes;
+   three digits is a thousands group and stays. */
+eq('currency suffix stripped',   D.toRecord({ 'Monthly Salary': '4200000.00 IDR' }).monthlyIncome, '4200000');
+eq('indonesian separators',      D.toRecord({ 'Monthly Salary': '4.200.000,00' }).monthlyIncome, '4200000');
+eq('anglo separators',           D.toRecord({ 'Monthly Salary': '4,200,000.00' }).monthlyIncome, '4200000');
+eq('no fraction at all',         D.toRecord({ 'Monthly Salary': '35000000 IDR' }).monthlyIncome, '35000000');
+eq('a currency prefix',          D.toRecord({ 'Monthly Salary': 'Rp 3.500.000' }).monthlyIncome, '3500000');
+eq('words are not an amount',    D.toRecord({ 'Monthly Salary': 'n/a' }).monthlyIncome, '');
+/* ZERO IS NOT AN AMOUNT. Fifteen of the 69 rows hold 0.00 IDR, which is the
+   sheet saying there is no salary - the same answer as an empty cell. Passing
+   '0' through would type a zero income onto a sworn form instead of ticking
+   the box CEAC provides for exactly this. */
+eq('zero is no salary',          D.toRecord({ 'Monthly Salary': '0.00 IDR' }).monthlyIncome, '');
+has('a wage too small to be one', D.validate(D.toRecord({
+  'Name': 'A, B', 'Monthly Salary': '2.00 IDR' })).warnings, 'monthlyIncome', 'too small for a monthly wage');
+none('a real wage is not flagged', D.validate(D.toRecord({
+  'Name': 'A, B', 'Monthly Salary': '3600000.00 IDR' })).warnings, 'monthlyIncome');
+
+/* -- SSN / tax ID / salary are DERIVED, with no idea of the visa class
+   The C1/D sheet has no columns for these three so every application ticks
+   Does Not Apply; the J1 sheet collects all three. The answer follows from
+   whether the cell holds an amount, which is the same question in both
+   classes - so there is no branch on `_class`, and none is wanted.
+
+   ONLY THE POSITIVE CASE IS ASSERTED. An empty cell leaves the key alone so
+   each pack's constant still ticks it and the panel switch stays live; a value
+   sets 'NO', because apply() treats '' as unset and would tick over it. */
+const withPay = D.toRecord({ 'Name': 'A, B', 'Monthly Salary': '3600000.00 IDR' });
+eq('a real salary blocks the tick', withPay.monthlyIncomeNA, 'NO');
+const noPay = D.toRecord({ 'Name': 'A, B', 'Monthly Salary': '0.00 IDR' });
+eq('no salary leaves the tick to the pack', noPay.monthlyIncomeNA, undefined);
+const withIds = D.toRecord({
+  'Name': 'A, B',
+  'U.S. Social Security Number (if any)': '123456789',
+  'U.S. Taxpayer ID Number (if any)': '99-1234567',
+});
+eq('an SSN blocks its tick',    withIds.ssnNA, 'NO');
+eq('a tax ID blocks its tick',  withIds.taxIdNA, 'NO');
+const noIds = D.toRecord({ 'Name': 'A, B' });
+eq('no SSN column, no assertion',    noIds.ssnNA, undefined);
+eq('no tax ID column, no assertion', noIds.taxIdNA, undefined);
+/* No rule can fill the SSN boxes yet - CEAC splits it in three and no live J1
+   Fill has named their ids. The gap is visible on the page (the tick is clear)
+   and the worksheet says why, which beats guessing an id. */
+has('an unfillable SSN is named', D.validate(withIds).warnings, 'ssn', 'not known yet');
+has('and the tax ID too',        D.validate(withIds).warnings, 'taxId', 'not known yet');
+
+/* -- a parent cannot be born after their child ----------------------
+   One row in the J1 export gives the mother 2026-05-15 against an applicant
+   born 2006-11-14. It parses cleanly, so nothing else catches it: it would go
+   onto a sworn form and be read at the counter. */
+const juliana = D.toRecord({
+  'Name': 'I Ketut, Juliana', 'Date of Birth': '39035',
+  "Father's Date of Birth": '25569', "Mother's Date of Birth": '46157',
+});
+eq('the applicant parses', juliana.dob, '14-NOV-2006');
+eq('the mother parses too, which is the problem', juliana.motherDob, '15-MAY-2026');
+has('the impossible parent is named', D.validate(juliana).warnings, 'motherDob', 'not before the applicant');
+none('a plausible father is not', D.validate(juliana).warnings, 'fatherDob');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

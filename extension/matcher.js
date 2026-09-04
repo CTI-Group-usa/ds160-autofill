@@ -839,9 +839,32 @@
      listing them as unrecognised buries the real ones. Checkboxes are excluded:
      a "Does Not Apply" box is judged by isDoesNotApply() instead. */
   const LEAVE_BLANK = [/PPT_BOOK_NUM/i, /PassportBookNum/i, /passport book number/i];
-  function isLeftBlank(ctl) {
+
+  /* A BOX WHOSE "Does Not Apply" TWIN IS TICKED. CEAC greys it out, so it is
+     not a gap - but unlike the passport book number, whether it is blank
+     DEPENDS on the answer beside it, and a static list would be wrong half the
+     time. The SSN is three boxes and the tax ID one; a C1/D application ticks
+     both, and every Fill on Personal 2 was listing all four as "Not
+     recognised", which is the noise that buries a real gap.
+
+     Silencing them outright would be worse. A J1 row with an SSN needs those
+     boxes filled, no rule can fill them yet (CEAC's three-box split has never
+     been confirmed by a live Fill, and guessing ids on this project has never
+     once worked), and the unrecognised list is exactly how their real ids get
+     read off the page. So this is keyed on the record's own NA answer: quiet
+     while the box is greyed out, loud the moment it is not. */
+  const BLANK_WHEN_TICKED = [
+    { na: 'ssnNA',   ids: /APP_SSN/i },
+    { na: 'taxIdNA', ids: /APP_TAX_ID/i },
+  ];
+
+  function isLeftBlank(ctl, rec) {
     if (String(ctl.type || '').toLowerCase() === 'checkbox') return false;
-    return LEAVE_BLANK.some(re => re.test([ctl.id, ctl.name, ctl.label].join(' ')));
+    const hay = [ctl.id, ctl.name, ctl.label].join(' ');
+    if (LEAVE_BLANK.some(re => re.test(hay))) return true;
+    if (!rec) return false;
+    return BLANK_WHEN_TICKED.some(b =>
+      String(rec[b.na] || '').toUpperCase() === 'YES' && b.ids.test(hay));
   }
 
   function isDoesNotApply(ctl) {
@@ -853,6 +876,7 @@
   const api = { RULES, KIND, FORBIDDEN, FULLNAME_KEYS, MONONYM_NA_KEYS,
                 ADDRESS_KEYS, addressHalf,
                 matchKey, datePart, splitDate, isDoesNotApply, isLeftBlank, LEAVE_BLANK,
+                BLANK_WHEN_TICKED,
                 isForbidden, nameHalf };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160Matcher = api;

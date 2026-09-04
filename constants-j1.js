@@ -15,10 +15,13 @@
  * WHAT IS *NOT* HERE, AND WHY:
  *   - the Crew Visa block. It exists on the form only because the
  *     purpose is C1/D; CEAC never shows it to an exchange visitor.
- *   - `ssnNA`, `taxIdNA`, `monthlyIncomeNA`. The J1 form collects all
- *     three ("if any"), so they are DERIVED in normalize.js - filled when
- *     the column has a value, ticked when it does not. A constant tick
- *     here would hide a number the sheet actually holds.
+ *   - the `ssnNA` / `taxIdNA` / `monthlyIncomeNA` PROBLEM, which is solved
+ *     elsewhere. Those three are here, ticked by default, but normalize.js
+ *     derives 'NO' for whichever column the sheet fills (K, L, AY) and
+ *     apply() will not tick over it. So the two packs now give the same
+ *     answer to the same question and a leak between them can no longer
+ *     hide a number the sheet holds - which was the whole reason for
+ *     keeping them separate.
  *   - `languageSpoken`. Column BX collects it.
  *   - the stay address and the U.S. contact. Both are the host employer,
  *     so they are per-applicant, not per-programme.
@@ -42,6 +45,31 @@
     { key: 'otherCountryPermRes', kind: 'yesno', page: 'Personal 2',
       label: 'Are you a permanent resident of another country?',
       def: 'NO', why: 'Yes if the participant holds PR somewhere other than Indonesia.' },
+    /* THE DEFAULT ANSWER, NOT A BLANKET ONE. normalize.js derives 'NO' for
+       whichever of these the sheet actually fills - columns K, L and AY - and
+       apply() will not tick over a value that is already set, so the number
+       the participant gave reaches the form and this box stays clear. What is
+       left is the common case: all 69 rows of the export have K and L empty,
+       and 15 of them hold 0.00 IDR in AY.
+
+       Carrying them here rather than omitting them is what makes the two packs
+       AGREE on these three questions, so leaking one pack onto the other class
+       can no longer tick a box over a number. That was the original argument
+       for keeping the packs apart; the derivation removes it at the source. */
+    { key: 'ssnNA', kind: 'checkbox', page: 'Personal 2',
+      label: 'U.S. Social Security Number - tick "Does Not Apply"',
+      def: 'YES', why: 'Column K collects it "if any" and is empty for every row in the ' +
+                       'export - a first-time exchange visitor has never had a U.S. SSN. ' +
+                       'Filled automatically, and this box left clear, when K has one.' },
+    { key: 'taxIdNA', kind: 'checkbox', page: 'Personal 2',
+      label: 'U.S. Taxpayer ID Number - tick "Does Not Apply"',
+      def: 'YES', why: 'Column L, same arrangement as the SSN. Only applies to someone who ' +
+                       'has filed U.S. tax returns.' },
+    { key: 'monthlyIncomeNA', kind: 'checkbox', page: 'Work / Education',
+      label: 'Monthly Income in Local Currency - tick "Does Not Apply"',
+      def: 'YES', why: 'Column AY, and CEAC only asks it "if employed". A real amount is ' +
+                       'filled from the sheet and this box left clear; 0.00 IDR is the ' +
+                       'sheet saying there is no salary, which is this tick.' },
     { key: 'mailingSameAsHome', kind: 'yesno', page: 'Address and Phone',
       label: 'Is your mailing address the same as your home address?',
       def: 'YES', why: 'The intake form collects one address.' },

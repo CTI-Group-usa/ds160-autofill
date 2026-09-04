@@ -417,7 +417,7 @@
            nothing either: the U.S. contact organisation box needed ticking
            and this silence hid its id, so there was no way to write a rule
            for it. Report those separately - quiet, but with the id. */
-        if (M.isDoesNotApply(c) || (M.isLeftBlank && M.isLeftBlank(c))) {
+        if (M.isDoesNotApply(c) || (M.isLeftBlank && M.isLeftBlank(c, rec))) {
           report.deliberate.push({ id: c.id, label: c.label });
         } else if (!M.isForbidden(c.id) && !M.isForbidden(c.name)) {
           /* Forbidden controls stay out entirely - excluded on purpose, and

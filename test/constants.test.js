@@ -96,22 +96,49 @@ eq('its Does Not Apply box matches nothing',
 
 // -- ONE PACK AT A TIME, NEVER MERGED --------------------------------
 /* This is the whole reason the packs are separate files rather than a
-   conditional. C1/D ticks "Does Not Apply" for the SSN, the tax ID and the
-   monthly salary because its intake form never collects them. The J1 form
-   collects all three, so leaking the C1/D pack onto a J1 record would tick
-   those boxes over numbers that exist in the sheet - a wrong answer on a sworn
-   form, and invisible, because a ticked box is not a gap. */
+   conditional: each carries a block that describes the wrong principal
+   entirely - the vessel owner, the manning agency, the cruise line's U.S.
+   contact - and those must not cross.
+
+   The SSN, tax ID and monthly salary used to be on this list too, and are no
+   longer, because the fix moved: normalize.js derives 'NO' for whichever of
+   those columns the sheet fills, apply() will not tick over a value already
+   set, and BOTH packs now carry the same default tick. So the two classes give
+   the same answer to the same question and a leak can no longer tick a box
+   over a number the sheet holds. That is asserted below, with the pack
+   deliberately set to the WRONG class. */
 C.use('j1');
 const j1rec = C.apply({ fullName: 'I KETUT JULIANA' });
 eq('a J1 record is stamped j1', j1rec._class, 'j1');
 eq('no vessel owner leaks in', j1rec.vesselOwnerCompany, undefined);
 eq('no manning agency leaks in', j1rec.agencyName, undefined);
 eq("no cruise line's U.S. contact leaks in", j1rec.usPocSurname, undefined);
-eq('no SSN tick leaks in - J1 derives it from the column', j1rec.ssnNA, undefined);
-eq('no tax ID tick leaks in', j1rec.taxIdNA, undefined);
-eq('no monthly income tick leaks in', j1rec.monthlyIncomeNA, undefined);
+/* Both packs tick these when the sheet says nothing - that IS the common
+   answer, and 15 of the 69 J1 rows hold 0.00 IDR. */
+eq('J1 ticks the SSN box by default', j1rec.ssnNA, 'YES');
+eq('and the tax ID box', j1rec.taxIdNA, 'YES');
+eq('and the monthly income box', j1rec.monthlyIncomeNA, 'YES');
 eq('no ENGLISH language constant leaks in', j1rec.languageSpoken, undefined);
 eq('and no Do-Not-Know on the organisation name', j1rec.usPocOrgNA, undefined);
+
+/* THE LEAK THAT USED TO MATTER, TESTED WITH THE WRONG PACK ON PURPOSE.
+   A J1 row filed while the C1/D pack is active still keeps its salary and its
+   SSN, and both Does Not Apply boxes stay clear - because the record asserted
+   'NO' before any pack was consulted. Ticking one of these over a number the
+   participant gave is a wrong sworn answer that nothing else would catch: a
+   ticked box is not a gap and appears in no report. */
+const N = require('../normalize.js');
+C.use('c1d');
+const wrongPack = C.apply(N.toRecord({
+  'Name': 'I Ketut, Juliana',
+  'Monthly Salary': '3600000.00 IDR',
+  'U.S. Social Security Number (if any)': '123456789',
+}));
+eq('the salary survives the wrong pack', wrongPack.monthlyIncome, '3600000');
+eq('and its tick stays clear', wrongPack.monthlyIncomeNA, 'NO');
+eq('the SSN survives too', wrongPack.ssn, '123456789');
+eq('and its tick stays clear', wrongPack.ssnNA, 'NO');
+C.use('j1');
 
 /* The purpose is a class answer, and each pack owns its own. trip.js used to
    carry the C1/D values, which app.js applied FIRST - and apply() never

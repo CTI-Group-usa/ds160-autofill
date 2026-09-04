@@ -999,5 +999,36 @@ eq('the school postal _NA twin is not the postal box',
 
 console.log('  (previous-work repeater covered)');
 
+
+/* -- a greyed-out box is quiet only WHILE its tick is on -------------
+   The SSN is three boxes and the tax ID one, no rule can fill them yet, and a
+   C1/D application ticks Does Not Apply beside both - so every Fill on
+   Personal 2 was listing all four as "Not recognised", which is the noise that
+   buries a real gap.
+
+   Silencing them with a static list would be worse: a J1 row with an SSN needs
+   them filled, and the unrecognised list is exactly how their real ids get
+   read off the page. So it is keyed on the record's own NA answer. */
+eq('the SSN box is quiet while the tick is on',
+   M.isLeftBlank({ id: P + 'tbxAPP_SSN1', name: '', label: '', type: 'text' },
+                 { ssnNA: 'YES' }), true);
+eq('and the tax ID box too',
+   M.isLeftBlank({ id: P + 'tbxAPP_TAX_ID', name: '', label: '', type: 'text' },
+                 { taxIdNA: 'YES' }), true);
+eq('but LOUD the moment the sheet has a number',
+   M.isLeftBlank({ id: P + 'tbxAPP_SSN1', name: '', label: '', type: 'text' },
+                 { ssnNA: 'NO', ssn: '123456789' }), false);
+eq('and loud with no record at all, so a stale caller cannot silence it',
+   M.isLeftBlank({ id: P + 'tbxAPP_SSN1', name: '', label: '', type: 'text' }), false);
+/* One tick must not silence the other field. */
+eq('the SSN tick says nothing about the tax ID box',
+   M.isLeftBlank({ id: P + 'tbxAPP_TAX_ID', name: '', label: '', type: 'text' },
+                 { ssnNA: 'YES' }), false);
+/* The passport book number stays on the STATIC list - it is blank on every
+   application CTI files, whatever the record says. */
+eq('the static list still works with no record',
+   M.isLeftBlank({ id: P + 'tbxPPT_BOOK_NUM', name: '', label: 'Passport Book Number',
+                   type: 'text' }), true);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
