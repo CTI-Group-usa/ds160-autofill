@@ -411,65 +411,90 @@
        makes comparing them possible at all. */
     function applyParsed(doc, list) {
       const P = doc.parser();
-      const usable = list.filter(x => x && x.parsed && x.parsed.found);
-      if (!usable.length) {
-        /* Nothing readable - but if a document was RECOGNISED and simply gave
-           nothing up, its hint is the most useful thing on screen, so it beats
-           the generic "that is not one of the three". */
-        const hinted = list.filter(x => x && x.parsed && x.parsed.hint);
-        letterMsg('err', hinted.length ? hinted.map(x => x.name + ': ' + x.parsed.hint).join(' ')
-                                       : doc.notFound);
-        return;
-      }
+      const readable = list.filter(x => x && x.parsed && x.parsed.found);
 
       /* FIRST VALUE WINS, so the order of DOCS.links decides which document is
          believed: DS-7002 before DS-2019, because it labels both the SEVIS id
-         and the programme number where the DS-2019 labels neither. */
-      const answers = {};
-      for (const u of usable) {
+         and the programme number where the DS-2019 labels neither.
+
+         `from` records WHICH document supplied each answer, and that is not
+         bookkeeping for its own sake. The report used to open "2 field(s) read
+         from DS-7002" - the total, attached to the first name in the list - on
+         a pass where the DS-7002 gave nothing at all and both dates came from
+         the DS-2019. A count against the wrong document is a plain false
+         statement, and this is the whole of what the operator sees. */
+      const answers = {}, from = {};
+      for (const u of readable) {
         const a = P.answers(u.parsed);
-        for (const k in a) if (!(k in answers)) answers[k] = a[k];
+        for (const k in a) if (!(k in answers)) { answers[k] = a[k]; from[k] = u.parsed.name; }
       }
       for (const k in answers) DS160Trip.set(rec, k, answers[k]);
 
-      const notes = [], problems = [];
-      for (const u of usable) {
-        const name = u.parsed.name || doc.what;
-        notes.push(name + (u.parsed.missing.length
-          ? ' (not in it: ' + u.parsed.missing.join(', ') + ')' : ''));
-        if (u.parsed.unconfirmed)
-          notes.push(name + ': its labels have never been checked against a real one');
-        for (const i of P.crossCheck(u.parsed, rec)) problems.push(i.msg);
+      /* ONE LINE PER DOCUMENT, saying what that document did. The old shape
+         said the same thing about a failed document three times over - once in
+         "not in it", once as its unconfirmed note, once as its hint - and left
+         the successful one unmentioned. */
+      const lines = [], problems = [];
+      for (const f of list) {
+        if (!f) continue;
+        const name = f.name || (f.parsed && f.parsed.name) || doc.what;
+        if (f.error) { lines.push(name + ': ' + f.error); continue; }
+        const pr = f.parsed;
+        if (!pr || !pr.doc) { lines.push(name + ': not a DS-7002, DS-2019 or SEVIS receipt'); continue; }
+
+        const gave = Object.keys(answers).filter(k => from[k] === pr.name);
+        if (gave.length) {
+          lines.push(pr.name + ': ' + gave.join(', '));
+        } else if (pr.hint) {
+          /* The hint already explains the emptiness; repeating the missing
+             field names beside it adds nothing. */
+          lines.push(pr.name + ': nothing - ' + pr.hint);
+        } else if (pr.missing.length) {
+          lines.push(pr.name + ': read, but no ' + pr.missing.join(', '));
+        } else {
+          lines.push(pr.name + ': read, nothing the form needs');
+        }
+        /* Only when the hint has not already said it. With a hint present the
+           two lines were the same sentence twice - "the labels have never been
+           checked" is the hint's own opening. */
+        if (pr.unconfirmed && !gave.length && !pr.hint)
+          lines.push('(' + pr.name + "'s labels have never been checked against a real one)");
+        /* A document that gave up nothing cannot be cross-checked - j1docs.js
+           gates that too, and this is the belt to its braces. */
+        if (!pr.hint) for (const i of P.crossCheck(pr, rec)) problems.push(i.msg);
       }
+
       /* TWO DOCUMENTS DESCRIBING ONE PLACEMENT MUST AGREE. If the DS-2019's
          period and the DS-7002's training dates differ, filling either is
          choosing a document to believe, which is not ours to do. */
       if (P.compareDocs) {
-        for (let i = 0; i < usable.length; i++) {
-          for (let j = i + 1; j < usable.length; j++) {
-            for (const x of P.compareDocs(usable[i].parsed, usable[j].parsed)) problems.push(x.msg);
+        for (let i = 0; i < readable.length; i++) {
+          for (let j = i + 1; j < readable.length; j++) {
+            for (const x of P.compareDocs(readable[i].parsed, readable[j].parsed)) problems.push(x.msg);
           }
         }
       }
-      for (const f of list) if (f && f.error) problems.push(f.name + ': ' + f.error);
-      /* AN INTERACTIVE PDF LOOKS EXACTLY LIKE THIS: recognised, and every value
-         somewhere the page text cannot reach. The parser says what to do about
-         it, and the operator has no way to know otherwise.
 
-         NAMED, because two documents can fail the same way in one pass and an
-         unattributed sentence leaves the operator guessing which file to go and
-         fix - the first live run printed the identical hint twice, once for the
-         DS-7002 and once for the SEVIS receipt. */
-      for (const f of list)
-        if (f && f.parsed && f.parsed.hint) problems.push(f.name + ': ' + f.parsed.hint);
+      const nAnswers = Object.keys(answers).length;
+      if (!nAnswers && !problems.length && !lines.length) { letterMsg('err', doc.notFound); return; }
 
       /* De-duplicated: the same sentence twice tells the operator nothing the
          first one did not, and this report is already long. */
       const seen = {}, unique = problems.filter(m => (seen[m] ? false : (seen[m] = true)));
+      /* One full stop, not two. A hint already ends in one, so joining with
+         '. ' produced "...read that instead.. DS-2019:". */
+      const sentence = l => (/[.!?]$/.test(l) ? l : l + '.');
+      /* GREEN ONLY WHEN THERE IS NOTHING TO DO. Two documents that gave
+         nothing each carry a hint telling the operator to go and fix
+         something, so a green tick over that would be a lie - even though the
+         fields that matter were filled. */
+      const todo = unique.length || list.some(f => f && f.parsed && f.parsed.hint) ||
+                   list.some(f => f && f.error);
       pendingLetter = {
-        kind: unique.length ? 'err' : 'ok',
-        text: Object.keys(answers).length + ' field(s) read from ' + notes.join('; ') +
-              (unique.length ? ' — CHECK: ' + unique.join(' | ') : ''),
+        kind: todo ? 'err' : 'ok',
+        text: (nAnswers ? nAnswers + ' field(s) filled. ' : 'Nothing filled. ') +
+              lines.map(sentence).join(' ') +
+              (unique.length ? ' CHECK: ' + unique.join(' | ') : ''),
       };
       rebuild();
     }

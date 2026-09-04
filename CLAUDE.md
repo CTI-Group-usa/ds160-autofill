@@ -261,6 +261,31 @@ called empty.
   one pass and the identical sentence printed twice, unattributed, leaving the
   operator to guess which file to go and fix.
 
+**The report itself then had to be rewritten.** With the false cross-check gone
+it was still saying something untrue: it opened *"2 field(s) read from
+DS-7002"* on a pass where the DS-7002 gave **nothing** and both dates came from
+the DS-2019. That is the merged total attached to the first name in the list -
+a count against the wrong document, in the one string the operator sees.
+
+It is **one line per document** now, each saying what that document did:
+
+> 2 field(s) filled. DS-7002: nothing - *(the interactive-PDF hint)*.
+> DS-2019: arrivalDate, departureDate. SEVIS receipt: nothing - *(the
+> unconfirmed-labels hint)*.
+
+- **`from[k]` records which document supplied each answer**, so a name is only
+  credited with what it actually gave.
+- the old shape said the same thing about a failed document **three times** -
+  in *"not in it"*, as its unconfirmed note, and as its hint - while leaving
+  the successful one unmentioned. The unconfirmed note now stands down when the
+  hint has already said it.
+- **green only when there is nothing to do.** Two documents carrying a hint
+  each ask the operator to go and fix something, so a green tick over that
+  would be a lie even though the fields that matter were filled.
+- one full stop, not two: a hint already ends in one, so joining with `'. '`
+  produced *"...read that instead.. DS-2019:"*.
+
+
 **What still worked, and it is the part that matters:** the DS-2019 supplied the
 arrival and departure dates. That is the answer the sheet cannot give at all.
 

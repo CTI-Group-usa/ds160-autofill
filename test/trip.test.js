@@ -119,7 +119,7 @@ ok('and each class names its own parser',
    value wins on merge, so the better source has to be read first. */
 ok('the DS-7002 is listed before the DS-2019',
    app.indexOf("key: 'ds7002Url'") < app.indexOf("key: 'ds2019Url'"));
-ok('first value wins on merge', /if \(!\(k in answers\)\) answers\[k\] = a\[k\]/.test(app));
+ok('first value wins on merge', /if \(!\(k in answers\)\) \{ answers\[k\] = a\[k\]/.test(app));
 
 /* THE TAB CHOOSES, NOT THE RECORD. index.html says the tab is the authority
    for which class is in play, and the trip block belongs to whichever tab is
@@ -132,21 +132,23 @@ ok('the active class picks the document set', /DOCS\[DS160Const\.activeClass\(\)
    all three, identifying the document from its own title. */
 ok('the parse path goes through the descriptor',
    /doc\.parser\(\)\.parse\(/.test(app) && /P\.answers\(u\.parsed\)/.test(app) &&
-   /P\.crossCheck\(u\.parsed, rec\)/.test(app));
+   /P\.crossCheck\(pr, rec\)/.test(app));
 ok('nothing calls DS160Letter directly any more',
    (app.match(/DS160Letter/g) || []).length === 1);
 
 /* READ IN ONE PASS, and not only to save clicks: the DS-2019's period and the
    DS-7002's training dates describe the same placement, and comparing them is
    only possible if both are in hand at once. */
-ok('the documents are compared against each other', /P\.compareDocs\(usable\[i\]/.test(app));
+ok('the documents are compared against each other', /P\.compareDocs\(readable\[i\]/.test(app));
 
 /* ONE BAD ATTACHMENT MUST NOT DISCARD THE GOOD ONES. fetchOne resolves on
    failure rather than rejecting, and the failure is carried into the report. */
 ok('a failed fetch resolves rather than rejects',
    /resolve\(\{ error:/.test(app) && !/reject\(/.test(app));
+/* On its own line now, with the document's name - it used to be swept into
+   the CHECK list at the end, where a fetch failure read like a data problem. */
 ok('and its error reaches the report',
-   /problems\.push\(f\.name \+ ': ' \+ f\.error\)/.test(app));
+   /lines\.push\(name \+ ': ' \+ f\.error\)/.test(app));
 
 /* THE DESCRIPTOR IS CAPTURED ONCE, before the first fetch. Three reads at up
    to 20s each is a long time to hold a tab still, and switching class mid-run
@@ -168,6 +170,41 @@ ok('the paste button too',         /if \(\$\('letterParse'\)\)/.test(app));
 /* A row missing one attachment is normal - and it is named rather than
    treated as a failure, so the operator knows which one to go and find. */
 ok('missing links are named, not fatal', /not in this row: /.test(app));
+
+/* -- the report says what each document did -------------------------
+   The first live run opened "2 field(s) read from DS-7002" on a pass where the
+   DS-7002 gave NOTHING and both dates came from the DS-2019: the total,
+   attached to the first name in the list. A count against the wrong document
+   is a plain false statement, and this report is the whole of what the
+   operator sees. */
+ok('each answer records which document supplied it',
+   /from\[k\] = u\.parsed\.name/.test(app));
+ok('and the line names only what that document gave',
+   /const gave = Object\.keys\(answers\)\.filter\(k => from\[k\] === pr\.name\)/.test(app));
+ok('the total is stated on its own, not against a name',
+   /nAnswers \+ ' field\(s\) filled\. '/.test(app));
+
+/* ONE LINE PER DOCUMENT. The old shape said the same thing about a failed
+   document three times - once in "not in it", once as its unconfirmed note,
+   once as its hint - and left the successful one unmentioned. */
+ok('a failed fetch is named on its own line', /lines\.push\(name \+ ': ' \+ f\.error\)/.test(app));
+ok('an unrecognised document says so', /not a DS-7002, DS-2019 or SEVIS receipt/.test(app));
+ok('and the unconfirmed note stands down when the hint has said it',
+   /pr\.unconfirmed && !gave\.length && !pr\.hint/.test(app));
+
+/* One full stop, not two: a hint already ends in one, so joining with '. '
+   produced "...read that instead.. DS-2019:". */
+ok('lines are punctuated once', /\/\[\.\!\?\]\$\/\.test\(l\)/.test(app));
+
+/* GREEN ONLY WHEN THERE IS NOTHING TO DO. Two documents that gave nothing each
+   carry a hint telling the operator to go and fix something, so a green tick
+   over that would be a lie - even though the fields that matter were filled. */
+ok('a hint keeps the message out of green',
+   /const todo = unique\.length \|\| list\.some\(f => f && f\.parsed && f\.parsed\.hint\)/.test(app));
+
+/* A document that gave up nothing is not cross-checked HERE either - j1docs.js
+   gates it too, and this is the belt to those braces. */
+ok('no cross-check against an empty document', /if \(!pr\.hint\) for \(const i of P\.crossCheck/.test(app));
 
 /* NOT VERIFIED IN A BROWSER, and it cannot be from here: the worksheet is
    behind the Microsoft sign-in. Pressing the button on a real J1 row is a
