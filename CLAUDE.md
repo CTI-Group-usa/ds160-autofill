@@ -985,6 +985,46 @@ enforces it. They also carry `not: /PREV/i`, because Previous U.S. Travel has
 its own length of stay and `/LOS_CD/` matches `PREV_US_VISIT_LOS_CD` too — the
 intended stay for this trip was landing in a visit years in the past.
 
+## The chips on the applicant list, and one that was always wrong
+Each row in the list carries two independent chips, answering two different
+questions:
+
+| Chip | Means |
+|---|---|
+| `ready` **or** `N errors` | **whether it can be filed.** An error is CEAC refusing the page, or a required field empty. |
+| `N to check` | **the tool will still fill it**, but a human should look before swearing to it. |
+
+They are independent, and `ready` + `N to check` is the normal combination.
+That is the point of the amber count: **a warning stops nothing**, the value
+goes on the form regardless, so the number is the list of things being sworn to
+that the tool is not sure of.
+
+Note the adjacent trap: the **only rows with errors** checkbox filters on
+`errors` alone, so a row with 0 errors and 3 warnings *disappears* when it is
+ticked. The amber count is exactly what that checkbox hides.
+
+### The comma is the sheet's separator, not a character in the name
+`validate()` warned *"Name contains characters that are not in the passport
+MRZ"* whenever `fullName` held anything outside `A-Z ' -`. Measured on the live
+export: **it fired on 516 of 832 rows - 62% - and in every single one the comma
+was the only offender.** Not one row held a genuinely odd character.
+
+A warning that is wrong every time it appears is worse than no warning. It was
+**62% of the amber count on the list**, and it taught the operator that the
+amber count is noise - the same failure as the P-3-04510 cross-check reporting
+a mismatch on every DS-2019.
+
+`splitName()` already treats the comma as a separator and `rec.nativeName`
+already drops it for the same stated reason - a name has no punctuation in it -
+so the test now runs on the name with the separator removed. It still catches
+what it is for: a digit, a full stop, a title like `MR.`. Hyphens and
+apostrophes are in the MRZ and never warned.
+
+**`surname`'s "Name split is a guess" is NOT the same case and stays.** The
+comma does not settle which half is the surname - `I PUTU JULI, FRINDAYANA`
+gives FRINDAYANA (right for this sheet) while `FRINDAYANA, I PUTU JULI` would
+give JULI (wrong) - and that is already written down further up this file.
+
 ## Previous U.S. Travel (added 2026-09-01, at the user's instruction)
 Two questions on this page read alike and are not the same thing:
 

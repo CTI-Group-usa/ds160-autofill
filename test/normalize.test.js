@@ -672,5 +672,30 @@ none('a real contact is not', D.validate(D.toRecord({
   'Name': 'I Ketut, Juliana',
   'Additional point of contact': 'Arta, Artana' })).warnings, 'addPoc2Name');
 
+
+/* -- the comma is the sheet's separator, not part of the name --------
+   This warning counted it as a character in the name, and on the live export
+   it fired on 516 of 832 rows - 62% - with the comma the ONLY offender in
+   every single one. Not one row held a genuinely odd character. A warning
+   that is wrong every time it appears is worse than none: it was 62% of the
+   amber "N to check" count on the applicant list, and it teaches the operator
+   that the amber count is noise.
+
+   splitName() already treats the comma as a separator, and a name has no
+   punctuation in it - the same reasoning that keeps the comma out of
+   rec.nativeName. */
+const mrz = n => D.validate(D.toRecord({ 'Name': n, 'Passport Number': 'X1' }))
+                   .warnings.filter(x => x.field === 'fullName').length;
+eq('the separator alone does not warn',  mrz('PUTU YUDA, PRATAMA'), 0);
+eq('nor in a longer name',               mrz('I Komang Satria, Pranata'), 0);
+eq('nor a mononym',                      mrz('Suroso'), 0);
+/* AND IT STILL CATCHES WHAT IT IS FOR. A title and a digit are exactly the
+   things that must not reach the MRZ boxes. */
+eq('a title still warns',                mrz('MR. BUDI SANTOSO'), 1);
+eq('a digit still warns',                mrz('BUDI 2 SANTOSO'), 1);
+/* Hyphens and apostrophes are IN the MRZ, so they never warned and must not
+   start now. */
+eq('a hyphenated name is fine',          mrz("ANNE-MARIE O'BRIEN"), 0);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

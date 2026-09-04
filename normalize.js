@@ -845,7 +845,19 @@
       W('surname', 'Single name - filled as Surname "' + rec.surname + '", Given Names "FNU". Confirm against the passport.');
     else if (rec._nameGuessed)
       W('surname', 'Name split is a guess: Surname "' + rec.surname + '" / Given "' + rec.givenNames + '". Must match the passport MRZ exactly.');
-    if (/[^A-Z' -]/.test(rec.fullName))
+    /* THE COMMA IS THE SHEET'S SEPARATOR, NOT A CHARACTER IN THE NAME, and
+       this warning used to count it as one. Measured on the live export: it
+       fired on 516 of 832 rows - 62% - and in EVERY one of them the comma was
+       the only offender. Not a single row held a genuinely odd character. A
+       warning that is wrong every time it appears is worse than no warning:
+       it is 62% of the amber count on the applicant list, and it teaches the
+       operator that the amber count is noise.
+
+       `splitName()` already treats the comma as a separator, and CLAUDE.md
+       already says why - a name has no punctuation in it. So the test runs on
+       the name with the separator removed, and still catches what it is for:
+       a digit, a full stop, a title like MR. */
+    if (/[^A-Z' -]/.test(rec.fullName.replace(/,/g, '')))
       W('fullName', 'Name contains characters that are not in the passport MRZ (digits, titles, punctuation)');
 
     if (/MARRIED|KAWIN|MENIKAH/.test(rec.maritalStatus)) {
