@@ -782,9 +782,20 @@
   function validate(rec, opts) {
     opts = opts || {};
     const today = opts.today ? new Date(opts.today) : new Date();
-    const errors = [], warnings = [];
+    const errors = [], warnings = [], notes = [];
     const E = (field, msg) => errors.push({ field, msg });
     const W = (field, msg) => warnings.push({ field, msg });
+    /* A THIRD CATEGORY, AND THE REASON IT EXISTS. Errors block filing;
+       warnings are doubts a human must resolve before swearing to them. Some
+       things are neither - they are how a page works, they are true on every
+       single row, and nothing is wrong.
+
+       Those were going in the amber list and inflating the "N to check" chip
+       on the applicant list. That is the same failure as the comma warning
+       fixed earlier today, in a milder form: a line that appears on 69 of 69
+       rows and never needs a decision teaches the operator that the amber
+       count is noise. Notes are shown calmly and counted nowhere. */
+    const N = (field, msg) => notes.push({ field, msg });
 
     for (const [k, label] of REQUIRED) if (!rec[k]) E(k, label + ' is empty');
 
@@ -985,11 +996,14 @@
 
        Still a warning rather than silence, because a page showing one school
        out of three looks finished, and Next is right there. */
+    /* A NOTE, NOT A WARNING. It was amber, and the user's objection was the
+       right one: this is the arrangement we chose, it is true on every J1 row,
+       and there is nothing to decide. The filler does fill all three - the
+       operator just presses Add Another between passes. */
     if ((rec._eduMore || []).length)
-      W('eduName', rec._eduList.length + ' schools, and CEAC shows one row at a ' +
-                   'time. Press "Add Another" and Fill again for each - the filler ' +
-                   'puts them in order. After ' + rec.eduName + ' comes: ' +
-                   rec._eduMore.join('; '));
+      N('eduName', rec._eduList.length + ' schools. CEAC shows one row at a time: ' +
+                   'press "Add Another" and Fill again for each, and the filler puts ' +
+                   'them in order - ' + rec._eduMore.join('; '));
     /* CEAC requires both of these on the Work/Education page, and both come
        from columns AX and AV. A blank has to be visible rather than silent. */
     if (!rec.employerStart)
@@ -1055,7 +1069,7 @@
     const missing = [];
     for (const [k, label] of MISSING_FROM_INTAKE) if (!rec[k]) missing.push({ field: k, msg: label });
 
-    return { errors, warnings, missing, ok: errors.length === 0 };
+    return { errors, warnings, notes, missing, ok: errors.length === 0 };
   }
 
   // -- worksheet layout, in DS-160 page order -------------------------

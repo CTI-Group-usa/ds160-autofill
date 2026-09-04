@@ -1003,6 +1003,34 @@ Note the adjacent trap: the **only rows with errors** checkbox filters on
 `errors` alone, so a row with 0 errors and 3 warnings *disappears* when it is
 ticked. The amber count is exactly what that checkbox hides.
 
+### A THIRD CATEGORY: notes (2026-09-04)
+`validate()` returns `errors`, `warnings` and now **`notes`**, because some
+lines are neither. They are how a page works, they are true on **every single
+row**, and nothing is wrong.
+
+The repeater message was the case that forced it: *"3 schools. CEAC shows one
+row at a time: press Add Another and Fill again for each."* That is the
+arrangement we chose, it fires on 69 of 69 J1 rows, and it needs no decision -
+so sitting in the amber list it was inflating "N to check" by one on every row.
+**Same failure as the comma warning fixed the same day, in a milder form: a
+line that is never a problem teaches the operator that the amber count is
+noise.** The user made exactly that objection, having read the same argument
+from me an hour earlier.
+
+Notes are:
+- **counted nowhere.** The chip stays `warnings.length` and `ok` stays
+  `errors.length === 0`, so *"Nothing to fix"* still shows when only notes are
+  present.
+- **not flagged in the table below.** A note is not a doubt about the value in
+  that row, and outlining it amber would say the opposite.
+- **the quietest thing in the list** - no coloured ground, muted text, a thin
+  border - and rendered last. Checked against the error and warning styles side
+  by side in a browser: distinct, and still legible.
+
+`normalize.test.js` asserts the contract *and its consumer* in one place,
+because a category is only worth having if `app.js` honours it and the two rot
+together.
+
 ### The comma is the sheet's separator, not a character in the name
 `validate()` warned *"Name contains characters that are not in the passport
 MRZ"* whenever `fullName` held anything outside `A-Z ' -`. Measured on the live

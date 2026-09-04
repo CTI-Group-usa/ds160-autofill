@@ -191,6 +191,8 @@
     const flagged = {};
     val.errors.forEach(e => flagged[e.field] = 'bad');
     val.warnings.forEach(w => { if (!flagged[w.field]) flagged[w.field] = 'flag'; });
+    /* Deliberately NOT flagged. A note is not a doubt about the value in that
+       row, and outlining it amber says the opposite. */
     val.missing.forEach(m => { if (!flagged[m.field]) flagged[m.field] = 'flag'; });
 
     let h = '<div class="who"><div>' +
@@ -203,9 +205,13 @@
       '<span id="sendMsg"></span></div></div>';
 
     h += '<div class="issues">';
+    /* Notes do not count as something to fix - that is the whole point of
+       them - so "Nothing to fix" still shows when only notes are present. */
     if (!val.errors.length && !val.warnings.length) h += '<div class="clear">Nothing to fix.</div>';
     val.errors.forEach(e => h += '<div class="issue e"><code>' + esc(e.field) + '</code>' + esc(e.msg) + '</div>');
     val.warnings.forEach(w => h += '<div class="issue w"><code>' + esc(w.field) + '</code>' + esc(w.msg) + '</div>');
+    /* Calm and last: how a page works, not a problem with this applicant. */
+    (val.notes || []).forEach(n => h += '<div class="issue n"><code>' + esc(n.field) + '</code>' + esc(n.msg) + '</div>');
     if (val.missing.length) {
       h += '<details class="missing"><summary>' + val.missing.length +
         ' DS-160 field(s) the intake form never asks for</summary>' +

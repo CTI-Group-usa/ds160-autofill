@@ -741,10 +741,13 @@ eq('the other two are listed', j1edu._eduMore.length, 2);
    fill repeater rows: press Add Another, press Fill, done. Still a warning
    rather than silence, because a page showing one school out of three looks
    finished and Next is right there. */
-has('and validate names them', D.validate(j1edu).warnings, 'eduName', 'Add Another');
-has('and promises the filler does it', D.validate(j1edu).warnings, 'eduName', 'puts them in order');
+has('and validate names them', D.validate(j1edu).notes, 'eduName', 'Add Another');
+has('and promises the filler does it', D.validate(j1edu).notes, 'eduName', 'puts them in order');
 none('it no longer says to type them by hand',
-     D.validate(j1edu).warnings.filter(w => /by hand/.test(w.msg)), 'eduName');
+     D.validate(j1edu).notes.filter(w => /by hand/.test(w.msg)), 'eduName');
+/* AND IT IS NOT AMBER. The user's objection: this is the arrangement we chose,
+   it is true on every J1 row, and there is nothing to decide. */
+none('nor is it a warning any more', D.validate(j1edu).warnings, 'eduName');
 
 /* THE STRUCTURED LIST IS WHAT THE REPEATER READS, in order, one row each. */
 eq('the list carries all three', j1edu._eduList.length, 3);
@@ -754,7 +757,7 @@ eq('in chronological order',
 eq('each with its own course',
    j1edu._eduList.map(b => b.course).join(' | '),
    'JUNIOR HIGH SCHOOL | PERHOTELAN | ');
-has('quoting the schools', D.validate(j1edu).warnings, 'eduName', 'SMK NEGERI 1 SERIRIT');
+has('quoting the schools', D.validate(j1edu).notes, 'eduName', 'SMK NEGERI 1 SERIRIT');
 
 /* THE C1/D PATH IS UNCHANGED: BI names one block, the others are not filled,
    and nothing is handed back. */
@@ -796,6 +799,67 @@ none('never a column letter, which differs between templates',
 const noschool = D.toRecord({ 'Name': 'P, Y', 'Name of Junior High School': '' });
 has('no school named is said plainly', D.validate(noschool).warnings, 'eduName',
     'secondary level or above');
+
+
+/* -- notes: neither an error nor a doubt ----------------------------
+   Errors block filing. Warnings are doubts a human must resolve before
+   swearing to them. Some things are neither: they are how a page works, they
+   are true on every single row, and nothing is wrong.
+
+   Those were going in the amber list and inflating the "N to check" chip. Same
+   failure as the comma warning fixed earlier today, in a milder form: a line
+   that appears on 69 of 69 rows and never needs a decision teaches the
+   operator that the amber count is noise. */
+const withNote = D.toRecord({
+  'Name': 'Putu Yuda, Pratama',
+  'Name of Junior High School': 'Smp Negeri 2 Seririt',
+  'Name of Senior High School/Vocational School': 'Smk Negeri 1 Seririt',
+  'Name of College/University': 'OTC Bali Singaraja',
+});
+const vn = D.validate(withNote);
+/* This file has eq()/has()/none() but no ok(). */
+eq('validate returns notes', Array.isArray(vn.notes), true);
+eq('the repeater arrangement is a note', vn.notes.filter(n => n.field === 'eduName').length, 1);
+none('and not a warning any more', vn.warnings, 'eduName');
+has('it still says what to press', vn.notes, 'eduName', 'Add Another');
+has('and that the filler does the rest', vn.notes, 'eduName', 'puts them in order');
+
+/* A NOTE MUST NOT CHANGE `ok`. That is what the amber chip and the "only rows
+   with errors" filter are computed from, and a note is not a problem. */
+const clean = D.toRecord({ 'Name': 'A, B' });
+eq('notes do not affect ok', D.validate(withNote).ok, D.validate(withNote).errors.length === 0);
+
+/* -- and the consumer side of the same contract ---------------------
+   app.js is browser-only (an IIFE, no exports), so these are text assertions -
+   the arrangement auth.test.js and extension-auth.test.js already use. They
+   live here because a category is only worth having if its consumer honours
+   it, and the two rot together. */
+const fs2 = require('fs');
+const path2 = require('path');
+const appjs = fs2.readFileSync(path2.join(__dirname, '..', 'app.js'), 'utf8')
+                 .split('\r\n').join('\n');
+const ok2 = (label, cond) => eq(label, !!cond, true);
+
+ok2('the amber chip counts warnings, not notes',
+    /const e = p\.val\.errors\.length, w = p\.val\.warnings\.length;/.test(appjs) &&
+    !/p\.val\.notes\.length/.test(appjs));
+ok2('notes render in their own calm class', /class="issue n"/.test(appjs));
+/* Last in the list, because they are the least urgent thing in it. */
+ok2('and after the warnings',
+    appjs.indexOf("list('Filled'") < 0 ||
+    appjs.indexOf('class="issue w"') < appjs.indexOf('class="issue n"'));
+/* NOT flagged in the table below: a note is not a doubt about the value in
+   that row, and outlining it amber would say the opposite. */
+ok2('a note does not amber-flag its own row',
+    !/notes\.forEach\(n => \{ if \(!flagged/.test(appjs));
+/* "Nothing to fix" still shows when only notes are present - that is the
+   whole point of the category. */
+ok2('notes are not counted as something to fix',
+    /if \(!val\.errors\.length && !val\.warnings\.length\) h \+= '<div class="clear">/.test(appjs));
+
+const css2 = fs2.readFileSync(path2.join(__dirname, '..', 'style.css'), 'utf8');
+ok2('the note style is the quietest of the three',
+    /\.issue\.n\{background:transparent;color:var\(--muted\)/.test(css2));
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

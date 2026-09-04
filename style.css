@@ -110,6 +110,11 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:10px;
 .issue{display:flex;gap:8px;padding:6px 9px;border-radius:6px;margin-bottom:4px;font-size:12.5px}
 .issue.e{background:var(--err-bg);color:var(--err)}
 .issue.w{background:var(--warn-bg);color:var(--warn)}
+/* A NOTE: how a page works, not a problem with this applicant. Deliberately
+   the quietest thing in the list - no coloured ground, muted text - because it
+   is true on every row and an operator who sees it 69 times must not read it
+   as 69 problems. */
+.issue.n{background:transparent;color:var(--muted);border:1px solid var(--line)}
 .issue code{font-weight:600;flex:0 0 auto}
 .clear{color:var(--ok);font-size:13px}
 
