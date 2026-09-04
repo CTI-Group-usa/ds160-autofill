@@ -271,5 +271,38 @@ eq('their own entry opens it', T.apply(Object.assign({}, gateRec)).departureDate
    record with it. */
 ok('no pack in play is survivable', !!T.values({ passportNumber: 'GATE1' }));
 
+
+/* -- A DEFAULT DERIVED PER APPLICANT, AND THE OPERATOR STILL WINS ----
+   The user's rule: the arrival and departure cities are the city the host
+   organisation is in. normalize.js derives `hostCity` from the one free-text
+   address column, and it is read HERE rather than written onto the record -
+   because `apply()` never overwrites a value the record already holds, so a
+   derived `arrivalCity` sitting on the record would beat this applicant's own
+   entry. A participant may fly into a different city; their answer has to
+   win, and that is the whole point of storing trip details per applicant. */
+ok('the from-keys come from the table itself',
+   /const FROM_KEYS = FIELDS\.filter\(f => f\.from\)/.test(
+     require('fs').readFileSync(require('path').join(__dirname, '..', 'trip.js'), 'utf8')));
+
+const hostRec = { passportNumber: 'HOST1', specificTravelPlans: 'YES',
+                  hostCity: 'RICHMOND' };
+eq('the arrival city falls back to the host',
+   T.apply(hostRec).arrivalCity, 'RICHMOND');
+eq('and the departure city',
+   T.apply(hostRec).departureCity, 'RICHMOND');
+
+T.set(hostRec, 'arrivalCity', 'LOS ANGELES');
+eq("the operator's own entry wins", T.apply(hostRec).arrivalCity, 'LOS ANGELES');
+eq('and the other city is untouched', T.apply(hostRec).departureCity, 'RICHMOND');
+
+/* NO HOST ADDRESS, NO INVENTION. Both boxes stay empty and
+   MISSING_FROM_INTAKE keeps the report calm about them. */
+eq('nothing is invented', T.apply({ passportNumber: 'HOST2',
+   specificTravelPlans: 'YES' }).arrivalCity, undefined);
+/* AND THE GATE STILL RULES. C1/D answers NO, CEAC never asks for a city, so
+   `apply()` must not send one even though a J1-shaped record could carry it. */
+eq('a closed gate keeps the city out', T.apply({ passportNumber: 'HOST3',
+   specificTravelPlans: 'NO', hostCity: 'RICHMOND' }).departureCity, undefined);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

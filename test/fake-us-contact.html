@@ -66,7 +66,17 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_ADDR_CITY"></td></tr>
     <tr><td>State</td>
         <td><select id="ctl00_SiteContentPlaceHolder_FormView1_ddlUS_POC_ADDR_STATE">
-              <option>- SELECT ONE -</option><option>FLORIDA</option></select></td></tr>
+              <!-- A REALISTIC RANGE, not one option. With FLORIDA alone a correct
+                   MISSOURI came back "no matching option on this page" and read
+                   as a matcher failure - the trap already recorded for
+                   fake-family.html and fake-prev-work-education.html. The
+                   neighbouring M-states are here on purpose: the derivation
+                   expands `MO` to the full name because setSelect's prefix
+                   fallback would otherwise answer `MI` with whichever of these
+                   came first. -->
+              <option>- SELECT ONE -</option><option>FLORIDA</option>
+              <option>MICHIGAN</option><option>MINNESOTA</option>
+              <option>MISSOURI</option><option>VIRGINIA</option></select></td></tr>
     <tr><td>ZIP Code (if known)</td>
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxUS_POC_ADDR_POSTAL_CD"></td></tr>
     <tr><td>Phone Number</td>

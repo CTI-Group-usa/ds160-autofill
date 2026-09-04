@@ -244,6 +244,92 @@
     return t;
   }
 
+  /* THE HOST ORGANISATION'S ADDRESS, AND THE ONE PLACE AN ADDRESS IS READ.
+     The user's standing rule stands: no parser for the seafarer's HOME
+     address. Indonesian free text has no convention to lean on
+     (`DUSUN 2 RT 14 RW 04 BANGLARANGAN AMPELGADING, PEMALANG`), a parser for
+     it was built and reverted the same day, and it is not coming back.
+
+     This is a different string. It is a US address, and the user has now
+     stated twice what it feeds: the stay address is always the host company's,
+     and the arrival and departure cities are the city the host company is in.
+     The J1 sheet holds it as one free-text cell, so there is nothing else to
+     read it from.
+
+     THE GATE IS A REAL USPS STATE CODE. `..., RICHMOND, VA 23230` is
+     unmistakable; `..., JAKARTA, ID` is not an American address and must not
+     be read as one. Anything that does not end in `, CITY, XX` with XX in this
+     table returns null, and validate() then names the cell so the operator
+     types the boxes - the same refusal `stayUnit` and `strictDate` already
+     make. A shape this tight is not the parser that was banned.
+
+     The code is expanded to the full state name because CEAC's State is a
+     dropdown of full names, and setSelect's prefix fallback would answer `MI`
+     with MICHIGAN or MINNESOTA - whichever came first. Picking between two
+     plausible options is guessing, and this is a visa form. */
+  const US_STATES = {
+    AL: 'ALABAMA', AK: 'ALASKA', AZ: 'ARIZONA', AR: 'ARKANSAS',
+    CA: 'CALIFORNIA', CO: 'COLORADO', CT: 'CONNECTICUT', DE: 'DELAWARE',
+    DC: 'DISTRICT OF COLUMBIA', FL: 'FLORIDA', GA: 'GEORGIA', HI: 'HAWAII',
+    ID: 'IDAHO', IL: 'ILLINOIS', IN: 'INDIANA', IA: 'IOWA', KS: 'KANSAS',
+    KY: 'KENTUCKY', LA: 'LOUISIANA', ME: 'MAINE', MD: 'MARYLAND',
+    MA: 'MASSACHUSETTS', MI: 'MICHIGAN', MN: 'MINNESOTA', MS: 'MISSISSIPPI',
+    MO: 'MISSOURI', MT: 'MONTANA', NE: 'NEBRASKA', NV: 'NEVADA',
+    NH: 'NEW HAMPSHIRE', NJ: 'NEW JERSEY', NM: 'NEW MEXICO', NY: 'NEW YORK',
+    NC: 'NORTH CAROLINA', ND: 'NORTH DAKOTA', OH: 'OHIO', OK: 'OKLAHOMA',
+    OR: 'OREGON', PA: 'PENNSYLVANIA', RI: 'RHODE ISLAND',
+    SC: 'SOUTH CAROLINA', SD: 'SOUTH DAKOTA', TN: 'TENNESSEE', TX: 'TEXAS',
+    UT: 'UTAH', VT: 'VERMONT', VA: 'VIRGINIA', WA: 'WASHINGTON',
+    WV: 'WEST VIRGINIA', WI: 'WISCONSIN', WY: 'WYOMING',
+    AS: 'AMERICAN SAMOA', GU: 'GUAM', MP: 'NORTHERN MARIANA ISLANDS',
+    PR: 'PUERTO RICO', VI: 'U.S. VIRGIN ISLANDS',
+  };
+  /* THE ZIP IS REQUIRED, and a probe is why. The first version made it
+     optional and claimed the state-code collisions were harmless because "an
+     Indonesian address does not produce that shape". It does:
+
+       JL RAYA KUTA NO 12, KUTA, ID   ->  city KUTA, state IDAHO
+
+     `ID` is Idaho and also the code Indonesia is written with, and the same
+     trap is set by IN/India, MO/Macao, MD/Moldova, MT/Malta, NE/Niger. Idaho
+     is a real state and a host company can be in Sun Valley, so the map keeps
+     it; what changes is that a bare two-letter tail is no longer enough.
+
+     Requiring five digits is not proof - an Indonesian postcode is five digits
+     too - so it is not the only defence. `validate()` states the place it read
+     on every row, as a NOTE, so a wrong read is in front of the operator
+     rather than only in the boxes. And refusing is the safe direction: an
+     empty box is a visible gap, a filled one is a sworn answer nobody
+     rechecks. */
+  const US_TAIL = new RegExp(
+    ',\\s*([A-Za-z][A-Za-z .\'-]{1,28}?)\\s*,\\s*([A-Za-z]{2})\\.?' +
+    '\\s+(\\d{5})(?:-\\d{4})?\\s*$');
+  function usPlace(raw) {
+    const t = clean(raw);
+    const m = t.match(US_TAIL);
+    if (!m) return null;
+    const st = US_STATES[m[2].toUpperCase()];
+    if (!st) return null;
+    return { street: t.slice(0, m.index).trim(), city: upper(m[1]),
+             state: st, zip: m[3] || '' };
+  }
+
+  /* CEAC's two street boxes take 40 characters each - the maxlength on the
+     live page and on the fixture. `addressHalf()` in matcher.js reads that
+     attribute off the box, which is the right way round, but it works on ONE
+     record key spread over two controls. These are two separate keys, because
+     C1/D supplies two distinct constant lines, so the split has to happen here
+     against the known cap. Breaking on a space keeps a word whole; the
+     alternative is the browser clipping the tail silently, which is how the
+     employer address lost text before anyone noticed. */
+  function twoLines(raw, max) {
+    const t = clean(raw), cap = max || 40;
+    if (t.length <= cap) return [t, ''];
+    let cut = t.lastIndexOf(' ', cap);
+    if (cut <= 0) cut = cap;
+    return [t.slice(0, cut).trim(), t.slice(cut).trim()];
+  }
+
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
     let s = deExp(raw).replace(PHONE_DIGITS, '');
@@ -466,16 +552,21 @@
        which no re-send could ever clear - into the calm "the intake form does
        not collect this". They are only reported when EMPTY, so C1/D's
        constants still fill the stay block and it stays quiet there. */
-    ['arrivalCity',   'Arrival city (J1: the host organisation is in one address column)'],
-    ['departureCity', 'Departure city'],
+    /* These six are DERIVED on J1 whenever the host organisation address
+       ends in a US city, state and ZIP - see usPlace(). They stay listed
+       because the list is only consulted when a key is EMPTY, which now means
+       one of two things: no host address in the sheet, or one this reader
+       refused. Both are fixed in the same cell, so both say so. */
+    ['arrivalCity',   'Arrival city (J1: read from the host organisation address)'],
+    ['departureCity', 'Departure city (J1: read from the host organisation address)'],
     ['arrivalFlight', 'Arrival flight (no column on either sheet)'],
     ['departureFlight','Departure flight (no column on either sheet)'],
     ['travelLocation','Places you will visit (no column on either sheet)'],
-    ['stayAddr1',     'Address where you will stay - street (J1: the host organisation)'],
+    ['stayAddr1',     'Address where you will stay - street (J1: the host organisation address)'],
     ['stayAddr2',     'Address where you will stay - second line'],
-    ['stayCity',      'Address where you will stay - city'],
-    ['stayState',     'Address where you will stay - state'],
-    ['stayZip',       'Address where you will stay - ZIP'],
+    ['stayCity',      'Address where you will stay - city (J1: from the host organisation address)'],
+    ['stayState',     'Address where you will stay - state (J1: from the host organisation address)'],
+    ['stayZip',       'Address where you will stay - ZIP (J1: from the host organisation address)'],
     ['arrivalDate',   'Intended date of arrival in the US'],
     ['stayAddress',   'Address where you will stay in the US'],
     ['tripPayer',     'Person / entity paying for the trip'],
@@ -813,6 +904,40 @@
       rec.payerCompany = rec.payerPersonName;
     }
 
+    /* THE STAY ADDRESS IS ALWAYS THE HOST COMPANY'S - the user's rule, stated
+       2026-09-04 after a live report listed all five of its boxes as having no
+       value. On J1 the host organisation is also the U.S. point of contact, so
+       one cell answers both blocks, and it was reaching NEITHER: the sheet
+       names it `usPocAddress` while the matcher has `usPocAddr1`/`usPocAddr2`
+       and `stayAddr1`..`stayZip`. A value sitting in the sheet, landing
+       nowhere - the third time that exact shape has turned up.
+
+       Positive case only, as with the SSN and the payer: an empty cell leaves
+       every key alone, so C1/D's five stay constants - the cruise line's
+       address - still fill the block and the panel switch stays live. */
+    if (rec.usPocAddress) {
+      const place = usPlace(rec.usPocAddress);
+      const lines = twoLines(place ? place.street : rec.usPocAddress);
+      rec.stayAddr1  = lines[0];
+      rec.usPocAddr1 = lines[0];
+      if (lines[1]) { rec.stayAddr2 = lines[1]; rec.usPocAddr2 = lines[1]; }
+      if (place) {
+        rec.stayCity   = place.city;
+        rec.stayState  = place.state;
+        rec.usPocCity  = place.city;
+        rec.usPocState = place.state;
+        rec.stayZip = place.zip;
+        rec.usPocZip = place.zip;
+        /* NOT arrivalCity / departureCity. Those are trip fields, and
+           `trip.apply()` never overwrites a value the record already holds -
+           so setting them here would make this derivation beat the operator's
+           own entry for that applicant, which is exactly backwards. trip.js
+           falls back to `hostCity` instead, after their own answer. */
+        rec.hostCity = place.city;
+      }
+      rec._hostPlace = !!place;
+    }
+
     if (rec.ssn)           rec.ssnNA = 'NO';
     if (rec.taxId)         rec.taxIdNA = 'NO';
     if (rec.monthlyIncome) rec.monthlyIncomeNA = 'NO';
@@ -989,6 +1114,26 @@
       W('monthlyIncome', 'Monthly salary reads ' + rec.monthlyIncome + ' in local currency - ' +
                          'too small for a monthly wage in IDR. Check the intake cell for a ' +
                          'missing thousand or a different unit.');
+
+    /* AN ADDRESS THAT IS NOT AMERICAN CANNOT ANSWER FIVE AMERICAN BOXES.
+       Only fires when the cell holds something and its tail is not
+       `, CITY, XX` with a real state code - so it is silent on every row the
+       derivation handles, and it quotes the value rather than naming a
+       column. */
+    /* WHAT IT READ, ON EVERY ROW IT READ ONE. A note, not a warning: nothing
+       is wrong, it fires on every J1 row, and it needs no decision - so it
+       must not inflate the amber count, which is the trap this file records
+       for the comma warning and the repeater message. What it buys is that a
+       misread address is visible in words instead of only in five boxes. */
+    if (rec._hostPlace)
+      N('stayCity', 'The stay address and the arrival and departure cities ' +
+                    'come from the host organisation: ' + rec.stayAddr1 + ', ' +
+                    rec.stayCity + ', ' + rec.stayState + ' ' + rec.stayZip);
+    if (rec.usPocAddress && !rec._hostPlace)
+      W('stayCity', 'The host organisation address reads "' + rec.usPocAddress +
+                    '", which does not end in a US city, state and ZIP ' +
+                    'code - so the stay city, state and ZIP, and the arrival ' +
+                    'and departure cities, have to be typed in');
 
     /* THE PAYER'S NAME SPLIT IS THE SAME GUESS AS THE APPLICANT'S, so it is
        named the same way. Nobody checks this half against a passport, but the
@@ -1317,7 +1462,7 @@
 
   const api = { toRecord, validate, SECTIONS, MAP, MISSING_FROM_INTAKE, stayUnit, stayCount, STAY_UNITS,
                 parseDate, fmtDate, dateStr, strictDate, normPhone, phoneAsWritten, deExp,
-                normMoney, splitName, yn, monthsBetween, toJs };
+                normMoney, splitName, yn, monthsBetween, toJs, usPlace, twoLines };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160 = api;

@@ -974,5 +974,87 @@ eq('nothing is invented', noPayerName.payerSurname, undefined);
 eq('nor a given name',    noPayerName.payerGivenNames, undefined);
 none('and nothing is warned about', D.validate(noPayerName).warnings, 'payerSurname');
 
+
+/* -- the host organisation's address answers two blocks --------------
+   The user's rule, 2026-09-04: the stay address is ALWAYS the host company's,
+   and the arrival and departure cities are the city it is in. On J1 the host
+   organisation is also the U.S. point of contact, so one free-text cell feeds
+   both - and it was reaching NEITHER, because the sheet names it
+   `usPocAddress` while the matcher has `usPocAddr1`/`usPocAddr2` and
+   `stayAddr1`..`stayZip`. Third time that exact shape has turned up, after
+   `payerPersonPhone` and `payerPersonName`. */
+const host = D.toRecord({ 'Name': 'A, B',
+  'Point of contact address': '6631 W BROAD ST, RICHMOND, VA 23230' });
+eq('the stay street',   host.stayAddr1, '6631 W BROAD ST');
+eq('the stay city',     host.stayCity, 'RICHMOND');
+/* THE FULL STATE NAME, not the code. CEAC's State is a dropdown of full names
+   and setSelect's prefix fallback would answer `MI` with MICHIGAN or
+   MINNESOTA, whichever came first - guessing between two options on a visa
+   form. */
+eq('the stay state',    host.stayState, 'VIRGINIA');
+eq('the stay ZIP',      host.stayZip, '23230');
+eq('the contact street', host.usPocAddr1, '6631 W BROAD ST');
+eq('the contact city',   host.usPocCity, 'RICHMOND');
+eq('the contact state',  host.usPocState, 'VIRGINIA');
+/* NOT arrivalCity / departureCity. Those are trip fields and `trip.apply()`
+   never overwrites a value the record already holds, so writing them here
+   would beat the operator's own entry for that applicant. trip.js reads
+   `hostCity` as a fallback instead - asserted in trip.test.js. */
+eq('the host city is published for trip.js', host.hostCity, 'RICHMOND');
+none('and the note is not a warning', D.validate(host).warnings, 'stayCity');
+has('the derivation says what it read', D.validate(host).notes,
+    'stayCity', 'come from the host organisation');
+
+/* THE GATE IS A REAL STATE CODE PLUS A ZIP, and a probe is why the ZIP is
+   required. With it optional, `JL RAYA KUTA NO 12, KUTA, ID` read as city KUTA
+   in the state of IDAHO - `ID` is Idaho and also the code Indonesia is written
+   with, and IN/India, MO/Macao, MD/Moldova, MT/Malta and NE/Niger set the same
+   trap. Idaho stays in the map: a host company can be in Sun Valley. */
+eq('an Indonesian address is refused',
+   D.usPlace('JL RAYA KUTA NO 12, KUTA, ID'), null);
+eq('and so is a bare name', D.usPlace('The Westin Richmond'), null);
+eq('and a state with no ZIP', D.usPlace('100 Main St, Richmond, VA'), null);
+eq('Idaho is still a state',
+   D.usPlace('100 Main St, Sun Valley, ID 83353').state, 'IDAHO');
+eq('a ZIP+4 is read too',
+   D.usPlace('1 A St, Reston, VA 20190-1234').zip, '20190');
+
+/* REFUSING IS THE SAFE DIRECTION - an empty box is a visible gap, a filled one
+   is a sworn answer nobody rechecks - so the refusal is named, with the value
+   quoted rather than a column letter. */
+const badHost = D.toRecord({ 'Name': 'A, B',
+  'Point of contact address': 'The Westin Richmond' });
+eq('the street still fills', badHost.stayAddr1, 'The Westin Richmond');
+/* '' rather than undefined: toRecord seeds every key it knows, and
+   DS160Const.apply() reads '' as unset - so C1/D's stay constants still
+   fill the block. */
+eq('but no city is invented', badHost.stayCity, '');
+has('and it says so', D.validate(badHost).warnings, 'stayCity',
+    'does not end in a US city, state and ZIP');
+none('with no note claiming it read one', D.validate(badHost).notes, 'stayCity');
+
+/* NO COLUMN, NO ASSERTION, so C1/D's five stay constants - the cruise line's
+   address - still fill the block and the panel switch stays live. */
+const noHost = D.toRecord({ 'Name': 'A, B' });
+eq('nothing is invented', noHost.stayAddr1, '');
+eq('nor the city',        noHost.stayCity, '');
+none('and nothing is said', D.validate(noHost).warnings, 'stayCity');
+
+/* CEAC'S TWO STREET BOXES TAKE 40 CHARACTERS EACH. addressHalf() in matcher.js
+   reads that maxlength off the box, which is the right way round, but it
+   spreads ONE key over two controls; these are two separate keys because C1/D
+   supplies two distinct constant lines. Breaking on a space keeps a word
+   whole - the alternative is the browser clipping the tail silently, which is
+   how the employer address lost text before anyone noticed. */
+eq('a short address needs no second line', D.twoLines('6631 W BROAD ST')[1], '');
+const longAddr = D.twoLines('1234 SOME VERY LONG STREET NAME AVENUE SUITE 900 BUILDING C');
+eq('line 1 fits the box', longAddr[0].length <= 40, true);
+eq('and breaks on a space', longAddr[0], '1234 SOME VERY LONG STREET NAME AVENUE');
+eq('the tail is kept',     longAddr[1], 'SUITE 900 BUILDING C');
+const wrapped = D.toRecord({ 'Name': 'A, B',
+  'Point of contact address': '1234 SOME VERY LONG STREET NAME AVENUE SUITE 900 BUILDING C, RESTON, VA 20190' });
+eq('a long host street wraps', wrapped.stayAddr2, 'SUITE 900 BUILDING C');
+eq('on both blocks',           wrapped.usPocAddr2, 'SUITE 900 BUILDING C');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

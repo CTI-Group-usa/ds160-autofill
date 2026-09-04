@@ -45,7 +45,15 @@
       hint: 'The sign-on date. Any format - it is converted to DD-MMM-YYYY.' },
     { key: 'arrivalFlight', page: 'Travel', label: 'Arrival Flight (if known)', def: '',
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
-    { key: 'arrivalCity', page: 'Travel', label: 'Arrival City', def: '',
+    /* THE HOST COMPANY'S CITY, and the fallback is what makes it safe. The
+       user's rule (2026-09-04): the arrival and departure cities are the city
+       the host organisation is in. `hostCity` is derived in normalize.js from
+       the one free-text address column, and it is read HERE rather than
+       written onto the record - because `apply()` never overwrites a value the
+       record already holds, so a derived `arrivalCity` on the record would
+       beat this applicant's own entry. A participant may fly into a different
+       city; their answer has to win. */
+    { key: 'arrivalCity', page: 'Travel', label: 'Arrival City', def: '', from: 'hostCity',
       hint: 'The sign-on port city.',
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'departureDate', page: 'Travel', kind: 'date',
@@ -53,7 +61,7 @@
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'departureFlight', page: 'Travel', label: 'Departure Flight (if known)', def: '',
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
-    { key: 'departureCity', page: 'Travel', label: 'Departure City', def: '',
+    { key: 'departureCity', page: 'Travel', label: 'Departure City', def: '', from: 'hostCity',
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'jobTitleAboard', page: 'Crew Visa', label: 'Specific job title aboard the vessel', def: '',
       hint: 'The "Working in the Capacity of" line in the supporting letter.' },
@@ -88,6 +96,9 @@
   const GATE_KEYS = FIELDS.filter(f => f.showWhen).map(f => f.showWhen.key)
                           .filter((k, i, a) => a.indexOf(k) === i);
 
+  // Derived from the table, like GATE_KEYS - adding a `from` registers itself.
+  const FROM_KEYS = FIELDS.filter(f => f.from);
+
   function values(rec) {
     const mine = all()[idOf(rec)] || {}, out = {};
     for (const f of FIELDS) out[f.key] = (f.key in mine) ? mine[f.key] : f.def;
@@ -109,6 +120,16 @@
        operator's answer must beat a constant; then the record; then the active
        pack. The pack is asked LAST and defensively - trip.js is loaded without
        constants.js in the node tests, and values() must not throw there. */
+    /* A FIELD WHOSE DEFAULT IS DERIVED PER APPLICANT. Same precedence as the
+       gates above and for the same reason: this applicant's own entry first,
+       then whatever the record derived. `from` names a record key, never a
+       literal, so the derivation stays in normalize.js where it can be
+       tested. */
+    for (const f of FROM_KEYS) {
+      if (out[f.key]) continue;
+      if (rec && rec[f.from]) out[f.key] = rec[f.from];
+    }
+
     for (const k of GATE_KEYS) {
       if (out[k]) continue;
       if (rec && rec[k]) { out[k] = rec[k]; continue; }

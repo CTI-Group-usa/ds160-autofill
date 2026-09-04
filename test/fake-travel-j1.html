@@ -110,8 +110,16 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_LN2" maxlength="40"></td></tr>
     <tr><td>City</td>
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_CITY"></td></tr>
+    <!-- STATE IS A DROPDOWN ON THE LIVE PAGE, of full state names - which is
+         why the derivation expands `VA` to VIRGINIA rather than handing the
+         code to setSelect, whose prefix fallback would answer `MI` with
+         MICHIGAN or MINNESOTA, whichever came first. -->
     <tr><td>State</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_STATE"></td></tr>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_STATE">
+              <option value="">- SELECT ONE -</option>
+              <option>MICHIGAN</option><option>MINNESOTA</option>
+              <option>MISSOURI</option><option>VIRGINIA</option>
+            </select></td></tr>
     <tr><td>ZIP Code (if known)</td>
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSTAY_ADDR_POSTAL_CD"></td></tr>
   </table>

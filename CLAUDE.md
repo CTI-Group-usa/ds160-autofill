@@ -615,6 +615,116 @@ and a broken one alike is not a reason.** It was the comma warning, the
 P-3-04510 cross-check, the repeater note, `no value in record` on a malformed
 date, and now this.
 
+## The stay address IS the host company (2026-09-04, user's rule)
+Two instructions, one after the other:
+
+> Address Where You Will Stay in the U.S. - **always using host company
+> address**
+> arrival city dan departure city juga memakai **city dimana host company
+> berada**
+
+On J1 the host organisation is also the U.S. point of contact, so **one
+free-text cell answers two whole blocks** - and it was reaching **neither**.
+The sheet names it `usPocAddress`; the matcher has `usPocAddr1`/`usPocAddr2`
+and `stayAddr1`..`stayZip`. A value sitting in the sheet, landing nowhere:
+**the third time that exact shape has turned up**, after `payerPersonPhone`
+and `payerPersonName`. The U.S. Contact page had been filling name, phone and
+email and silently skipping the address.
+
+### The address ban stands; this is a different string
+No parser for the seafarer's **home** address. Indonesian free text has no
+convention to lean on, one was built and reverted the same day at the user's
+request, and it is not coming back.
+
+This is a **US** address, in a column that exists to hold one, and the user has
+now twice said what it feeds. There is nothing else to read the city from - the
+J1 sheet has no host-city column.
+
+**The gate is a real USPS state code plus a five-digit ZIP.** Anything else
+returns null. And the first version of that gate was too loose, which a probe
+caught before it shipped:
+
+| Address | First version |
+|---|---|
+| `6631 W BROAD ST, RICHMOND, VA 23230` | Richmond, VIRGINIA - right |
+| `JL RAYA KUTA NO 12, KUTA, ID` | **Kuta, IDAHO** |
+
+`ID` is Idaho and also the code Indonesia is written with, and IN/India,
+MO/Macao, MD/Moldova, MT/Malta and NE/Niger set the same trap. Idaho stays in
+the table - a host company can be in Sun Valley - so what changed is that a
+bare two-letter tail is no longer enough. The comment that had claimed the
+collision was harmless was **wrong, and my own probe is what disproved it**.
+
+Requiring five digits is not proof either; an Indonesian postcode is five
+digits too. So it is not the only defence:
+
+- **`validate()` states the place it read, on every row, as a `note`.** Nothing
+  is wrong, it fires on every J1 row, it needs no decision - so it must not
+  inflate the amber count, which is the trap recorded here for the comma
+  warning and the repeater message. What it buys is that a misread address is
+  in front of the operator **in words**, not only in five boxes.
+- **refusing is the safe direction.** An empty box is a visible gap; a filled
+  one is a sworn answer nobody rechecks. A refusal is named, with the value
+  quoted rather than a column letter.
+
+### The state code is expanded to the full name
+CEAC's State is a dropdown of **full names**, and `setSelect`'s prefix fallback
+would answer `MI` with MICHIGAN or MINNESOTA - whichever came first. Picking
+between two plausible options is guessing, and this is a visa form. So
+`US_STATES` maps the code, and that map doubles as the gate.
+
+Both fixtures now carry MICHIGAN, MINNESOTA, MISSOURI and VIRGINIA together, so
+the expansion is what makes the right one land. `fake-us-contact.html`'s State
+had **one option** (FLORIDA) and a correct MISSOURI came back "no matching
+option on this page", reading as a matcher failure - the same trap already
+recorded for `fake-family.html` and `fake-prev-work-education.html`.
+
+### THE OPERATOR STILL WINS ON THE TWO CITIES
+`arrivalCity` and `departureCity` are **trip fields**, and `trip.apply()` never
+overwrites a value the record already holds. So deriving them onto the record
+would make the derivation beat **this applicant's own entry** - exactly
+backwards, and the reason trip details are stored per applicant at all. A
+participant may fly into a different city.
+
+`normalize.js` publishes **`hostCity`** and trip.js reads it as a fallback:
+`from: 'hostCity'` on the field, resolved in `values()` **after** the
+operator's own entry and before the pack. `FROM_KEYS` is derived from the field
+table, exactly like `GATE_KEYS`, so adding a `from` registers itself.
+
+Verified: with a host address both cities read RICHMOND; set `arrivalCity` for
+that applicant and it becomes LOS ANGELES while `departureCity` stays RICHMOND;
+with no host address both stay empty; and a closed `specificTravelPlans` gate
+still keeps them off the page entirely.
+
+### Two street boxes, two keys, a fixed cap
+`addressHalf()` in `matcher.js` reads the real `maxlength` off the box, which is
+the right way round, but it spreads **one** record key over two controls.
+`stayAddr1`/`stayAddr2` are two separate keys, because C1/D supplies two
+distinct constant lines - so `twoLines()` splits here against CEAC's known
+40-character cap, breaking on a space. The alternative is the browser clipping
+the tail silently, which is how the employer address lost text before anyone
+noticed.
+
+### What it does not touch
+Positive case only, as with the SSN and the payer keys: an **empty** cell
+leaves every key alone, so C1/D's five stay constants - the cruise line's
+address - still fill the block and the panel switch stays live.
+
+The six derived keys stay in `MISSING_FROM_INTAKE`, because that list is only
+consulted when a key is **empty** - which now means one of two things, no host
+address in the sheet or one the reader refused. Both are fixed in the same
+cell, and the wording says so instead of claiming the intake form does not
+collect it.
+
+**Still no source on the J1 Travel page:** both flight numbers, the
+places-to-visit repeater, and `stayAddr2` when the host street fits one line.
+
+**One thing not done, and it is offered rather than assumed:** the DS-7002 also
+carries the host organisation's address, and `j1docs.js` already parses it
+(`6631 W BROAD ST, RICHMOND, VA 23230` - cleaner than free text). Wiring it as
+a second source means new answer keys and a derivation inside `j1docs`, so it
+waits for the user to ask.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it
