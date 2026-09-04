@@ -47,7 +47,11 @@ const r = P.parse(SAMPLE);
    hint that date would come out as 5 December instead of 12 May. */
 eq('programme starts', r.fields.programFrom, '25-MAY-2026');
 eq('programme ends',   r.fields.programTo,   '24-MAY-2027');
-ok('nothing missing', r.ok);
+/* `ok` is false on the blank sample, and correctly so: its only P-n-nnnnn is
+   the form's stationery, which is stripped, so the programme number really is
+   absent. Both DATES are what matter here. */
+ok('both dates present', !!r.fields.programFrom && !!r.fields.programTo);
+eq('and only the programme number is missing', r.missing.join(','), 'programNumber');
 
 /* THE ONE THAT WOULD HAVE BEEN WRONG SILENTLY. Both halves under 13, so only
    the "(mm-dd-yyyy)" in the label can resolve it. */
@@ -73,20 +77,21 @@ eq('the category is read but not offered', a.category, undefined);
 eq('and neither is programFrom',           a.programFrom, undefined);
 
 // -- the formatted identifiers ---------------------------------------
-/* Found by PATTERN, not by label: they are shaped like nothing else on the
-   page, and in the sample the SEVIS id arrives with no label at all. */
+/* Found by PATTERN, because in the sample the SEVIS id arrives with no label
+   at all. See the stationery block near the end of this file for what that
+   choice cost on the programme number. */
 eq('SEVIS id',       r.fields.sevisId,       'N00375XXXXX');
-eq('programme number', r.fields.programNumber, 'P-3-04510');
 eq('category',       r.fields.category,      'INTERN');
 
 // -- the cross-check against the sheet -------------------------------
 /* Columns CH and CI are typed in by hand FROM this document, so a
    disagreement means one of them is wrong on a sworn application - and
    nothing else in this project would notice. */
-const real = P.parse(SAMPLE.replace('N00375XXXXX', 'N0037491619'));
+const real = P.parse(SAMPLE.replace('N00375XXXXX', 'N0037491619') +
+                     ' Program Number: P-4-44043');
 eq('agreeing values raise nothing',
-   P.crossCheck(real, { sevisId: 'N0037491619', programNumber: 'P-3-04510' }).length, 0);
-const bad = P.crossCheck(real, { sevisId: 'N0099999999', programNumber: 'P-3-04510' });
+   P.crossCheck(real, { sevisId: 'N0037491619', programNumber: 'P-4-44043' }).length, 0);
+const bad = P.crossCheck(real, { sevisId: 'N0099999999', programNumber: 'P-4-44043' });
 eq('a different SEVIS id is caught', bad.length, 1);
 ok('and both values are quoted',
    /N0037491619/.test(bad[0].msg) && /N0099999999/.test(bad[0].msg));
@@ -136,10 +141,46 @@ if (realFile) {
   console.log('  (no local DS-2019 text found - the label tests above still ran)');
 }
 
-/* NOT PROVEN, AND THE COMMENT IN ds2019.js SAYS SO: that pdftext.js can
-   extract anything from a real DS-2019 PDF. It returned zero characters from
-   the CEAC print-out. `parse` takes text; where the text comes from is the
-   caller's problem, exactly as with letter.js. */
+/* NOW PROVEN (2026-09-04): pdftext.js CAN read a real DS-2019. The programme
+   period came out of a live form on the first attempt, which is more than the
+   CEAC print-out managed - that returned zero characters.
+
+   STILL OPEN from that same run: the SEVIS id was NOT found on the real form,
+   though it is found in the blank sample above. That needs the extracted text
+   of a real one in front of us; guessing a second pattern is how the
+   stationery bug happened. Until then it is reported missing. */
+
+
+/* -- THE FORM'S OWN STATIONERY IS SHAPED LIKE A PROGRAMME NUMBER -----
+   Found by the first live run, and the comment in ds2019.js used to claim the
+   opposite. Every DS-2019 carries the pre-printed 212(e) endorsement
+
+     PHYSICIANS SPONSORED BY P-3-04510 ARE SUBJECT TO ...
+
+   and P-3-04510 is ECFMG's number, there whoever the participant is. It was
+   the ONLY P-n-nnnnn in the blank sample - the clue, not the reassurance it
+   was taken for - and a real applicant's form returned it too, against a
+   sheet that said P-4-44043. So the cross-check reported a mismatch on EVERY
+   form, which is how an operator learns to ignore a warning. */
+const boiler = P.parse(SAMPLE);
+eq('the stationery is not read as a programme number', boiler.fields.programNumber, undefined);
+ok('it is reported missing instead', boiler.missing.indexOf('programNumber') >= 0);
+/* AND WITH NO VALUE THERE, THE CROSS-CHECK STANDS DOWN BY ITSELF. That is the
+   whole point: a visible gap beats a confident wrong answer. */
+eq('no false mismatch against the sheet',
+   P.crossCheck(boiler, { programNumber: 'P-4-44043' }).length, 0);
+
+/* A REAL programme number still has to come through. Only the one sentence is
+   stripped, not every P-n-nnnnn on the page. */
+const withReal = P.parse(SAMPLE + ' Program Number: P-4-44043');
+eq('a real one is still found', withReal.fields.programNumber, 'P-4-44043');
+eq('and agrees with the sheet',
+   P.crossCheck(withReal, { programNumber: 'P-4-44043' }).length, 0);
+eq('and disagrees when it should',
+   P.crossCheck(withReal, { programNumber: 'P-3-05133' }).length, 1);
+/* The strip must not eat the dates or the SEVIS id sitting near it. */
+eq('the dates survive the strip', withReal.fields.programFrom, '25-MAY-2026');
+eq('the SEVIS id too',            withReal.fields.sevisId, 'N00375XXXXX');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

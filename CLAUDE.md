@@ -153,11 +153,53 @@ One detail worth keeping: **a redacted sample must not report a mismatch.**
 `N00375XXXXX` is a blanked-out id, not a contradiction, and reporting it would
 train the operator to ignore the check.
 
-### What is NOT proven
-That `pdftext.js` can extract anything from a real DS-2019 **PDF**. It returned
-**zero characters** from the CEAC print-out. `parse` takes text and where the
-text comes from is the caller's problem, exactly as with `letter.js`;
-`test/ds2019.test.js` runs end-to-end against a local form if one is present.
+### THE FORM'S OWN STATIONERY IS SHAPED LIKE A PROGRAMME NUMBER
+Found by the first live run, and the comment in `ds2019.js` had claimed the
+opposite - *"nothing else on a DS-2019 is shaped like either"*. Every DS-2019
+carries the pre-printed 212(e) endorsement:
+
+> PRELIMINARY ENDORSEMENT ... REGARDING SECTION 212(e) ...
+> **PHYSICIANS SPONSORED BY P-3-04510 ARE SUBJECT TO** ...
+
+`P-3-04510` is **ECFMG's** programme number, printed on the form whoever the
+participant is. It was the **only** `P-n-nnnnn` in the blank sample - the clue,
+not the reassurance it was taken for - and a real applicant's form returned it
+too, against a sheet that said `P-4-44043`. So the pattern was reading the
+stationery on both, **and the cross-check then reported a mismatch on every
+form**, which is exactly how an operator learns to ignore a warning.
+
+Stripped before anything is matched, and if nothing survives the field is
+reported **missing** - a visible gap beats a confident wrong answer, and with no
+value there `crossCheck()` stands down by itself.
+
+**Only the number goes, not the sentence around it.** The first attempt stripped
+`...BY P-3-04510[^.]*` - up to the next full stop - and that block runs on for
+another two clauses without one, so it swallowed whatever followed. Harmless on
+the blank sample; on a filled form it would eat the real programme number
+sitting after it.
+
+The lesson, third time in this project: **a pattern is only as good as the
+things you checked it against.** A blank government form is stationery, and
+stationery is full of plausible-looking values.
+
+### What the live run proved, and what it did not
+**Proved:** `pdftext.js` **can** read a real DS-2019. The programme period came
+out on the first attempt - more than the CEAC print-out managed, which returned
+zero characters.
+
+**Still open:** the **SEVIS ID was not found** on the real form, though it *is*
+found in the blank sample. That needs the extracted text of a real one in front
+of us; guessing a second pattern is how the stationery bug happened. Until then
+it is reported missing, which is the honest state.
+
+`parse` takes text and where it comes from is the caller's problem, as with
+`letter.js`; `test/ds2019.test.js` runs end-to-end against a local form if one
+is present.
+
+**The files live in a different Zoho Drive folder from the J1 supporting
+letters** - `My Folders / ... / J1 Visa Attachment` - which does not affect the
+fetch (`background.js` sends the user's cookies to any WorkDrive host), but it
+is where to look for one.
 
 The samples are **gitignored** (`*.docx` joined `*.pdf`): the only DS-2019
 available is a third party's and **this repo is public**. The test therefore
