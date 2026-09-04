@@ -541,6 +541,80 @@ dropping them here costs nothing.
 bench. The cross-fixture sweep was run against the committed matcher first and
 then against the fix: **all twenty-two other pages byte-identical.**
 
+## A guard held up by string truncation (2026-09-04, third J1 report)
+Stripping option text out of the section had a consequence nothing predicted,
+and it exposed a defect older than the change.
+
+`purposeOfTrip` carried **`not: /Specify|OTHER/i`**. "Specify" is the label of
+the dropdown **next to it in the same block** - the mistake this file records
+twice already, under `vesselName` and `passportNumber`:
+
+> A `not` guard is for **other blocks**. Never name a neighbour in the same one.
+
+It looked like it worked. It only worked because CEAC's own option list -
+twenty-odd purposes - pushed that word past `tidy()`'s **240-character cut**.
+The moment `blockText()` stopped sweeping `<option>` text into the section,
+"Specify" fitted inside the window and the rule excluded itself from its own
+box. Measured, same label, three contexts:
+
+| Section | Old result |
+|---|---|
+| empty | `purposeOfTrip` |
+| heading **+ the option list**, truncated | `purposeOfTrip` |
+| heading + the sibling's label | **`undefined`** |
+
+The live J1 report named it: `dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip`,
+unrecognised. **A guard whose behaviour depends on whether a word fell inside
+an arbitrary 240-character window is not a guard** - and `travel-noplans` had
+been listing that control as unmatched in every sweep, unnoticed, for the same
+reason.
+
+Nothing replaced it. Neither id fragment reaches `ddlOtherPurpose`, the label
+is anchored and cannot match "Specify", and `specifyPurpose` sits below with
+its own anchored label. `/OTHER/i` was guarding nothing the ids do not already
+separate - and a bare word like that is exactly what catches an option list,
+since OTHER is an option in most CEAC dropdowns.
+
+`test/fake-travel-j1.html` now carries **both** dropdowns with the real
+repeater id, and its option list is there because its **length** was what hid
+the bug. Do not trim it.
+
+## "Already has a value" was hiding a wrong sworn answer
+The same report read:
+
+> `payerSurname – already has a value`
+> `payerGivenNames – already has a value`
+
+Those boxes still held `PRATAMA` / `PUTU YUDA` - the applicant's own name, put
+there by a pass before the fix above. The filler is right not to overwrite
+them: **an operator's own typing must never be replaced.** But the line it
+printed is word for word what it prints for an address somebody typed by hand,
+so the wrong answer sat on a sworn form looking settled.
+
+The skip now says what is in the box and what the record wants whenever they
+differ, and what to do about it:
+
+> `payerSurname` - the box holds "PRATAMA", the record says "YASA" - clear the
+> box and Fill again to replace it
+
+Then leaving it is the operator's decision, taken with the disagreement in
+front of them, rather than ours taken silently. Two details:
+
+- **it asks the setter's own question.** `findOption()` is lifted out of
+  `setSelect` so the report resolves a dropdown exactly as the filler would. A
+  select's value is often a code where the record holds the display text (`J`
+  against `EXCHANGE VISITOR (J)`), and comparing the two strings directly
+  invents a disagreement that is not there - verified on the live purpose
+  dropdown, which correctly stays quiet.
+- **the wording avoids "no value in record"**, the exact string `popup.js`
+  reads as *"stale record, send it again"*. Re-sending would not clear a box
+  that is already full, so that instruction would be wrong.
+
+Why this keeps happening, stated once: **a reason that is true of a good page
+and a broken one alike is not a reason.** It was the comma warning, the
+P-3-04510 cross-check, the repeater note, `no value in record` on a malformed
+date, and now this.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

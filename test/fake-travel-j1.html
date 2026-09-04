@@ -36,6 +36,35 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
      list; it is evidence. -->
 <h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Travel Information</h2>
 
+<!-- THE PURPOSE DROPDOWNS SIT IN A REPEATER, and this id is the real one -
+     `dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip`, read off the live J1 report
+     that came back with it unrecognised. The "Specify" box beside it is what
+     `purposeOfTrip`'s old `not` guard was naming, so both belong here: with
+     the sibling's label in the section the guard excluded the rule from its
+     own box. The option list is CEAC's, abbreviated - it is here because its
+     LENGTH was what hid the bug, by pushing "Specify" past the 240-character
+     section cut. -->
+<fieldset>
+  <legend>Purpose of Trip to the U.S.</legend>
+  <table>
+    <tr><td>Purpose of Trip to the U.S.</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip">
+        <option value="">- SELECT ONE -</option>
+        <option value="A">FOREIGN GOVERNMENT OFFICIAL (A)</option>
+        <option value="B">TEMP. BUSINESS PLEASURE VISITOR (B)</option>
+        <option value="C">ALIEN IN TRANSIT (C)</option>
+        <option value="J">EXCHANGE VISITOR (J)</option>
+        <option value="O">OTHER</option>
+      </select></td></tr>
+    <tr><td>Specify</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dlPrincipalAppTravel_ctl00_ddlOtherPurpose">
+        <option value="">- SELECT ONE -</option>
+        <option>INTERN (J1)</option>
+        <option>CREWMEMBER IN TRANSIT (C1/D)</option>
+      </select></td></tr>
+  </table>
+</fieldset>
+
 <fieldset>
   <legend>Provide a complete itinerary for your travel to the U.S.</legend>
   <table>

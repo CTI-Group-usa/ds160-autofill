@@ -1223,5 +1223,31 @@ eq('but it cannot reach a surname box',
 eq('the payer email box is not the applicant\'s',
    ph('tbxCtl0043', 'Email Address', payBlk), undefined);
 
+
+/* -- A GUARD HELD UP BY STRING TRUNCATION ---------------------------
+   `purposeOfTrip` carried `not: /Specify|OTHER/i`, and "Specify" is the label
+   of the dropdown NEXT TO it in the same block - so the rule excluded itself,
+   the mistake this suite already pins for `vesselName` and `passportNumber`.
+
+   It appeared to work only because CEAC's option list - twenty-odd purposes -
+   pushed that word past blockLabel()'s 240-character cut. The moment option
+   text stopped being swept into the section, "Specify" fitted inside the
+   window and a live J1 report came back with
+   `dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip` unrecognised.
+
+   So the section here holds the sibling's label deliberately. That is what a
+   real page gives it. */
+const purpBlk = 'Purpose of Trip to the U.S. Purpose of Trip to the U.S. Specify';
+eq('the purpose dropdown, with its neighbour in the section',
+   ph('dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip', 'Purpose of Trip to the U.S.',
+      purpBlk), 'purposeOfTrip');
+eq('and with no section at all',
+   ph('ddlPurposeOfTrip', 'Purpose of Trip to the U.S.', ''), 'purposeOfTrip');
+/* Nothing is needed in the guard's place: neither id fragment reaches the
+   Specify box, and its own anchored label claims it. */
+eq('Specify is still its own', ph('ddlOtherPurpose', 'Specify', purpBlk), 'specifyPurpose');
+eq('and the purpose label cannot claim it',
+   ph('tbxOpaque', 'Specify', purpBlk), 'specifyPurpose');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

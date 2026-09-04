@@ -256,9 +256,14 @@
     return text !== '' && !/^SELECT\b/.test(text);
   }
 
-  function setSelect(el, value) {
+  /* Lifted out of setSelect so the skip report can ask the SAME question the
+     setter would - "is the option already selected the one this record wants?"
+     A dropdown's value is often a code where the record holds the display text
+     (`C` against `ALIEN IN TRANSIT (C)`), so comparing the two strings
+     directly invents a disagreement that is not there. */
+  function findOption(el, value) {
     const want = String(value).trim().toUpperCase();
-    if (!want) return NOMATCH;
+    if (!want) return null;
     const opts = Array.from(el.options);
     const txt = o => o.text.trim().toUpperCase();
 
@@ -277,6 +282,11 @@
                                     (txt(o).indexOf(want) >= 0 || want.indexOf(txt(o)) >= 0));
       if (near.length === 1) hit = near[0];
     }
+    return hit || null;
+  }
+
+  function setSelect(el, value) {
+    const hit = findOption(el, value);
     if (!hit) return NOMATCH;
     if (el.value === hit.value) return SAME;
     el.value = hit.value;
@@ -544,7 +554,34 @@
       }
       if (!opts.overwrite && c.type !== 'radio' && c.type !== 'checkbox' &&
           hasRealValue(c) && !c.el.hasAttribute(MARK)) {
-        report.skipped.push({ id: c.id, key: m.key, why: 'already has a value' });
+        /* A BOX THAT DISAGREES WITH THE RECORD IS NOT THE SAME AS ONE THE
+           OPERATOR TYPED. Both are left alone - never overwrite someone's own
+           entry - but "already has a value" says nothing, and on the J1 Travel
+           page it hid a wrong sworn answer: the payer's name boxes still held
+           the applicant's own name from a pass before the fix, and the report
+           read exactly the same as it does for an address typed by hand.
+
+           So say what is in the box and what the record wants whenever they
+           differ. Then leaving it alone is the operator's decision, taken with
+           the disagreement in front of them, rather than ours taken silently.
+
+           The wording deliberately avoids "no value in record" - popup.js
+           reads that exact string as "stale record, send it again", which is
+           the wrong instruction here. */
+        let held = String(c.el.value || '').trim(), agrees;
+        if (c.tag === 'select') {
+          const sel = c.el.options[c.el.selectedIndex];
+          if (sel) held = sel.text.trim();
+          const hit = findOption(c.el, value);
+          agrees = !!hit && hit.value === c.el.value;
+        } else {
+          agrees = held.toUpperCase() === String(value).trim().toUpperCase();
+        }
+        report.skipped.push({ id: c.id, key: m.key,
+          why: (held && !agrees)
+            ? 'the box holds "' + held + '", the record says "' + value +
+              '" - clear the box and Fill again to replace it'
+            : 'already has a value' });
         continue;
       }
       if (isPostback(c.el)) {

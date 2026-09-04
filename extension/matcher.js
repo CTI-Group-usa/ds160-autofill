@@ -223,8 +223,27 @@
 
     // Travel page. The visible labels here are clean and distinct, so
     // they carry more weight than the id guesses.
+    /* THIS RULE CARRIED `not: /Specify|OTHER/i` AND WAS EXCLUDING ITSELF.
+       "Specify" is the label of the dropdown NEXT TO this one, in the same
+       block - the mistake this file records twice already, under `vesselName`
+       and `passportNumber`: a `not` is tested against the section, so naming a
+       neighbour in it turns the rule off on every real page.
+
+       It survived only because CEAC's own option list - twenty-odd purposes -
+       pushed the word past tidy()'s 240-character cut. The moment `blockText`
+       stopped sweeping <option> text into the section, "Specify" fitted inside
+       the window and the live page reported
+       `dlPrincipalAppTravel_ctl00_ddlPurposeOfTrip` as unrecognised. A guard
+       held up by string truncation is not a guard.
+
+       Nothing is needed in its place. Neither id fragment matches
+       `ddlOtherPurpose`, the label is anchored and cannot match "Specify", and
+       `specifyPurpose` sits below with its own anchored label. `/OTHER/i` was
+       guarding nothing the ids do not already separate - and a bare word like
+       that is exactly what catches an option list, since OTHER is an option in
+       most CEAC dropdowns. */
     { key: 'purposeOfTrip',  kind: 'text',  ids: [/PurposeOfTrip/i, /PURPOSE_OF_TRIP/i],
-      labels: [/^purpose of trip/i], not: /Specify|OTHER/i },
+      labels: [/^purpose of trip/i] },
     { key: 'specifyPurpose', kind: 'text',  ids: [/OtherPurpose/i, /ddlOtherPurpose/i],
       labels: [/^specify$/i] },
     { key: 'specificTravelPlans', kind: 'yesno', ids: [/SpecificTravel/i, /TRAVEL_PLANS_IND/i],
