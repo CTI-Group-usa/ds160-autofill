@@ -744,11 +744,69 @@ collect it.
 **Still no source on the J1 Travel page:** both flight numbers, the
 places-to-visit repeater, and `stayAddr2` when the host street fits one line.
 
-**One thing not done, and it is offered rather than assumed:** the DS-7002 also
-carries the host organisation's address, and `j1docs.js` already parses it
-(`6631 W BROAD ST, RICHMOND, VA 23230` - cleaner than free text). Wiring it as
-a second source means new answer keys and a derivation inside `j1docs`, so it
-waits for the user to ask.
+### The DS-7002 labels the city itself - Section 2 does
+The user pointed at the form: *"di ds 7002 section host company terlihat jelas
+ada sub section city"*. Section 2 is a table of named cells -
+
+> Organization Name | Phase Site Address | Suite
+> City | State | ZIP Code | Website URL
+
+so on that revision **nothing has to be read out of the tail of an address
+string**. `j1docs.js` reads those cells, and `arrivalCity` / `departureCity`
+are derived from the host city exactly as the dates are derived from the
+programme period - they are trip fields, so `applyParsed` stores them as this
+applicant's own entry and they stay editable.
+
+**Two measurements shaped this, and both said the same thing: a short label is
+not a label.**
+
+`State` on its own matched the **letterhead** first - *U.S. Department of
+State* - and `hostState` came back as
+
+> `*OMB APPROVAL NO. 1405-0170EXPIRATION DATE: 05/31/2024ESTIMATED BURDEN: 1.5 HOURS...`
+
+Declaring the longer letterhead as a cut point moved the problem rather than
+fixing it: the next match was the sponsor's own attestation, *"could be
+expected to bring the Department of State into notoriety or disrepute"*. The
+word is all over the prose.
+
+So the profile carries a **`scope`**: `SECTION 2: HOST ORGANIZATION
+INFORMATION` through to `SECTION 3`, and `hostStreet` / `hostCity` /
+`hostState` / `hostZip` are read **there and nowhere else**. Those keys are
+deleted from the whole-document pass before the scoped pass runs, so a match
+from outside the section cannot survive.
+
+### THE SCREENSHOT IS OF THE INTERACTIVE ONE
+Measured on both DS-7002s on this machine, and it is the thing to understand
+before wiring anything else to this document:
+
+| | Section headers | Section 2 values |
+|---|---|---|
+| the flattened one that parses well | **none at all** | writes a single-line `Address` |
+| the **interactive** one | present | **nothing between the labels** |
+
+The interactive file's text is exactly the label run and no more -
+`Organization NamePhase Site Address SuiteCityStateZIP CodeWebsite URL` -
+because its values live in form objects this reader cannot place. **So the City
+cell is genuinely there and clearly labelled, and its value still is not
+reachable.** Printing the file flat is what puts it on the page, which is what
+that document's hint already says.
+
+The scope therefore never fires on the revision that parses, and
+`hostOrgAddress` stays its source. It earns itself the day someone prints an
+interactive one flat - and the test pins that case with the label run **glued**
+the way pdftext delivers it, because hand-typing the spaces in is what hid the
+supervisor bug once already.
+
+**The recommendation against building the AcroForm parser stands unchanged.**
+The sheet's own column answers all five stay boxes and both cities today - the
+Kalahari row proves it end to end - so the document buys a cross-check, not an
+answer.
+
+**Still offered, not done:** `Organization Name` inside Section 2 would give
+the U.S. contact's organisation name on that revision. It is left alone
+because `hostOrgName` already reads on the revision that parses, and adding a
+shorter alias risks the value that works for a benefit nobody asked for.
 
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip

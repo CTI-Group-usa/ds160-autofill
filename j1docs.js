@@ -125,7 +125,47 @@
       { label: 'Type of Degree or Certificate', key: 'degree' },
       { label: 'Host Organization Name', key: 'hostOrgName' },
       { label: 'Employer ID Number', key: 'hostEin' },
+      /* SECTION 2 LABELS ITS OWN CITY, STATE AND ZIP - the user pointed at the
+         form: "di ds 7002 section host company terlihat jelas ada sub section
+         city". The host block is a table of named cells:
+
+           Organization Name | Phase Site Address | Suite
+           City | State | ZIP Code | Website URL
+
+         so nothing has to be read out of the tail of an address string. That
+         matters because the sheet's own column has to be, and its shape varies
+         (`7000 KALAHARI DR, SANDUSKY, OHIO, 44870` against the DS-7002's
+         `6631 W BROAD ST, RICHMOND, VA 23230`).
+
+         `Address` stays: one DS-7002 in hand writes a single-line address
+         under that label rather than the split cells, and first-wins means
+         whichever the document actually has is the one that lands.
+
+         `City`, `State` and `ZIP Code` are the shortest labels in this profile
+         and the only generic ones that carry a value, so they are MEASURED on
+         a real document rather than trusted - see the end-to-end block in
+         test/j1docs.test.js. Section 1 has no address on any form seen, which
+         is why first-wins is safe here. */
+      { label: 'Phase Site Address', key: 'hostStreet' },
       { label: 'Address', key: 'hostOrgAddress' },
+      { label: 'City', key: 'hostCity' },
+      { label: 'State', key: 'hostState' },
+      { label: 'ZIP Code', key: 'hostZip' },
+      { label: 'Suite', key: null },
+      /* THE FORM'S OWN LETTERHEAD SAYS "U.S. Department of State", AND A BARE
+         `State` MATCHES INSIDE IT. Measured, not guessed: with only the short
+         label declared, `hostState` came back as
+
+           *OMB APPROVAL NO. 1405-0170EXPIRATION DATE: 05/31/2024ESTIMATED
+           BURDEN: 1.5 HOURSTraining/Internship Placement Plan
+
+         because the letterhead is the FIRST occurrence and readLabelled takes
+         the first. Declaring the longer label as a cut point is the fix, and
+         it is the mechanism this profile already relies on for `Category`
+         against `Occupational Category`: overlaps resolve in favour of the
+         longer label, so the letterhead is consumed here and Section 2's own
+         `State` cell is the first one left. */
+      { label: 'U.S. Department of State', key: null },
       { label: 'Exchange Visitor Hours per week', key: 'hoursPerWeek' },
       { label: 'Stipend', key: 'stipend' },
       { label: 'Main Program Supervisor/POC', key: 'supervisor' },
@@ -144,6 +184,33 @@
       { label: 'Additional Participant Details', key: null },
     ],
     patterns: [],
+    /* SHORT LABELS ARE SCOPED TO THEIR SECTION, and two measurements are why.
+       `State` on its own matched the letterhead first - "U.S. Department of
+       State" - and once that was declared as a cut point it matched the
+       sponsor's attestation instead: "...could be expected to bring the
+       Department of State into notoriety or disrepute". The word is all over
+       the prose. `City` and `ZIP Code` are luckier but not safer.
+
+       The form gives a real anchor: `SECTION 2: HOST ORGANIZATION INFORMATION`
+       through to `SECTION 3`. Inside that slice these labels mean exactly one
+       thing, so they are read there and nowhere else - the keys are deleted
+       from the whole-document pass before the scoped one runs, so an
+       out-of-section match can never survive.
+
+       Measured on both DS-7002s on this machine:
+         - the flattened one that parses well has NO section headers at all and
+           writes a single-line address under `Address`. The scope never fires,
+           and `hostOrgAddress` stays its source.
+         - the INTERACTIVE one has the headers and this exact label run -
+           `Organization NamePhase Site Address SuiteCityStateZIP CodeWebsite
+           URL` - with NOTHING between them, because its values live in form
+           objects this reader cannot place. Printing it flat is what puts them
+           on the page, which is what its hint already says. */
+    scope: {
+      from: /HOST\s+ORGANIZATION\s+INFORMATION/i,
+      to: /SECTION\s*3\b/i,
+      keys: ['hostStreet', 'hostCity', 'hostState', 'hostZip'],
+    },
     required: ['sevisId', 'programNumber', 'trainingDates'],
   };
 
@@ -296,6 +363,20 @@
 
     const out = Object.assign({}, readLabelled(text, profile.labels));
 
+    /* The scoped pass - see `scope` on the profile. The keys are cleared
+       first, so a match from outside the section never survives. */
+    if (profile.scope) {
+      for (const k of profile.scope.keys) delete out[k];
+      const at = text.search(profile.scope.from);
+      if (at >= 0) {
+        const rest = text.slice(at);
+        const end = rest.search(profile.scope.to);
+        const inSection = readLabelled(end > 0 ? rest.slice(0, end) : rest,
+                                       profile.labels);
+        for (const k of profile.scope.keys) if (inSection[k]) out[k] = inSection[k];
+      }
+    }
+
     for (const f of profile.dates) {
       const m = text.match(f.re);
       if (m) out[f.key] = m[1];
@@ -354,6 +435,19 @@
 
     if (out.programFrom) out.arrivalDate = out.programFrom;
     if (out.programTo) out.departureDate = out.programTo;
+    /* THE ARRIVAL AND DEPARTURE CITIES ARE THE HOST'S CITY - the user's rule.
+       Derived here, the same way the dates are derived from the programme
+       period, so the document can answer them directly: both are trip fields,
+       so `applyParsed` stores them as this applicant's own entry and they stay
+       editable. A participant may fly into somewhere else.
+
+       This is the better of the two sources. The sheet's column has to have a
+       city read out of the tail of a free-text address; Section 2 of this form
+       labels the cell. */
+    if (out.hostCity) {
+      out.arrivalCity = out.hostCity;
+      out.departureCity = out.hostCity;
+    }
 
     /* Applied LAST, so it judges the finished value rather than a fragment
        part-way through the normalising above. */
@@ -509,7 +603,7 @@
      sponsor, the stipend, the hours, the field of study - is read so the
      operator can see it and so the cross-checks have something to compare,
      not because the form asks for it. */
-  const ANSWER_KEYS = ['arrivalDate', 'departureDate'];
+  const ANSWER_KEYS = ['arrivalDate', 'departureDate', 'arrivalCity', 'departureCity'];
   function answers(parsed) {
     const out = {};
     for (const k of ANSWER_KEYS) if (parsed.fields && parsed.fields[k]) out[k] = parsed.fields[k];

@@ -363,6 +363,70 @@ ok('it no longer claims they sit in form fields',
 
    Set J1_DOC=<path> to point it at one, or drop a DS-7002 / DS-2019 PDF in
    ~/Downloads. */
+
+/* -- SECTION 2 LABELS ITS OWN CITY, STATE AND ZIP -------------------
+   The user pointed at the form: the host organisation block is a table of
+   named cells, so nothing has to be read out of the tail of an address
+   string - which matters, because the sheet's column has to be and its shape
+   varies.
+
+   THE TEXT BELOW IS GLUED THE WAY THE FORM ARRIVES. pdftext.js joins runs with
+   no separator, so a label the form wraps loses its space and the values sit
+   flush against the labels before them - `Organization NameKalahari Resort
+   Sandusky OH`. Hand-typing the spaces in is what hid the supervisor bug once
+   already, so do not tidy this. */
+const hostSection =
+  'U.S. Department of State Training/Internship Placement Plan (DS-7002) ' +
+  'SEVIS ID N0036102391 Program Number P-3-06123 ' +
+  'Training/Internship Dates 09/16/2024 - 09/16/2025 ' +
+  'SECTION 2: HOST ORGANIZATION INFORMATION Organization NameKalahari Resort Sandusky OH' +
+  'Phase Site Address7000 Kalahari Dr. Suite CitySandusky StateOH ZIP Code44870 ' +
+  'Website URLhttps://www.kalahariresorts.com/ohio Employer ID Number (EIN)710927750 ' +
+  'Exchange Visitor Hours Per Week32 ' +
+  'SECTION 3: CERTIFICATIONS I agree that if I receive information regarding a ' +
+  'serious problem that could be expected to bring the Department of State into ' +
+  'notoriety or disrepute I will notify the sponsor';
+const host = P.parse(hostSection).fields;
+eq('the host city',   host.hostCity, 'Sandusky');
+eq('the host state',  host.hostState, 'OH');
+eq('the host ZIP',    host.hostZip, '44870');
+eq('the host street', host.hostStreet, '7000 Kalahari Dr.');
+
+/* AND THE TWO CITIES FOLLOW FROM IT - the user's rule, derived here the same
+   way the dates are derived from the programme period. Both are trip fields,
+   so applyParsed stores them as this applicant's own entry and they stay
+   editable; a participant may fly into somewhere else. */
+eq('the arrival city',   host.arrivalCity, 'Sandusky');
+eq('the departure city', host.departureCity, 'Sandusky');
+eq('and they are answers the form takes',
+   P.ANSWER_KEYS.indexOf('arrivalCity') >= 0 && P.ANSWER_KEYS.indexOf('departureCity') >= 0,
+   true);
+
+/* THE SCOPE IS THE WHOLE POINT, and two measurements are why it exists.
+   `State` on its own matched the letterhead first - "U.S. Department of
+   State" - and with that declared as a cut point it matched the sponsor's
+   attestation instead: "bring the Department of State into notoriety or
+   disrepute". Both are in the string above, AFTER the host section, and
+   neither may win. */
+eq('the letterhead does not become the state', host.hostState.length <= 2, true);
+/* Outside the section these keys are not read at all: the whole-document pass
+   has them deleted before the scoped pass runs, so a match from anywhere else
+   cannot survive. A document with no Section 2 heading yields none of them -
+   which is the flattened DS-7002 in circulation, and its single-line
+   `Address` stays its source. */
+const noSection = P.parse(
+  'Training/Internship Placement Plan U.S. Department of State ' +
+  'SEVIS ID N0036102391 Program Number P-3-06123 ' +
+  'Training/Internship Dates 09/16/2024 - 09/16/2025 ' +
+  'City Nowhere State Nowhere ZIP Code 00000 ' +
+  'Host Organization Name The Westin Richmond Address 6631 W BROAD ST, RICHMOND, VA 23230').fields;
+eq('no section, no city',   noSection.hostCity, undefined);
+eq('no section, no state',  noSection.hostState, undefined);
+eq('no section, no ZIP',    noSection.hostZip, undefined);
+eq('and no cities derived', noSection.arrivalCity, undefined);
+eq('the single-line address still reads',
+   noSection.hostOrgAddress, '6631 W BROAD ST, RICHMOND, VA 23230');
+
 const PDFText = require('../pdftext.js');
 const dir = path.join(os.homedir(), 'Downloads');
 let files = [];
