@@ -238,6 +238,46 @@ That block is what caught the whitespace bug and the runaway value; the typed
 text above it caught neither. The documents are gitignored (`*.pdf`, `*.docx`)
 because they are real people's and **this repo is public**.
 
+### What the first live run found (2026-09-04)
+Three defects, and all three were **a check speaking about data it should not
+have been looking at** - the third time in one day.
+
+**The DS-7002 in circulation is the INTERACTIVE kind.** Its page text is only
+the blank form's printed labels, so `Main Program Supervisor/POC` matched and
+took the **next label** as its value: `at Host Organization TitleEmail`.
+`crossCheck` then reported that the sheet's real contact address did not appear
+in it - a mismatch against nothing, on a document the same report had already
+called empty.
+
+- **`crossCheck` now returns immediately when `parsed.hint` is set.** That flag
+  means none of the required fields survived, which is exactly the condition
+  under which no cross-check can mean anything.
+- **the hint's reason depends on which document it is.** Blaming the PDF format
+  is right where the labels are known good; for the **SEVIS receipt**, whose
+  labels have never been checked against a real one, the likely fault is *ours*
+  - and "print it flat" would send the operator to do something useless. That
+  profile now says so instead.
+- **the hint is named and de-duplicated.** Two documents failed the same way in
+  one pass and the identical sentence printed twice, unattributed, leaving the
+  operator to guess which file to go and fix.
+
+**What still worked, and it is the part that matters:** the DS-2019 supplied the
+arrival and departure dates. That is the answer the sheet cannot give at all.
+
+**The interactive DS-7002 is not readable by `pdftext.js`, and that is not a
+small fix.** Its field values live in **13 compressed object streams** - there
+is not a single plain `/V (…)` in the file - so reading them means parsing the
+xref stream, inflating object streams, and resolving `/Parent` chains for
+hierarchical field names. A real PDF parser, not an addition to a deliberately
+blunt one.
+
+Worth knowing before anyone starts: **for that applicant the DS-7002 adds almost
+nothing the sheet does not already hold.** SEVIS ID is column CH, the programme
+number CI, the host organisation and its contact BZ-CC. Its value here is as a
+**cross-check**, so what an unreadable one costs is confirmation, not data. The
+cheap answer stays the hint's: print it flat.
+
+
 ### One attachment set per class, one code path
 `app.js` holds a `DOCS` descriptor: C1/D one link and `letter.js`, J1 three
 links and `j1docs.js`. `parse` / `answers` / `crossCheck` / `compareDocs` all go

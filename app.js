@@ -454,13 +454,22 @@
       for (const f of list) if (f && f.error) problems.push(f.name + ': ' + f.error);
       /* AN INTERACTIVE PDF LOOKS EXACTLY LIKE THIS: recognised, and every value
          somewhere the page text cannot reach. The parser says what to do about
-         it, and the operator has no way to know otherwise. */
-      for (const f of list) if (f && f.parsed && f.parsed.hint) problems.push(f.parsed.hint);
+         it, and the operator has no way to know otherwise.
 
+         NAMED, because two documents can fail the same way in one pass and an
+         unattributed sentence leaves the operator guessing which file to go and
+         fix - the first live run printed the identical hint twice, once for the
+         DS-7002 and once for the SEVIS receipt. */
+      for (const f of list)
+        if (f && f.parsed && f.parsed.hint) problems.push(f.name + ': ' + f.parsed.hint);
+
+      /* De-duplicated: the same sentence twice tells the operator nothing the
+         first one did not, and this report is already long. */
+      const seen = {}, unique = problems.filter(m => (seen[m] ? false : (seen[m] = true)));
       pendingLetter = {
-        kind: problems.length ? 'err' : 'ok',
+        kind: unique.length ? 'err' : 'ok',
         text: Object.keys(answers).length + ' field(s) read from ' + notes.join('; ') +
-              (problems.length ? ' — CHECK: ' + problems.join(' | ') : ''),
+              (unique.length ? ' — CHECK: ' + unique.join(' | ') : ''),
       };
       rebuild();
     }

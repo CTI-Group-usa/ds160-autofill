@@ -298,6 +298,43 @@ eq('a redacted id survives the shape check',   P.sane('sevisId', 'N00375XXXXX'),
 eq('a plausible host name is kept', P.sane('hostOrgName', 'The Westin Richmond'), 'The Westin Richmond');
 eq('a 500-character one is not',    P.sane('hostOrgName', 'x'.repeat(500)), '');
 
+// -- what the first live run found ----------------------------------
+/* Three defects, all of them a check speaking about data it should not have
+   been looking at - the third time in one day. */
+
+/* AN INTERACTIVE DS-7002's page text is only the BLANK FORM'S PRINTED LABELS,
+   so `Main Program Supervisor/POC` matched and took the NEXT LABEL as its
+   value: "at Host Organization TitleEmail". crossCheck then reported that the
+   sheet's real contact address did not appear in it - a mismatch against
+   nothing, on a document already reported empty. */
+const blankForm = P.parse(
+  'Training/Internship Placement Plan Program Sponsor Program Number ' +
+  'The Exchange Visitor is: Main Program Supervisor/POC at Host Organization ' +
+  'Title Email Phone Fax Please list the names and titles of those');
+eq('it is still recognised', blankForm.doc, 'ds7002');
+ok('and reported empty', !!blankForm.hint);
+ok('it did pick up label text as a value',
+   /Host Organization/.test(blankForm.fields.supervisor || ''));
+/* THE GATE. A document that gave up none of its required fields cannot be
+   cross-checked, and trying is worse than not. */
+eq('so nothing is cross-checked against it',
+   P.crossCheck(blankForm, { usPocEmail: 'hberkey@kalahariresorts.com',
+                             sevisId: 'N0036102391',
+                             programNumber: 'P-3-06123' }).length, 0);
+/* A document that DID read is still cross-checked, or the gate has gone too
+   far. */
+eq('a readable one is still checked',
+   P.crossCheck(a, { programNumber: 'P-3-99999' }).length, 1);
+
+/* THE HINT'S REASON DEPENDS ON WHICH DOCUMENT IT IS. Blaming the PDF format is
+   right where the labels are known good; for the SEVIS receipt, whose labels
+   have never been checked against a real one, the likely fault is OURS - and
+   "print it flat" would send the operator to do something useless. */
+const emptyReceipt = P.parse('I-901 Fee Payment Confirmation for your records');
+ok('the receipt blames the labels', /labels have never been checked/.test(emptyReceipt.hint || ''));
+ok('and not the file format', !/interactive PDF/.test(emptyReceipt.hint || ''));
+ok('the DS-7002 blames the file format', /interactive PDF/.test(blankForm.hint || ''));
+
 // -- END TO END, against a real PDF if one is on this machine -------
 /* THIS IS THE BLOCK THAT EARNS ITS KEEP. Everything above runs on text typed
    into this file, and typed text has spaces in it - which is exactly what hid

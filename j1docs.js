@@ -368,11 +368,23 @@
        and every value is somewhere the page text cannot reach. Printing it to
        a flat PDF puts the values back on the page, which is the fix, and the
        operator has no way to know that otherwise. */
-    const hint = (missing.length === profile.required.length && profile.required.length)
-      ? 'Every field came back empty, which usually means this is an interactive ' +
-        'PDF whose values sit in form fields rather than on the page. Open it, ' +
-        'print it to PDF, and read that instead.'
-      : null;
+    /* AND THE REASON DEPENDS ON WHICH DOCUMENT IT IS. Blaming the PDF format
+       is right for a profile whose labels are known to be correct - the first
+       live run met an interactive DS-7002 whose page text is only the blank
+       form's printed labels, so every value was somewhere the page cannot
+       reach. It is the WRONG guess for the SEVIS receipt, whose labels have
+       never been checked against a real one: there the likely fault is ours,
+       and saying "print it flat" would send the operator to do something
+       useless. */
+    const allMissing = profile.required.length && missing.length === profile.required.length;
+    const hint = !allMissing ? null
+      : profile.unconfirmed
+        ? 'Nothing was found, and this profile\'s labels have never been checked ' +
+          'against a real one - so the labels are the likely fault, not the file. ' +
+          'Send the extracted text and they can be corrected.'
+        : 'Every field came back empty, which usually means this is an interactive ' +
+          'PDF whose values sit in form fields rather than on the page. Open it, ' +
+          'print it to PDF, and read that instead.';
 
     return {
       doc: profile.id,
@@ -394,6 +406,18 @@
      wrong on a sworn application and nothing else here would notice. */
   function crossCheck(parsed, rec) {
     const f = parsed.fields || {}, issues = [];
+    /* A DOCUMENT THAT GAVE UP NOTHING CANNOT BE CROSS-CHECKED, and trying is
+       worse than not: the first live run met an interactive DS-7002 whose page
+       text is only the blank form's printed labels, so `supervisor` came back
+       as "at Host Organization TitleEmail" - the NEXT label, not a value - and
+       this function then reported that the sheet's real contact address did
+       not appear in it. A mismatch against nothing, on a page where the whole
+       document had already been reported empty.
+
+       That is the third time today a check has cried wolf on data it should
+       not have been looking at. `hint` is set exactly when none of the
+       required fields survived, so it is the right gate. */
+    if (parsed.hint) return issues;
     const squash = s => norm(s).toUpperCase().replace(/[^A-Z0-9]/g, '');
     const cmp = (a, b) => squash(a) === squash(b);
     const say = (field, msg) => issues.push({ field: field, msg: msg });
