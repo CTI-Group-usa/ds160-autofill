@@ -289,18 +289,53 @@ It is **one line per document** now, each saying what that document did:
 **What still worked, and it is the part that matters:** the DS-2019 supplied the
 arrival and departure dates. That is the answer the sheet cannot give at all.
 
-**The interactive DS-7002 is not readable by `pdftext.js`, and that is not a
-small fix.** Its field values live in **13 compressed object streams** - there
-is not a single plain `/V (…)` in the file - so reading them means parsing the
-xref stream, inflating object streams, and resolving `/Parent` chains for
-hierarchical field names. A real PDF parser, not an addition to a deliberately
-blunt one.
+**EVERY DS-7002 IN CIRCULATION IS A FLATTENED FILLABLE FORM**, and the user
+confirmed all of theirs report the same way. The values are **not** locked in
+form fields - the first wording of the hint said so and was wrong. They are
+ordinary page text, drawn inside a **Form XObject per field**. Proved by
+building a positioned extractor and running it on the file:
 
-Worth knowing before anyone starts: **for that applicant the DS-7002 adds almost
-nothing the sheet does not already hold.** SEVIS ID is column CH, the programme
-number CI, the host organisation and its contact BZ-CC. Its value here is as a
-**cross-check**, so what an unreadable one costs is confirmation, not data. The
-cheap answer stays the hint's: print it flat.
+| | x | y |
+|---|---|---|
+| label, drawn on the page | 39.6 | 698.0 |
+| value, drawn in an XObject | **1.0** | **3.5** |
+
+The labels get real page coordinates; the values get **local** ones, because an
+XObject's placement lives in the *page* stream and its resource dictionary, not
+in the XObject. `pdftext.js` inflates every stream detached from whatever draws
+it, so it fundamentally cannot place them. That extractor was **reverted** -
+100 lines of parser with no consumer would rot.
+
+Pairing them needs the object graph: xref stream, 13 object streams, page tree,
+`/Resources /XObject`, `Do` placement. ~300-400 lines of real PDF parsing, in a
+file whose bluntness is a documented choice.
+
+### Why that parser is not being built, measured rather than argued
+| | |
+|---|---|
+| rows carrying a DS-7002 | 67 of 69 |
+| rows where it is the **only** itinerary source | **0** |
+| SEVIS ID present in column CH | 56 of 69 |
+| Programme number in CI | 57 of 69 |
+
+**Nothing the DS-7002 puts on the form is unavailable elsewhere.** Every row
+that has one has a DS-2019 too, and the itinerary - the only thing any of these
+documents fills - comes from that. So the parser buys a **cross-check**.
+
+The real gap is the **13 rows with no SEVIS ID in column CH**, and that is a
+*sheet* problem: thirteen cells, filled once by eye, against four hundred lines
+that would need maintaining and could put `Miami Beach` in a date field. That
+comparison is the recommendation.
+
+### So a missing cross-check stopped being a failure
+The report was putting a **red banner on 67 of 69 rows** for an unreadable
+DS-7002 when nothing was missing from the form. Red now means the pass actually
+failed - **nothing reached the form, or something disagrees** - and a document
+that gave nothing says so calmly, with printing offered rather than demanded.
+
+This is the comma warning a third time: **a red line that is always there and
+never actionable teaches the operator to stop reading.**
+
 
 
 ### One attachment set per class, one code path

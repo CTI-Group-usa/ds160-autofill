@@ -196,11 +196,19 @@ ok('and the unconfirmed note stands down when the hint has said it',
    produced "...read that instead.. DS-2019:". */
 ok('lines are punctuated once', /\/\[\.\!\?\]\$\/\.test\(l\)/.test(app));
 
-/* GREEN ONLY WHEN THERE IS NOTHING TO DO. Two documents that gave nothing each
-   carry a hint telling the operator to go and fix something, so a green tick
-   over that would be a lie - even though the fields that matter were filled. */
-ok('a hint keeps the message out of green',
-   /const todo = unique\.length \|\| list\.some\(f => f && f\.parsed && f\.parsed\.hint\)/.test(app));
+/* RED ONLY WHEN THE PASS ACTUALLY FAILED: nothing reached the form, or
+   something disagrees. A document that gave nothing is NOT by itself a
+   failure, and treating it as one put a red banner on 67 of the 69 J1 rows.
+   Measured: every row carrying a DS-7002 carries a DS-2019 too - 0 rows where
+   the DS-7002 is the only itinerary source - so an unreadable one costs a
+   cross-check, not an answer.
+
+   This is the comma warning again: a red line that is always there and never
+   actionable teaches the operator to stop reading. */
+ok('a missing cross-check is not a failure',
+   /const todo = unique\.length \|\| !nAnswers \|\| list\.some\(f => f && f\.error\)/.test(app));
+ok('and the report says so once, at the end',
+   /are cross-checks - nothing is missing from the form/.test(app));
 
 /* A document that gave up nothing is not cross-checked HERE either - j1docs.js
    gates it too, and this is the belt to those braces. */

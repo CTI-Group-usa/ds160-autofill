@@ -484,16 +484,28 @@
       /* One full stop, not two. A hint already ends in one, so joining with
          '. ' produced "...read that instead.. DS-2019:". */
       const sentence = l => (/[.!?]$/.test(l) ? l : l + '.');
-      /* GREEN ONLY WHEN THERE IS NOTHING TO DO. Two documents that gave
-         nothing each carry a hint telling the operator to go and fix
-         something, so a green tick over that would be a lie - even though the
-         fields that matter were filled. */
-      const todo = unique.length || list.some(f => f && f.parsed && f.parsed.hint) ||
-                   list.some(f => f && f.error);
+      /* RED ONLY WHEN THE PASS ACTUALLY FAILED, which means: nothing reached
+         the form, or something disagrees.
+
+         A document that gave nothing is NOT by itself a failure, and treating
+         it as one put a red banner on 67 of the 69 J1 rows. Measured: every
+         row that carries a DS-7002 carries a DS-2019 too - 0 rows where the
+         DS-7002 is the only itinerary source - so an unreadable DS-7002 costs
+         a cross-check, not an answer. Its line still says so, calmly, and
+         printing it flat is then an option rather than an instruction.
+
+         This is the comma warning again: a red line that is always there and
+         never actionable teaches the operator to stop reading. */
+      const todo = unique.length || !nAnswers || list.some(f => f && f.error);
       pendingLetter = {
         kind: todo ? 'err' : 'ok',
         text: (nAnswers ? nAnswers + ' field(s) filled. ' : 'Nothing filled. ') +
               lines.map(sentence).join(' ') +
+              /* Said once at the end rather than on each line: the point is
+                 about the pass as a whole. */
+              (nAnswers && list.some(f => f && f.parsed && f.parsed.hint)
+                ? ' The ones that gave nothing are cross-checks - nothing is missing from the form.'
+                : '') +
               (unique.length ? ' CHECK: ' + unique.join(' | ') : ''),
       };
       rebuild();

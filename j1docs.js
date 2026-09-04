@@ -382,9 +382,22 @@
         ? 'Nothing was found, and this profile\'s labels have never been checked ' +
           'against a real one - so the labels are the likely fault, not the file. ' +
           'Send the extracted text and they can be corrected.'
-        : 'Every field came back empty, which usually means this is an interactive ' +
-          'PDF whose values sit in form fields rather than on the page. Open it, ' +
-          'print it to PDF, and read that instead.';
+        /* THE OLD WORDING WAS FACTUALLY WRONG and it matters, because it told
+           the operator where to look. It said the values "sit in form fields".
+           They do not: they are ordinary page text, drawn inside a Form
+           XObject per field. Checked on the file itself - the LABELS come out
+           at real page coordinates (Trainee/Intern Name at x 39.6, y 698) and
+           the VALUES at local ones (Widiantara at x 1.0, y 3.5), because an
+           XObject's placement lives in the page stream, not in the XObject.
+           Pairing them needs the whole object graph.
+
+           And it framed printing as an instruction. It is not: 0 of the 69
+           rows need the DS-7002 for anything that reaches the form. */
+        : 'Nothing was found. The values are on the page but inside a form ' +
+          'container, and where each one sits is recorded somewhere this reader ' +
+          'does not go - so labels and values cannot be paired. Printing the ' +
+          'file to PDF flattens them onto the page, if you want this document ' +
+          'as a cross-check.';
 
     return {
       doc: profile.id,

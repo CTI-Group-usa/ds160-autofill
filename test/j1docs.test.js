@@ -279,7 +279,8 @@ eq('but the boilerplate is not a programme number', runaway.fields.programNumber
 ok('and it is reported missing', runaway.missing.indexOf('programNumber') >= 0);
 /* THE HINT IS THE USEFUL PART. The operator has no way to know that printing
    the PDF flat puts the values back on the page. */
-ok('and the hint says what to do', /interactive PDF/.test(runaway.hint || ''));
+ok('and the hint says where the values really are',
+   /inside a form container/.test(runaway.hint || ''));
 ok('a good document carries no hint', !a.hint && !b.hint);
 
 /* THE TWO IDENTIFIERS MUST MATCH THE SHAPE THEIR ISSUER PRINTS. Not a guess:
@@ -333,7 +334,21 @@ eq('a readable one is still checked',
 const emptyReceipt = P.parse('I-901 Fee Payment Confirmation for your records');
 ok('the receipt blames the labels', /labels have never been checked/.test(emptyReceipt.hint || ''));
 ok('and not the file format', !/interactive PDF/.test(emptyReceipt.hint || ''));
-ok('the DS-7002 blames the file format', /interactive PDF/.test(blankForm.hint || ''));
+/* THE WORDING WAS FACTUALLY WRONG and it matters, because it told the operator
+   where to look: it said the values "sit in form fields". They do not - they
+   are ordinary page text drawn inside a Form XObject per field. Checked on the
+   file: the LABELS come out at real page coordinates (Trainee/Intern Name at
+   x 39.6, y 698) and the VALUES at local ones (Widiantara at x 1.0, y 3.5),
+   because an XObject's placement lives in the page stream, not in the XObject.
+
+   It also framed printing as an instruction. It is not: 0 of the 69 rows need
+   the DS-7002 for anything that reaches the form. */
+ok('the DS-7002 hint says where the values really are',
+   /inside a form container/.test(blankForm.hint || ''));
+ok('and offers printing rather than demanding it',
+   /if you want this document as a cross-check/.test(blankForm.hint || ''));
+ok('it no longer claims they sit in form fields',
+   !/sit in form fields/.test(blankForm.hint || ''));
 
 // -- END TO END, against a real PDF if one is on this machine -------
 /* THIS IS THE BLOCK THAT EARNS ITS KEEP. Everything above runs on text typed
