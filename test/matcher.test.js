@@ -1030,5 +1030,68 @@ eq('the static list still works with no record',
    M.isLeftBlank({ id: P + 'tbxPPT_BOOK_NUM', name: '', label: 'Passport Book Number',
                    type: 'text' }), true);
 
+
+/* -- the J1 Student / Exchange Visitor page --------------------------
+   Three rules, matched on the LABEL alone, because no live J1 Fill report
+   exists yet and no id has been guessed. These labels appear nowhere else on
+   the form, so no `must` guard is wanted - an unnecessary guard is what killed
+   eduCountry and both spousePob rules, since `must` gates the id path too. */
+/* `key()` above passes no section, and every guard here is judged on one - the
+   same blind spot that let `not: /book/i` break passportNumber while the node
+   test stayed green. So this block uses its own helper. */
+const keyIn = (id, label, section) =>
+  (M.matchKey({ id: P + id, name: '', label: label || '', section: section || '',
+                type: 'text', tag: 'input' }, {}) || {}).key || null;
+const SEX = 'Student/Exchange Visitor Information';
+eq('SEVIS ID',       keyIn('tbxWhatever', 'SEVIS ID', SEX), 'sevisId');
+eq('Program Number', keyIn('tbxWhatever', 'Program Number', SEX), 'programNumber');
+
+/* -- and the block it must NOT touch ---------------------------------
+   CEAC takes TWO additional points of contact there, and every sub-label is
+   shared between them AND with the applicant's own boxes: Surnames, Given
+   Names, Street Address, City, State/Province, Postal Zone/ZIP Code,
+   Country/Region, Telephone Number, Email Address.
+
+   Before the guard, `homeAddress` and `email` claimed four boxes across the two
+   contact blocks - the applicant's own address and email written into a
+   stranger's contact details. Filled, plausible, wrong, and invisible, because
+   a filled field is not a gap. `surname` stood aside only because the fixture's
+   invented id contains `AddPoc`, which the old guard's `POC` matched: luck, not
+   protection.
+
+   TWO INDEPENDENT GUARDS, because either can be out of reach. `exchange` comes
+   from pageTag() and is reachable however the block is nested; `point of
+   contact` comes from the block heading, which blockLabel() only reaches when
+   there is no <legend> to prefer. Both are asserted, because the browser
+   fixture exercises only the first. */
+const POC = 'Name (1) Surnames Given Names Street Address City State/Province ' +
+            'Postal Zone/ZIP Code Country/Region Telephone Number Email Address ' +
+            'Student/Exchange Visitor Information';
+const POC_NO_LEGEND = 'Additional Point of Contact Information Surnames Given Names ' +
+                      'Street Address City Telephone Number Email Address';
+eq('the home address stays out (page tag)',   keyIn('tbxAddr1', 'Street Address', POC), null);
+eq('and out with no legend to read',          keyIn('tbxAddr1', 'Street Address', POC_NO_LEGEND), null);
+eq('the email stays out (page tag)',          keyIn('tbxEmail', 'Email Address', POC), null);
+eq('and out with no legend to read',          keyIn('tbxEmail', 'Email Address', POC_NO_LEGEND), null);
+eq('the surname stays out (page tag)',        keyIn('tbxSurname', 'Surnames', POC), null);
+eq('and out with no legend to read',          keyIn('tbxSurname', 'Surnames', POC_NO_LEGEND), null);
+eq('given names too',                         keyIn('tbxGivenName', 'Given Names', POC), null);
+
+/* AND THE GUARD MUST NOT COST THE REAL MATCH. These four are the pages where
+   those rules do their actual work, and the cross-fixture sweep
+   (test/sweep-fixtures.html) confirms the same in a browser. */
+eq('the home address still matches its own block',
+   keyIn('tbxAPP_ADDR_LN1', 'Street Address', 'Home Address'), 'homeAddress');
+eq('the email still matches',
+   keyIn('tbxAPP_EMAIL_ADDR', 'Email Address', 'Email Address Information'), 'email');
+eq('the surname still matches',
+   keyIn('tbxAPP_SURNAME', 'Surnames', 'Personal Information 1'), 'surname');
+eq('given names still match',
+   keyIn('tbxAPP_GIVEN_NAME', 'Given Names', 'Personal Information 1'), 'givenNames');
+/* The U.S. contact's own email keeps its box - it wins in the id pass, which
+   runs first, and that is all that ever protected it. */
+eq("the US contact's email is still its own",
+   keyIn('tbxUS_POC_EMAIL_ADDR', 'Email Address', 'Contact Person in the United States'), 'usPocEmail');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fake DS-160 Student / Exchange Visitor</title>
+<style>body{font:14px system-ui;margin:20px} td{padding:6px;vertical-align:top}
+h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-weight:600}</style>
+</head>
+<body>
+<!-- J1 ONLY. CEAC shows this page for a J visa class and never for C1/D, so
+     nothing here can collide with the seafarer side.
+
+     EVERY ID ON THIS PAGE IS A PLACEHOLDER, and that is the point of the
+     fixture. No live J1 Fill report exists yet, so the real ids are unknown and
+     none has been guessed in matcher.js - the three rules there match on the
+     LABEL alone, and the labels below are taken verbatim from the filed sample
+     (I KETUT JULIANA, printed 30 Jun 2026):
+
+       SEVIS ID: N0037491619
+       Program Number: P-3-05133
+       Do you intend to study in the U.S.? NO
+
+     WHY BOTH CONTACT ROWS ARE HERE. CEAC takes TWO additional points of
+     contact, and every sub-label is shared between them - Street Address, City,
+     State/Province, Postal Zone/ZIP Code, Country/Region, Telephone Number,
+     Email Address. A label-only rule would match BOTH rows and write CTI
+     Indonesia's address into the second contact's boxes: filled, plausible and
+     wrong, which is the worst class of bug this project produces. So there are
+     no rules for this block yet, and these fourteen boxes SHOULD come back
+     unrecognised - that is the honest state, and it is what one live Fill
+     report turns into the repeater prefix (the way dtlPrevEmpl separates the
+     two employer blocks on Previous Work). Do not "fix" this fixture by
+     deleting the second row; it is what makes the leak provable. -->
+<h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Student/Exchange Visitor Information</h2>
+
+<table>
+  <tr><td>SEVIS ID</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSEVIS_ID_PLACEHOLDER"></td></tr>
+  <tr><td>Program Number</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPROGRAM_NUMBER_PLACEHOLDER"></td></tr>
+  <tr><td>Q:</td><td>Do you intend to study in the U.S.?</td></tr>
+  <tr><td>A:</td><td>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblSTUDY_PLACEHOLDER" value="Y"
+           onclick="javascript:setTimeout('__doPostBack(&#39;s&#39;,&#39;&#39;)', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblSTUDY_PLACEHOLDER" value="N"
+           onclick="javascript:setTimeout('__doPostBack(&#39;s&#39;,&#39;&#39;)', 0)">
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_1">No</label>
+  </td></tr>
+</table>
+
+<h3>Additional Point of Contact Information</h3>
+
+<fieldset>
+  <legend>Name (1)</legend>
+  <table>
+    <tr><td>Surnames</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxSurname_PLACEHOLDER"></td></tr>
+    <tr><td>Given Names</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxGivenName_PLACEHOLDER"></td></tr>
+    <tr><td>Street Address</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAddr1_PLACEHOLDER" maxlength="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxCity_PLACEHOLDER"></td></tr>
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxState_PLACEHOLDER"></td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxPostal_PLACEHOLDER"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_ddlCountry_PLACEHOLDER">
+              <option value="">- SELECT ONE -</option><option>INDONESIA</option>
+              <option>UNITED STATES OF AMERICA</option></select></td></tr>
+    <tr><td>Telephone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxPhone_PLACEHOLDER"></td></tr>
+    <tr><td>Email Address</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxEmail_PLACEHOLDER"></td></tr>
+  </table>
+</fieldset>
+
+<fieldset>
+  <legend>Name (2)</legend>
+  <table>
+    <tr><td>Surnames</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxSurname_PLACEHOLDER"></td></tr>
+    <tr><td>Given Names</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxGivenName_PLACEHOLDER"></td></tr>
+    <tr><td>Street Address</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAddr1_PLACEHOLDER" maxlength="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxCity_PLACEHOLDER"></td></tr>
+    <tr><td>State/Province</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxState_PLACEHOLDER"></td></tr>
+    <tr><td>Postal Zone/ZIP Code</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxPostal_PLACEHOLDER"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_ddlCountry_PLACEHOLDER">
+              <option value="">- SELECT ONE -</option><option>INDONESIA</option>
+              <option>UNITED STATES OF AMERICA</option></select></td></tr>
+    <tr><td>Telephone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxPhone_PLACEHOLDER"></td></tr>
+    <tr><td>Email Address</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxEmail_PLACEHOLDER"></td></tr>
+  </table>
+</fieldset>
+
+<script>window.__postbacks=[];window.__doPostBack=(t)=>{window.__postbacks.push(t);};</script>
+<script>document.write('<scr'+'ipt src="../extension/matcher.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+<script>document.write('<scr'+'ipt src="../extension/content.js?v='+Date.now()+'"><\/scr'+'ipt>');</script>
+</body></html>

@@ -104,7 +104,9 @@ eq('the payer is a person', j1.payerPersonName, 'WIJANA, I MADE');
 eq('the payer phone is digits only', j1.payerPersonPhone, '085935221510');
 eq('relationship to the payer', j1.payerRelationship, 'PARENT');
 eq('the US contact comes from the sheet on J1', j1.usPocName, 'INGLE, MARIAH');
-eq('and a second contact', j1.addPocName, 'ARTANA, I WAYAN ARTA');
+/* NAME (2), and the key says so. The J1 pack carries Name (1) as constants -
+   CTI Indonesia - so the sheet's contact is the second of CEAC's two blocks. */
+eq('and a second contact', j1.addPoc2Name, 'ARTANA, I WAYAN ARTA');
 eq('languages are collected, not constant', j1.languages, 'INDONESIAN, ENGLISH');
 
 // -- names -----------------------------------------------------------
@@ -632,6 +634,43 @@ eq('the KTP',
    this is really an assertion that the two never meet. */
 eq('a serial date is still a date',
    D.toRecord({ 'Name': 'A, B', 'Date of Birth': '39035' }).dob, '14-NOV-2006');
+
+
+/* -- the programme number: the sheet drops CEAC's hyphens ------------
+   Column CI writes it two ways - 30 rows as P-3-05133 and 18 as P305133. The
+   compressed form maps onto the hyphenated one unambiguously: P, one category
+   digit, five digits. */
+const prog = v => D.toRecord({ 'Name': 'A, B', 'Program Number': v }).programNumber;
+eq('hyphens restored',        prog('P305133'),   'P-3-05133');
+eq('another one',             prog('P313279'),   'P-3-13279');
+eq('already correct',         prog('P-3-05133'), 'P-3-05133');
+/* PASSED THROUGH, NOT DROPPED. Seven rows hold things a pattern cannot repair.
+   Returning '' would leave the box empty with the sheet's value nowhere in
+   sight; filled and flagged lets the operator see the cell, and CEAC rejects a
+   malformed number itself. */
+eq('an unrepairable value survives', prog('PL52-449'), 'PL52-449');
+eq('and keeps its own spacing',      prog('J 1 PROGRAM'), 'J 1 PROGRAM');
+has('and is flagged', D.validate(D.toRecord({
+  'Name': 'A, B', 'Program Number': 'PL52-449' })).warnings, 'programNumber', 'P-n-nnnnn');
+none('a good one is not flagged', D.validate(D.toRecord({
+  'Name': 'A, B', 'Program Number': 'P305133' })).warnings, 'programNumber');
+/* One row holds the SEVIS id as a float; xlsx.js expands it, and what comes
+   out is not an N-number, so it is filled and flagged rather than dropped. */
+has('an odd SEVIS id is flagged', D.validate(D.toRecord({
+  'Name': 'A, B', 'SEVIS ID': '37889931' })).warnings, 'sevisId', 'N plus ten digits');
+none('a good one is not', D.validate(D.toRecord({
+  'Name': 'A, B', 'SEVIS ID': 'N0037491619' })).warnings, 'sevisId');
+
+/* -- a point of contact who is the applicant is not a contact --------
+   Two of the 69 rows hold the applicant's own name in column CD. On the filed
+   sample that row is exactly the one, and whoever filed it substituted the host
+   school's contact instead of using the cell. */
+has('the self-reference is named', D.validate(D.toRecord({
+  'Name': 'I Ketut, Juliana',
+  'Additional point of contact': 'I Ketut, Juliana' })).warnings, 'addPoc2Name', 'the applicant themselves');
+none('a real contact is not', D.validate(D.toRecord({
+  'Name': 'I Ketut, Juliana',
+  'Additional point of contact': 'Arta, Artana' })).warnings, 'addPoc2Name');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -29,6 +29,31 @@
      ids:    regexes tried against the control id / name
      labels: regexes tried against the nearest visible label text
      kind:   text | date | yesno   (date/yesno need special handling) */
+  /* BOXES THAT BELONG TO SOMEBODY ELSE. The applicant's own Surnames, Given
+     Names, Street Address and Email Address labels are word-for-word the ones
+     on the relatives' boxes, the spouse's, the supervisor's, the manning
+     agency's - and, found on 2026-09-04, on BOTH additional points of contact
+     on the J1 Student/Exchange Visitor page.
+
+     That page was the instructive one. `surname` stood aside there only
+     because the fixture's invented id happens to contain `AddPoc`, which the
+     old guard's `POC` matched - luck, not protection, and the real CEAC id may
+     not carry those letters. `homeAddress` and `email` had nothing at all and
+     claimed four boxes across the two contact blocks: with a real record that
+     writes the applicant's own address and email into a stranger's contact
+     details. Filled, plausible, wrong, and invisible, because a filled field
+     is not a gap.
+
+     TWO INDEPENDENT CHANCES, because either one can be out of reach:
+       `point of contact` is in the block heading - but blockLabel() prefers a
+         <legend>, and this page's legends say only Name (1) / Name (2), so on
+         a page laid out that way the heading never reaches the section;
+       `exchange` comes from pageTag(), the page heading plus ?node=, which is
+         reachable regardless of how the block is nested.
+     None of these fields exists anywhere on that page, so excluding the whole
+     page costs nothing. */
+  const RELATIVE_OR_THIRD_PARTY =
+    /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency|point of contact|exchange/i;
   const RULES = [
     /* "Surnames" and "Given Names" are the labels on the relatives' boxes too,
        and these rules sit first. The id pass saves them today - FathersSurname
@@ -36,9 +61,9 @@
        of those controls the label pass would write the SEAFARER's own name into
        his father's box. Same guard, and same reason, as `dob` below. */
     { key: 'surname',        kind: 'text',  ids: [/APP_SURNAME/i], labels: [/^surnames/i],
-      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency/i },
+      not: RELATIVE_OR_THIRD_PARTY },
     { key: 'givenNames',     kind: 'text',  ids: [/APP_GIVEN_NAME/i], labels: [/^given names/i],
-      not: /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency/i },
+      not: RELATIVE_OR_THIRD_PARTY },
     { key: 'gender',         kind: 'text',  ids: [/APP_GENDER/i], labels: [/^sex$/i] },
     { key: 'maritalStatus',  kind: 'text',  ids: [/APP_MARITAL_STATUS/i], labels: [/marital status/i] },
     // Relatives get their own DOB controls with the same suffix, so the
@@ -97,7 +122,7 @@
        "Street Address (Line 2)" and received the whole address a second
        time, while Line 1 was over CEAC's limit and clipped. */
     { key: 'homeAddress', kind: 'text', ids: [/APP_ADDR_LN[12]/i], labels: [/street address/i],
-      not: /will stay|contact|employer|school|paying|mailing/i },
+      not: /will stay|contact|employer|school|paying|mailing|exchange/i },
     /* The home country is a constant - the intake form has no country field.
        "Country/Region" is bare and reused by several blocks, so a label match
        has to see the Home Address heading. `must` gates the id too, which is
@@ -141,7 +166,13 @@
       labels: [/other email addresses in the last five years/i] },
     { key: 'otherWebsites5y', kind: 'yesno', ids: [/rblAddSocial/i, /ADD_SOCIAL_IND/i, /OTHER_WEBSITE/i],
       labels: [/presence on any other websites/i, /other websites or applications/i] },
-    { key: 'email',          kind: 'text',  ids: [/APP_EMAIL_ADDR/i], labels: [/^e-?mail address/i] },
+    /* `Email Address` labels the U.S. contact's box and BOTH additional
+       points of contact on the J1 page as well. This rule had no guard at all;
+       what saved it on the U.S. Contact page is that usPocEmail's id matches in
+       the id pass, which runs first - so it was one renamed control away from
+       putting the applicant's own address in the contact's box. */
+    { key: 'email',          kind: 'text',  ids: [/APP_EMAIL_ADDR/i], labels: [/^e-?mail address/i],
+      not: /point of contact|exchange/i },
     { key: 'socialPlatform', kind: 'text',  ids: [/SOCIAL_MEDIA_PROVIDER/i, /ddlSocialMedia/i], labels: [/social media platform/i] },
     { key: 'socialHandle',   kind: 'text',  ids: [/SOCIAL_MEDIA_IDENT/i, /tbxSocialMediaIdent/i], labels: [/social media identifier/i] },
 
@@ -632,6 +663,36 @@
     { key: 'eduState',  kind: 'text', ids: [/EDUC_INST.*ADDR_STATE(?!_NA)/i, /School.*ADDR_STATE(?!_NA)/i] },
     { key: 'eduPostal', kind: 'text', ids: [/EDUC_INST.*POSTAL_CD(?!_NA)/i, /School.*POSTAL_CD(?!_NA)/i] },
 
+    /* --- Student / Exchange Visitor - J1 ONLY -----------------------
+       CEAC shows this page only for a J class; a C1/D application never sees
+       it, so nothing here can collide with the seafarer side.
+
+       THREE RULES, AND NO ID GUESSED. These labels appear nowhere else on the
+       form, so the label alone is enough and no `must` guard is wanted - an
+       unnecessary guard is what killed eduCountry and both spousePob rules,
+       because `must` gates the id path too. The ids arrive with the first
+       live J1 Fill report, exactly as every other page here was done.
+
+       Labels taken verbatim from the filed sample (I KETUT JULIANA):
+         SEVIS ID: N0037491619
+         Program Number: P-3-05133
+         Do you intend to study in the U.S.? NO
+
+       WHAT IS DELIBERATELY MISSING: the Additional Point of Contact block.
+       CEAC takes TWO contacts there - the print-out numbers them Name (1) and
+       Name (2) - and every sub-label is shared between them: Street Address,
+       City, State/Province, Postal Zone/ZIP Code, Country/Region, Telephone
+       Number, Email Address. A label-only rule would match BOTH rows and write
+       CTI Indonesia's address into the second contact's boxes, which is the
+       wrong-fill class this project keeps getting caught by. Only the repeater
+       id prefix can separate them, the way dtlPrevEmpl does on Previous Work,
+       and that prefix is not known yet. One live Fill report settles it;
+       test/fake-student-exchange.html reproduces both rows so the leak is
+       provable either way. */
+    { key: 'sevisId',       kind: 'text',  ids: [], labels: [/^sevis id/i] },
+    { key: 'programNumber', kind: 'text',  ids: [], labels: [/program number/i] },
+    { key: 'intendToStudy', kind: 'yesno', ids: [],
+      labels: [/do you intend to study in the u\.?\s?s/i] },
     /* Sign and Submit. The filler fills the three answers CEAC asks for here
        and NOTHING else: the CAPTCHA is FORBIDDEN (/codetextbox/) and the Sign
        and Submit button is FORBIDDEN too (/sign(and)?submit/, /btnsign/).

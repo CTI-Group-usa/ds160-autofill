@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fixture sweep</title></head>
+<body>
+<!-- THE CROSS-FIXTURE SWEEP. Loads every fake-*.html in an iframe, runs the
+     filler over each with one full record, and reports what each page matched
+     and what it could not place.
+
+     WHAT IT IS FOR. Adding a `not` guard to a widely-shared rule - `surname`,
+     `homeAddress`, `email`, `nationality` - can silently stop it matching on a
+     page nobody was looking at, and the node tests cannot see that because they
+     pass their own contrived sections. So: run this, change the rule, run it
+     again, and every page's lists must be IDENTICAL except the one you meant to
+     change. CLAUDE.md records this being done by hand twice; it is a file now.
+
+     Not part of `npm test` - it needs a browser and the local server:
+       node server.js   then   localhost:7773/test/sweep-fixtures.html
+     Read the result from the page, or from window.__sweep in the console.
+
+     Keep PAGES in step with test/fake-*.html. A page missing from the list is
+     a page whose regressions this will not catch. -->
+<pre id="out">running...</pre>
+<script>
+const PAGES = ['personal1','personal2','travel','travel-initial','travel-noplans','travel-stay',
+  'prev-us-travel','address-phone','passport','us-contact','family','family-spouse','crew-visa',
+  'sign','work-education','prev-work-education','additional-work','security','payer','payer-block',
+  'edu-no-fieldset','student-exchange'];
+/* One record carrying every field the guarded rules read, so a leak shows up as
+   a filled box rather than a skip. */
+const REC = {
+  surname:'JULIANA', givenNames:'I KETUT', fullName:'I KETUT JULIANA',
+  homeAddress:'BR DINAS NYATNYATAN', email:'ketutjulianaa3@gmail.com',
+  phone:'6281337685484', homeCity:'TABANAN', homeState:'BALI', homePostal:'82162',
+  dob:'14-NOV-2006', nationality:'INDONESIA', passportNumber:'E9747564',
+  fatherName:'I MADE, WIJANA', motherName:'NI KETUT, RANGI',
+  employerName:'GRAND HYATT BALI', employerAddress:'JL. AHMAD YANI',
+  usPocSurname:'INGLE', usPocGiven:'MARIAH', usPocEmail:'mingle@big-cedar.com',
+  usPocAddress:'612 DEVILS POOL RD', agencyName:'CTI INDONESIA',
+  sevisId:'N0037491619', programNumber:'P-3-05133', intendToStudy:'NO',
+};
+const out = document.getElementById('out');
+(async () => {
+  const res = {};
+  for (const p of PAGES) {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'width:900px;height:600px';
+    f.src = 'fake-' + p + '.html?sweep=' + Date.now();
+    document.body.appendChild(f);
+    await new Promise(r => { f.onload = r; setTimeout(r, 4000); });
+    await new Promise(r => setTimeout(r, 250));   // let document.write'd scripts run
+    const w = f.contentWindow;
+    if (!w || !w.DS160Filler) { res[p] = 'NO FILLER'; f.remove(); continue; }
+    let rep;
+    try { rep = w.DS160Filler.fillPage(REC, {}); } catch (e) { res[p] = 'THREW ' + e.message; f.remove(); continue; }
+    const strip = s => String(s || '').replace(/^ctl00_SiteContentPlaceHolder_(FormView\d_)?/, '');
+    res[p] = {
+      filled: rep.filled.map(x => x.key).sort(),
+      unmatched: rep.unmatched.map(x => strip(x.id)).sort(),
+    };
+    f.remove();
+  }
+  out.textContent = JSON.stringify(res, null, 1);
+  window.__sweep = res;
+})();
+</script>
+</body></html>

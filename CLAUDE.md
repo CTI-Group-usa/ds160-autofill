@@ -107,6 +107,95 @@ them on the record's own NA answer: quiet while greyed out, **loud the moment it
 is not**, which is how their real ids will get read off the page. A static
 `LEAVE_BLANK` entry would have been wrong half the time.
 
+## Student / Exchange Visitor - J1 only (2026-09-04)
+CEAC shows this page for a J class and never for C1/D, so nothing on it can
+collide with the seafarer side. Labels taken verbatim from the filed sample:
+
+| Question | Key | Source |
+|---|---|---|
+| SEVIS ID | `sevisId` | column **CH** |
+| Program Number | `programNumber` | column **CI** |
+| Do you intend to study in the U.S.? | `intendToStudy` | constant **NO** |
+
+**Three rules, matched on the label alone, and no id guessed.** Those labels
+appear nowhere else on the form, so no `must` guard is wanted - an unnecessary
+guard is what killed `eduCountry` and both `spousePob` rules, because `must`
+gates the id path too.
+
+### The sheet drops the hyphens CEAC requires
+Column CI writes the programme number two ways: **30 rows as `P-3-05133`, 18 as
+`P305133`**. The compressed form maps onto the hyphenated one unambiguously - P,
+one category digit, five digits - so `normProgram()` repairs it.
+
+Seven rows hold things no pattern can repair (`PL52-449`, `J 1 PROGRAM`, a bare
+`-`, two floats). Those are **passed through as written, not dropped**: `''`
+would leave the box empty with the sheet's own value nowhere in sight, whereas
+filled-and-flagged lets the operator see the cell and CEAC rejects a malformed
+number itself. Whitespace is stripped only to *match*, so `J 1 PROGRAM` keeps
+its spacing and stays recognisable on screen. `normSevis` is loose for the same
+reason - an over-strict pattern would drop a real id.
+
+### A point of contact who is the applicant is not a contact
+Column CD is the additional point of contact, and **two of the 69 rows hold the
+applicant's own name, address, phone and email** - the intake form was filled in
+wrongly. On the filed sample that row is exactly one of the two, and whoever
+filed it substituted the host school's contact instead of using the cell.
+`validate()` names it.
+
+The keys are `addPoc2*`, not `addPoc*`: the J1 pack carries **Name (1)** as
+constants (CTI Indonesia), so the sheet's contact is CEAC's second block.
+
+### THE ADDITIONAL POINT OF CONTACT BLOCK HAS NO RULES, ON PURPOSE
+CEAC takes **two** contacts there and every sub-label is shared between them -
+Street Address, City, State/Province, Postal Zone/ZIP Code, Country/Region,
+Telephone Number, Email Address. A label-only rule matches **both rows** and
+would write CTI Indonesia's address into the second contact's boxes. Only the
+repeater id prefix can separate them, the way `dtlPrevEmpl` does on Previous
+Work, and that prefix is unknown until one live J1 Fill reports it.
+
+`test/fake-student-exchange.html` carries **both** rows for exactly this reason.
+Do not "fix" it by deleting the second one; it is what makes the leak provable.
+
+### What that fixture found immediately
+`homeAddress` and `email` had no guard that reached this page and claimed **four
+boxes across the two contact blocks** - the applicant's own address and email in
+a stranger's contact details. Filled, plausible, wrong, and invisible, because a
+filled field is not a gap.
+
+`surname` stood aside only because the fixture's invented id contains `AddPoc`,
+which the old guard's `POC` matched. **Luck, not protection** - the real CEAC id
+may carry no such letters.
+
+All four now share `RELATIVE_OR_THIRD_PARTY`, with **two independent guards**
+because either one can be out of reach:
+
+- **`point of contact`** is in the block heading - but `blockLabel()` prefers a
+  `<legend>`, and this page's legends say only *Name (1)* / *Name (2)*, so on a
+  page laid out that way the heading never reaches the section;
+- **`exchange`** comes from `pageTag()` - the page heading plus `?node=` - which
+  is reachable however the block is nested.
+
+None of these fields exists anywhere on that page, so excluding the whole page
+costs nothing. The browser fixture exercises the `exchange` path; `matcher.test.js`
+asserts the no-legend path by passing that section explicitly.
+
+### `test/sweep-fixtures.html` - the cross-fixture sweep, as a file
+Adding a `not` guard to a widely-shared rule can silently stop it matching on a
+page nobody was looking at, and the node tests cannot see that because they pass
+their own contrived sections. The sweep loads **every** `fake-*.html` in an
+iframe, fills each with one full record, and reports what each matched.
+
+Run it, change the rule, run it again: every page's lists must be identical
+except the one you meant to change. It is how these four guards were cleared -
+before, `student-exchange` filled `email, email, homeAddress, homeAddress`; after,
+`intendToStudy, programNumber, sevisId` and eighteen honestly unrecognised boxes,
+with all twenty-one other pages byte-identical.
+
+CLAUDE.md records this being done by hand twice. It is not part of `npm test` -
+it needs a browser and `node server.js` - and **PAGES must be kept in step with
+`test/fake-*.html`**, because a page missing from that list is a page whose
+regressions it will not catch.
+
 #### A filed print-out is one application, not the rule
 The J1 sample (I KETUT JULIANA) is **row 22 of the export** - the KTP matches - and
 the two disagree:
@@ -180,10 +269,8 @@ understood**, 9 admin/workflow columns ignored on purpose, 6 document links
 still to wire, 1 leftover that is a typo of an admin column.
 
 #### Still to do for J1
-- matcher rules for the Student/Exchange Visitor block. To be written from the
-  print-out's **labels**, with **no id guessed** - the first live J1 Fill reports
-  the ids for anything the labels miss, exactly as every other page here was
-  done. No separate trial is needed for that.
+- the Additional Point of Contact block on the Student/Exchange Visitor page -
+  blocked on one live J1 Fill report, see below.
 - the DS-2019 parser, for the programme dates (the J1 sheet has no
   arrival/departure columns; `Appointment Date` is the interview).
 - the two-tab worksheet, and the class banner in the extension popup.

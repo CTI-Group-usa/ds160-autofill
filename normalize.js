@@ -180,6 +180,34 @@
   const numText = raw => deExp(raw).replace(/\s+/g, ' ').trim();
   const phoneAsWritten = raw => deExp(raw).replace(PHONE_DIGITS, '');
 
+  /* THE SHEET DROPS THE HYPHENS CEAC REQUIRES. Column CI holds the DS-2019
+     programme number, and the export writes it two ways: 30 rows as
+     `P-3-05133` and 18 as `P305133`. The filed sample shows CEAC's own
+     rendering is the hyphenated one, and the compressed form maps onto it
+     unambiguously - P, one category digit, five digits.
+
+     Anything else is PASSED THROUGH AS WRITTEN rather than dropped. Seven
+     rows hold things like `PL52-449`, `J 1 PROGRAM` and a bare `-`, and
+     returning '' for those would leave the box empty with the sheet's own
+     value nowhere in sight. Filled and flagged is better: validate() names
+     it, the operator sees it, and CEAC rejects a malformed number itself. */
+  function normProgram(raw) {
+    /* Whitespace is stripped only to MATCH. A value that falls through keeps
+       the sheet's own spacing, because "J1PROGRAM" is harder to recognise on
+       screen than the "J 1 PROGRAM" somebody actually typed. */
+    const orig = upper(deExp(raw));
+    const t = orig.replace(/\s+/g, '');
+    if (/^P-\d-\d{5}$/.test(t)) return t;
+    const m = t.match(/^P(\d)(\d{5})$/);
+    return m ? 'P-' + m[1] + '-' + m[2] : orig;
+  }
+
+  /* A SEVIS id is N plus ten digits (N0037491619 in the filed sample). Kept
+     deliberately loose - strip punctuation and upper-case, nothing more -
+     because an over-strict pattern that returned '' would DROP a real id, and
+     an unusual one is better filled and flagged than silently gone. One row
+     of the export holds it as a float, which xlsx.js now expands. */
+  const normSevis = raw => upper(deExp(raw)).replace(/[^A-Z0-9]/g, '');
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
     let s = deExp(raw).replace(PHONE_DIGITS, '');
@@ -326,8 +354,8 @@
     'U.S. Taxpayer ID Number (if any)':                              ['taxId', clean],
     'Monthly Salary':                                                ['monthlyIncome', normMoney],
     'Provide a list of languages you speak':                         ['languages', upper],
-    'SEVIS ID':                                                      ['sevisId', upper],
-    'Program Number':                                                ['programNumber', upper],
+    'SEVIS ID':                                                      ['sevisId', normSevis],
+    'Program Number':                                                ['programNumber', normProgram],
 
     /* J1's payer is a PERSON, not a company - a different branch of the
        DS-160 question entirely. See constants-j1.js. */
@@ -342,10 +370,12 @@
     'Point of contact address':                                      ['usPocAddress', clean],
     'Point of contact phone number':                                 ['usPocPhone', phoneAsWritten],
     'Point of contact email Address':                                ['usPocEmail', clean],
-    'Additional point of contact':                                   ['addPocName', upper],
-    'Additional point of contact address':                           ['addPocAddress', clean],
-    'Additional point of contact phone number':                      ['addPocPhone', phoneAsWritten],
-    'Additional point of contact email Address':                     ['addPocEmail', clean],
+    /* NAME (2). The J1 pack carries Name (1) as constants - CTI Indonesia -
+       so the sheet's contact is the second block, and the keys say so. */
+    'Additional point of contact':                                   ['addPoc2Name', upper],
+    'Additional point of contact address':                           ['addPoc2Address', clean],
+    'Additional point of contact phone number':                      ['addPoc2Phone', phoneAsWritten],
+    'Additional point of contact email Address':                     ['addPoc2Email', clean],
 
     /* Junior High School - a THIRD education level the C1/D sheet has no
        columns for. CEAC's education block is one repeating set, so this is a
@@ -742,6 +772,30 @@
       W('monthlyIncome', 'Monthly salary reads ' + rec.monthlyIncome + ' in local currency - ' +
                          'too small for a monthly wage in IDR. Check the intake cell for a ' +
                          'missing thousand or a different unit.');
+
+    /* THE DS-2019 PROGRAMME NUMBER AND THE SEVIS ID, both from the sheet and
+       both sworn on the form. normProgram() repairs the one shape it can read
+       unambiguously (P305133 -> P-3-05133, 18 rows of the export) and passes
+       everything else through as written - seven rows hold things like
+       `PL52-449`, `J 1 PROGRAM` and a bare `-`. Filled and flagged beats
+       dropped: the operator can see the cell, and CEAC rejects a malformed
+       number itself. */
+    if (rec.programNumber && !/^P-\d-\d{5}$/.test(rec.programNumber))
+      W('programNumber', 'Programme number is ' + rec.programNumber + ', which is not ' +
+                         'the P-n-nnnnn shape CEAC expects - check it against the DS-2019');
+    if (rec.sevisId && !/^N\d{10}$/.test(rec.sevisId))
+      W('sevisId', 'SEVIS ID is ' + rec.sevisId + ', which is not N plus ten digits - ' +
+                   'check it against the DS-2019');
+
+    /* A POINT OF CONTACT WHO IS THE APPLICANT IS NOT A CONTACT. Column CD is
+       the additional point of contact and two of the 69 rows hold the
+       applicant's own name, address, phone and email - the intake form was
+       filled in wrongly. On the filed sample that row is exactly the one, and
+       whoever filed it substituted the host school's contact instead. */
+    if (rec.addPoc2Name && rec.fullName &&
+        upper(rec.addPoc2Name).replace(/[^A-Z]/g, '') === upper(rec.fullName).replace(/[^A-Z]/g, ''))
+      W('addPoc2Name', 'The additional point of contact is the applicant themselves (' +
+                       rec.addPoc2Name + ') - the intake cell needs a different person');
 
     /* THE TOOL CANNOT FILL THESE YET, AND SAYING SO BEATS FAILING QUIETLY.
        CEAC splits the SSN across three boxes and no live J1 Fill report has
