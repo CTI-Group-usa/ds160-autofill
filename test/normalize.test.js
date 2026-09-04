@@ -940,5 +940,39 @@ for (const k of ['arrivalCity', 'departureCity', 'arrivalFlight', 'departureFlig
                  'travelLocation', 'stayAddr1', 'stayAddr2', 'stayCity', 'stayState', 'stayZip'])
   eq(k + ' is named as not collected', gaps.indexOf(k) >= 0, true);
 
+
+/* -- column X is ONE name and CEAC wants TWO ------------------------
+   The second live J1 Travel report showed both payer name boxes holding
+   PRATAMA / PUTU YUDA - the applicant himself - while column X read
+   `Ketut Purna Yasa`. The matcher side of that is guarded; this is the source
+   side, which had no key for either box at all. */
+const payerName = D.toRecord({
+  'Name': 'Putu Yuda, Pratama',
+  'Name of the person paying for your trip': 'Ketut Purna Yasa',
+});
+eq('the payer surname',      payerName.payerSurname, 'YASA');
+eq('the payer given names',  payerName.payerGivenNames, 'KETUT PURNA');
+/* THE APPLICANT'S OWN NAME IS UNTOUCHED BY IT - that is the whole bug. */
+eq('the applicant keeps his surname', payerName.surname, 'PRATAMA');
+eq('and his given names',            payerName.givenNames, 'PUTU YUDA');
+/* Kept for the single-box COMPANY/ORGANIZATION branch. */
+eq('the whole name is still available', payerName.payerCompany, 'KETUT PURNA YASA');
+has('the split is named as a guess', D.validate(payerName).warnings,
+    'payerSurname', 'split as a guess');
+
+/* A mononym payer types the placeholder, because there is no "Do Not Know"
+   checkbox beside this box - the relatives' arrangement does not apply. */
+const payerMono = D.toRecord({ 'Name': 'A, B',
+  'Name of the person paying for your trip': 'Suroso' });
+eq('a single-named payer', payerMono.payerSurname, 'SUROSO');
+eq('and its placeholder',  payerMono.payerGivenNames, 'FNU');
+has('named too', D.validate(payerMono).warnings, 'payerSurname', 'single name');
+
+/* NO COLUMN, NO ASSERTION - so C1/D's own payer constants still fill the box. */
+const noPayerName = D.toRecord({ 'Name': 'A, B' });
+eq('nothing is invented', noPayerName.payerSurname, undefined);
+eq('nor a given name',    noPayerName.payerGivenNames, undefined);
+none('and nothing is warned about', D.validate(noPayerName).warnings, 'payerSurname');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

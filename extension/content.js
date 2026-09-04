@@ -101,6 +101,32 @@
      trade one wrong fill for another. */
   const BLOCK_MAX = 14;
 
+  /* A DROPDOWN'S OPTION LIST IS NOT BLOCK CONTEXT, and leaving it in silently
+     switched a guard off. The J1 payer block holds the relationship dropdown,
+     whose options are CEAC's own closed set - CHILD, PARENT, SPOUSE, OTHER
+     RELATIVE, FRIEND, OTHER - so the word RELATIVE landed in the section of
+     every control in that block and `RELATIVE_OR_THIRD_PARTY` excluded itself
+     from all of them.
+
+     That is the `{...}` filter's lesson a second time: this string is read by
+     every `must` and `not` on the page, so anything swept into it that nobody
+     wrote as a heading is a coincidence waiting to happen. Here the
+     coincidence was protective by accident on the fixture and absent on the
+     live page - the guard held in test and failed in production, which is the
+     worst way round.
+
+     Options are the whole of a <select>'s text and are read from `el.options`
+     when a value is set, so dropping them here costs nothing. */
+  function blockText(n) {
+    let t = '';
+    const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT, {
+      acceptNode: x => (x.parentElement && x.parentElement.closest('option'))
+        ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
+    while (w.nextNode()) t += w.currentNode.nodeValue + ' ';
+    return t;
+  }
+
   function blockLabel(el) {
     let n = el.parentElement;
     for (let i = 0; i < 10 && n; i++, n = n.parentElement) {
@@ -141,7 +167,7 @@
          Country/Region went unfilled: the rule was right, the context it
          depended on was blank. */
       if (count > BLOCK_MAX) return tidy(lead);
-      return tidy(lead + ' ' + n.textContent);
+      return tidy(lead + ' ' + blockText(n));
     }
     return '';
   }

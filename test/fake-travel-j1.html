@@ -23,6 +23,12 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
      branch - "Is the address of the party paying the same as your Home or
      Mailing Address?"
 
+     The payer's name is TWO boxes on this branch, and the applicant's own
+     `surname` / `givenNames` rules matched both of them - the second live
+     report showed PRATAMA / PUTU YUDA sworn as the person paying. That is what
+     the two label-only rules and the `paying` guard are for, and this fixture
+     is where it is proved.
+
      THE RELATIONSHIP OPTION LIST IS VERBATIM from that report:
        - SELECT ONE - | CHILD | PARENT | SPOUSE | OTHER RELATIVE | FRIEND | OTHER
      It is the whole reason a fix was needed: column AA holds "Father" for 35
@@ -85,8 +91,17 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
 <fieldset>
   <legend>Person/Entity Paying for Your Trip</legend>
   <table>
+    <!-- TWO NAME BOXES, AND THEIR IDS ARE DELIBERATELY OPAQUE. The real ones
+         are unknown: they never reached a "Not recognised" list, because
+         `surname` and `givenNames` were quietly claiming them on their labels
+         and the report called them "already correct". So the fixture must prove
+         the LABEL path, which is the only path the live page has - an invented
+         id here would prove a rule that does not exist. Same arrangement as
+         test/fake-travel.html. -->
     <tr><td>Surnames of Person Paying for Trip</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPayerName"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxCtl0041"></td></tr>
+    <tr><td>Given Names of Person Paying for Trip</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxCtl0042"></td></tr>
     <tr><td>Telephone Number</td>
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPayerPhone"></td></tr>
     <tr><td>Email Address</td>

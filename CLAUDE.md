@@ -468,6 +468,79 @@ question correctly deferred as a postback with `remaining: 0`. The
 cross-fixture sweep confirms **no page's unmatched list changed** - only the
 filled counts rose, because the sweep record now carries the J1 travel keys.
 
+## The payer's name was the applicant's (2026-09-04, second live report)
+The J1 Travel page came back with **Surnames of Person Paying for Trip** and
+**Given Names of Person Paying for Trip** holding `PRATAMA` / `PUTU YUDA` -
+**the applicant himself** - while column X reads `Ketut Purna Yasa`. The report
+listed both as *"Already correct"*.
+
+Worst class of bug this project produces: it fills something wrong rather than
+leaving it empty, a filled field is not a gap, and the report **agreed with
+it**.
+
+### Two boxes, and there was no key for either
+`surname`'s label is `/^surnames/i` and `givenNames`'s is `/^given names/i`.
+Both match those labels exactly, and nothing kept them out of that block.
+Meanwhile `payerPersonName` was aliased to `payerCompany`, which is the
+**single** Name box the COMPANY/ORGANIZATION branch shows - so on this branch
+the sheet's value had nowhere to go and the applicant's name had somewhere it
+should not.
+
+Column X is split the same way as the applicant's own name - last token is the
+surname, a mononym keeps `FNU` in the given box (no "Do Not Know" checkbox sits
+beside it, so the relatives' arrangement does not apply) - and `validate()`
+names it as the same guess, because it is.
+
+`payerCompany` is kept for the single-box branch, with a **negative lookahead**
+on both id patterns: if those two boxes turn out to be `tbxPayerNameSurname`
+and `tbxPayerNameGiven`, a bare `/tbxPayerName/i` would put the whole name in
+the surname box. A `not` cannot do that job - it is tested against the section,
+and this block says "Person/Entity Paying".
+
+**`paying` joined `RELATIVE_OR_THIRD_PARTY`**, which is where `homeAddress` has
+carried it since the day its "Street Address" label reached this block, and
+`email` now carries it too.
+
+**Their real ids are unknown, and here is why:** the boxes never reached a "Not
+recognised" list, because a rule was already claiming them. The two new rules
+are label-only - no `must`, because a guard gates the id path too and there is
+no id here to rescue it - and the fixture's ids are opaque on purpose, so it
+proves the label path, which is the only path the live page has.
+
+### A DROPDOWN'S OPTION LIST WAS IN THE SECTION, AND IT SWITCHED A GUARD OFF
+Writing the fixture found something worse than the bug it was written for.
+`blockLabel()` built its section from `n.textContent`, which includes every
+`<option>`. This block holds the relationship dropdown, whose options are
+CEAC's own closed set - `CHILD | PARENT | SPOUSE | OTHER RELATIVE | FRIEND |
+OTHER` - so the word **RELATIVE** was in the section of every control in it,
+and `RELATIVE_OR_THIRD_PARTY` **excluded itself from all of them.**
+
+Measured on the old code, same label, three contexts:
+
+| Section | Old result |
+|---|---|
+| empty | `surname` - the live bug |
+| the block heading | `surname` - the live bug |
+| heading **+ the option list** | `undefined` - the guard fires |
+
+So the guard held on the fixture and failed on the live page: **protective by
+accident in test, absent in production, which is the worst way round.** It also
+meant the first version of this fixture could not reproduce the bug at all.
+
+`blockText()` walks text nodes and rejects anything inside an `<option>`. That
+is the `{...}` stylesheet filter's lesson a second time - this string is read by
+every `must` and `not` on the page, so anything swept into it that nobody wrote
+as a heading is a coincidence waiting to happen. Options are the whole of a
+`<select>`'s text and are read from `el.options` when a value is set, so
+dropping them here costs nothing.
+
+**Verified both ways.** With the fix, `travel-j1` fills `payerSurname` and
+`payerGivenNames` and nothing is unrecognised. With `matcher.js` reverted and
+`content.js` kept, the same fixture fills **`surname = PRATAMA`,
+`givenNames = PUTU YUDA`** into the payer's boxes - the live failure, on the
+bench. The cross-fixture sweep was run against the committed matcher first and
+then against the fix: **all twenty-two other pages byte-identical.**
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

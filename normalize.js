@@ -782,9 +782,36 @@
        Same shape as the SSN derivation: only the positive case is asserted, so
        a sheet without those columns leaves the keys alone and each pack's own
        constants still fill them. No branch on `_class`, and none wanted. */
-    if (rec.payerPersonName)  rec.payerCompany = rec.payerPersonName;
     if (rec.payerPersonPhone) rec.payerPhone   = rec.payerPersonPhone;
     if (rec.payerPersonEmail) rec.payerEmail   = rec.payerPersonEmail;
+
+    /* ON THE OTHER-PERSON BRANCH THE NAME IS TWO BOXES, NOT ONE. Column X is
+       one free-text name - `Ketut Purna Yasa` - and CEAC asks for "Surnames of
+       Person Paying for Trip" and "Given Names of Person Paying for Trip"
+       separately, exactly as it does for the applicant.
+
+       The live report showed both of those boxes holding PRATAMA / PUTU YUDA -
+       THE APPLICANT'S OWN NAME - because `surname` and `givenNames` match on
+       `/^surnames/i` and `/^given names/i`, and nothing kept them out of this
+       block. Filled, plausible, and sworn to the wrong person; the report
+       called them "already correct".
+
+       Split the same way as the applicant's own name, because it is the same
+       kind of value from the same kind of cell: last token is the surname, a
+       mononym keeps FNU in the given box (there is no "Do Not Know" checkbox
+       beside it, so the placeholder is typed - the relatives' arrangement does
+       not apply here). And it is flagged the same way, because it is the same
+       guess. */
+    if (rec.payerPersonName) {
+      const pn = splitName(rec.payerPersonName);
+      rec.payerSurname     = pn.surname;
+      rec.payerGivenNames  = pn.given;
+      rec._payerNameMononym = pn.mononym;
+      rec._payerNameGuessed = pn.guessed;
+      /* Kept for the single-box branch: C1/D's payer is a company and CEAC
+         gives it one Name box. Harmless on J1, where no control matches it. */
+      rec.payerCompany = rec.payerPersonName;
+    }
 
     if (rec.ssn)           rec.ssnNA = 'NO';
     if (rec.taxId)         rec.taxIdNA = 'NO';
@@ -962,6 +989,17 @@
       W('monthlyIncome', 'Monthly salary reads ' + rec.monthlyIncome + ' in local currency - ' +
                          'too small for a monthly wage in IDR. Check the intake cell for a ' +
                          'missing thousand or a different unit.');
+
+    /* THE PAYER'S NAME SPLIT IS THE SAME GUESS AS THE APPLICANT'S, so it is
+       named the same way. Nobody checks this half against a passport, but the
+       payer's name has to match the document they will show if asked. */
+    if (rec._payerNameMononym)
+      W('payerSurname', 'The person paying has a single name - filled as ' +
+                        'Surname "' + rec.payerSurname + '", Given Names "FNU".');
+    else if (rec._payerNameGuessed)
+      W('payerSurname', 'Name of the person paying is split as a guess: ' +
+                        'Surname "' + rec.payerSurname + '" / Given "' +
+                        rec.payerGivenNames + '".');
 
     /* CEAC's relationship dropdown is a closed set and column AA is free text.
        Everything in the export maps, but a new word would land here rather

@@ -52,8 +52,15 @@
          reachable regardless of how the block is nested.
      None of these fields exists anywhere on that page, so excluding the whole
      page costs nothing. */
+  /* `paying` is in here for the J1 Travel page, and it is the same failure a
+     third time. On the OTHER PERSON branch CEAC asks for "Surnames of Person
+     Paying for Trip" and "Given Names of Person Paying for Trip" - which
+     `/^surnames/i` and `/^given names/i` match perfectly - and a live report
+     showed both boxes holding the APPLICANT'S own name, reported as "already
+     correct". `homeAddress` has carried this same word since the day its
+     "Street Address" label reached this block. */
   const RELATIVE_OR_THIRD_PARTY =
-    /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency|point of contact|exchange/i;
+    /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency|paying|point of contact|exchange/i;
   const RULES = [
     /* "Surnames" and "Given Names" are the labels on the relatives' boxes too,
        and these rules sit first. The id pass saves them today - FathersSurname
@@ -172,7 +179,7 @@
        the id pass, which runs first - so it was one renamed control away from
        putting the applicant's own address in the contact's box. */
     { key: 'email',          kind: 'text',  ids: [/APP_EMAIL_ADDR/i], labels: [/^e-?mail address/i],
-      not: /point of contact|exchange/i },
+      not: /point of contact|exchange|paying/i },
     { key: 'socialPlatform', kind: 'text',  ids: [/SOCIAL_MEDIA_PROVIDER/i, /ddlSocialMedia/i], labels: [/social media platform/i] },
     { key: 'socialHandle',   kind: 'text',  ids: [/SOCIAL_MEDIA_IDENT/i, /tbxSocialMediaIdent/i], labels: [/social media identifier/i] },
 
@@ -353,7 +360,27 @@
        The label rules stay as a fallback, pinned by must:/pay/ because
        City, State/Province and Country/Region are word for word the same
        in the U.S. contact block on the same page. */
-    { key: 'payerCompany',      kind: 'text', ids: [/tbxPayerName/i, /PAYER_NAME/i, /PayerCompany/i],
+    /* THE OTHER-PERSON BRANCH SPLITS THE NAME ACROSS TWO BOXES. Their ids are
+       not known: they never appeared in "Not recognised" because `surname` and
+       `givenNames` were quietly claiming them, so no report has ever named
+       them. The labels are unmistakable and carry these rules on their own -
+       no `must`, because a guard gates the id path too and there is no id here
+       to rescue it.
+
+       They sit before `payerCompany` so that the single-box branch, whose id
+       fragment is broader, cannot reach across. */
+    { key: 'payerSurname',      kind: 'text', ids: [],
+      labels: [/surnames of person paying/i] },
+    { key: 'payerGivenNames',   kind: 'text', ids: [],
+      labels: [/given names of person paying/i] },
+    /* One Name box, which is what the COMPANY/ORGANIZATION branch shows -
+       C1/D's payer is the cruise line. The lookahead is the sibling-prefix
+       rule: if the two boxes above turn out to be `tbxPayerNameSurname` and
+       `tbxPayerNameGiven`, a bare `/tbxPayerName/i` would put the whole name
+       in the surname box. A `not` cannot do this job - it is tested against
+       the section, and this block says "Person/Entity Paying". */
+    { key: 'payerCompany',      kind: 'text',
+      ids: [/tbxPayerName(?!.*(?:SURNAME|GIVEN))/i, /PAYER_NAME(?!.*(?:SURNAME|GIVEN))/i, /PayerCompany/i],
       labels: [/company.*organization paying/i], must: /pay/i },
     { key: 'payerPhone',        kind: 'text', ids: [/tbxPayerPhone/i, /PAYER_TEL/i],
       labels: [/^telephone number$/i], must: /pay/i },

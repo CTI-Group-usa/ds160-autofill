@@ -1179,5 +1179,49 @@ eq('the old arrival spelling still works', key('tbxARRIVAL_FLIGHT'), 'arrivalFli
    the wrong address in. */
 eq("the applicant's own email box is still its own", key('tbxAPP_EMAIL_ADDR'), 'email');
 
+
+/* -- THE PAYER'S NAME IS TWO BOXES, AND THEY WERE THE APPLICANT'S ----
+   On the OTHER PERSON branch CEAC asks for "Surnames of Person Paying for
+   Trip" and "Given Names of Person Paying for Trip". `/^surnames/i` and
+   `/^given names/i` match both of them, and a live report showed PRATAMA /
+   PUTU YUDA - the applicant's own name - sworn as the person paying, listed
+   as "already correct".
+
+   The real ids are unknown, and this is why: the boxes never reached a "Not
+   recognised" list, because a rule was claiming them. So both rules here are
+   label-only and the ids below are opaque on purpose. */
+const payBlk = 'Person/Entity Paying for Your Trip Provide the following ' +
+               'information Surnames of Person Paying for Trip Given Names of ' +
+               'Person Paying for Trip Telephone Number Email Address ' +
+               'Relationship to You';
+eq('the payer surname box',
+   ph('tbxCtl0041', 'Surnames of Person Paying for Trip', payBlk), 'payerSurname');
+eq('the payer given names box',
+   ph('tbxCtl0042', 'Given Names of Person Paying for Trip', payBlk), 'payerGivenNames');
+/* THE GUARD, which is the half that stops a wrong sworn answer. `paying` is
+   in the label itself, so it holds even where blockLabel() reaches nothing. */
+eq('the applicant surname rule stands aside',
+   ph('tbxCtl0041', 'Surnames of Person Paying for Trip', ''), 'payerSurname');
+eq('and the given names rule',
+   ph('tbxCtl0042', 'Given Names of Person Paying for Trip', ''), 'payerGivenNames');
+/* AND IT MUST NOT COST THE APPLICANT HIS OWN BOXES. Personal 1 says nothing
+   about paying, so the guard is out of reach there. */
+eq('Personal 1 surnames still fill',
+   ph('tbxAPP_SURNAME', 'Surnames', 'Personal Information 1 Name'), 'surname');
+eq('and given names', ph('tbxAPP_GIVEN_NAME', 'Given Names',
+   'Personal Information 1 Name'), 'givenNames');
+/* The single Name box is the COMPANY/ORGANIZATION branch - C1/D's payer is
+   the cruise line - and the lookahead is the sibling-prefix rule: if the two
+   boxes above turn out to be `tbxPayerNameSurname`, a bare `/tbxPayerName/i`
+   would put the whole name in the surname box. */
+eq('the company name box is still its own',
+   ph('tbxPayerName', '', payBlk), 'payerCompany');
+eq('but it cannot reach a surname box',
+   ph('tbxPayerNameSurname', 'Surnames of Person Paying for Trip', payBlk), 'payerSurname');
+/* The applicant's own email box also carries `paying` now. Its id rule wins
+   today, so this asserts the label path the id rule is a backstop for. */
+eq('the payer email box is not the applicant\'s',
+   ph('tbxCtl0043', 'Email Address', payBlk), undefined);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
