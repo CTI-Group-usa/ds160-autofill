@@ -640,23 +640,40 @@ This is a **US** address, in a column that exists to hold one, and the user has
 now twice said what it feeds. There is nothing else to read the city from - the
 J1 sheet has no host-city column.
 
-**The gate is a real USPS state code plus a five-digit ZIP.** Anything else
-returns null. And the first version of that gate was too loose, which a probe
-caught before it shipped:
+### THE REAL CELLS ARE NOT ONE SHAPE
+The first version was a single regex demanding `, CITY, XX 12345`. It matched
+the DS-7002's spelling and **refused the sheet's**:
 
-| Address | First version |
-|---|---|
-| `6631 W BROAD ST, RICHMOND, VA 23230` | Richmond, VIRGINIA - right |
-| `JL RAYA KUTA NO 12, KUTA, ID` | **Kuta, IDAHO** |
+| Source | Written as | First version |
+|---|---|---|
+| the DS-7002 | `6631 W BROAD ST, RICHMOND, VA 23230` | read |
+| **a live sheet row** | `7000 KALAHARI DR, SANDUSKY, OHIO, 44870` | **refused** |
 
-`ID` is Idaho and also the code Indonesia is written with, and IN/India,
-MO/Macao, MD/Moldova, MT/Malta and NE/Niger set the same trap. Idaho stays in
-the table - a host company can be in Sun Valley - so what changed is that a
-bare two-letter tail is no longer enough. The comment that had claimed the
-collision was harmless was **wrong, and my own probe is what disproved it**.
+State spelled out **in full**, ZIP behind **its own comma**. So the whole
+string went into Street Line 1 and no city was ever produced - the Arrival City
+and Departure City boxes stayed empty on a live page, which is what the user
+reported. One regex cannot hold both shapes without becoming unreadable, so
+`usPlace()` walks the comma-separated parts **backwards**: ZIP, then state,
+then city, and whatever is left is the street. That is also why a street
+containing a comma survives intact.
 
-Requiring five digits is not proof either; an Indonesian postcode is five
-digits too. So it is not the only defence:
+**The state is the gate, and how tight it has to be depends on how it is
+written:**
+
+| Written as | ZIP | Why |
+|---|---|---|
+| full name - `OHIO`, `VIRGINIA` | not needed | unambiguous |
+| two-letter - `VA`, `MO` | **required** | `ID` is Idaho *and* the code Indonesia is written with |
+
+A probe on the first version read `JL RAYA KUTA NO 12, KUTA, ID` as **Kuta,
+IDAHO**, and IN/India, MO/Macao, MD/Moldova, MT/Malta and NE/Niger set the same
+trap. Idaho stays in the table - a host company can be in Sun Valley - so what
+is refused is the **bare code**, not the state. The comment that had called
+that collision harmless was **wrong, and my own probe is what disproved it**.
+A country name is not a state either, so `..., KUTA, INDONESIA` is refused too.
+
+`..., KUTA, ID 80361` would still read as Idaho: an Indonesian postcode is five
+digits too. So the gate is not the only defence:
 
 - **`validate()` states the place it read, on every row, as a `note`.** Nothing
   is wrong, it fires on every J1 row, it needs no decision - so it must not
@@ -691,10 +708,18 @@ participant may fly into a different city.
 operator's own entry and before the pack. `FROM_KEYS` is derived from the field
 table, exactly like `GATE_KEYS`, so adding a `from` registers itself.
 
-Verified: with a host address both cities read RICHMOND; set `arrivalCity` for
-that applicant and it becomes LOS ANGELES while `departureCity` stays RICHMOND;
-with no host address both stay empty; and a closed `specificTravelPlans` gate
-still keeps them off the page entirely.
+Verified: with a host address both cities read the host's city; set
+`arrivalCity` for that applicant and it becomes LOS ANGELES while
+`departureCity` stays put; with no host address both stay empty; and a closed
+`specificTravelPlans` gate still keeps them off the page entirely.
+
+End to end on the live cell: `7000 KALAHARI DR, SANDUSKY, OHIO, 44870` fills
+both cities with SANDUSKY, and OHIO lands in the State dropdown with MICHIGAN,
+MINNESOTA, MISSOURI and VIRGINIA all present beside it. **And the previous
+commit's work showed up where it was needed** - Street Line 1 still held the
+whole address from before the fix, so the skip read *the box holds "7000
+KALAHARI DR, SANDUSKY, OHIO, 44870", the record says "7000 KALAHARI DR" - clear
+the box and Fill again* instead of the old, silent "already has a value".
 
 ### Two street boxes, two keys, a fixed cap
 `addressHalf()` in `matcher.js` reads the real `maxlength` off the box, which is

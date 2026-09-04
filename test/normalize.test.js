@@ -1005,19 +1005,56 @@ none('and the note is not a warning', D.validate(host).warnings, 'stayCity');
 has('the derivation says what it read', D.validate(host).notes,
     'stayCity', 'come from the host organisation');
 
-/* THE GATE IS A REAL STATE CODE PLUS A ZIP, and a probe is why the ZIP is
-   required. With it optional, `JL RAYA KUTA NO 12, KUTA, ID` read as city KUTA
-   in the state of IDAHO - `ID` is Idaho and also the code Indonesia is written
-   with, and IN/India, MO/Macao, MD/Moldova, MT/Malta and NE/Niger set the same
-   trap. Idaho stays in the map: a host company can be in Sun Valley. */
-eq('an Indonesian address is refused',
+/* THE REAL CELLS ARE NOT ONE SHAPE, and a live row is what proved it. The
+   first version was a single regex demanding `, CITY, XX 12345`. It matched
+   the DS-7002's spelling and refused the sheet's:
+
+     7000 KALAHARI DR, SANDUSKY, OHIO, 44870
+
+   - state spelled out IN FULL, ZIP behind its own comma. So the whole string
+   went into Street Line 1, no city was ever produced, and the Arrival City and
+   Departure City boxes stayed empty on a live page. The reader walks the comma
+   parts backwards now. */
+const kalahari = D.usPlace('7000 KALAHARI DR, SANDUSKY, OHIO, 44870');
+eq('the live shape - street',  kalahari.street, '7000 KALAHARI DR');
+eq('the live shape - city',    kalahari.city, 'SANDUSKY');
+eq('the live shape - state',   kalahari.state, 'OHIO');
+eq('the live shape - ZIP',     kalahari.zip, '44870');
+/* And the DS-7002's spelling still reads - a code, and the ZIP behind a space
+   rather than a comma. */
+eq('a code and a space',
+   D.usPlace('6631 W BROAD ST, RICHMOND, VA 23230').state, 'VIRGINIA');
+/* A COMMA IN THE STREET SURVIVES, because only the tail is consumed. */
+eq('a street with a comma',
+   D.usPlace('SUITE 900, 1234 MAIN ST, RESTON, VIRGINIA, 20190').street,
+   'SUITE 900, 1234 MAIN ST');
+eq('and its ZIP+4', D.usPlace('1 A St, Reston, VA 20190-1234').zip, '20190');
+
+/* HOW TIGHT THE GATE HAS TO BE DEPENDS ON HOW THE STATE IS WRITTEN.
+   A full name is unambiguous and needs no ZIP. A two-letter code does, because
+   `ID` is Idaho and also the code Indonesia is written with - IN/India,
+   MO/Macao, MD/Moldova, MT/Malta and NE/Niger set the same trap, and a probe
+   on the first version read `JL RAYA KUTA NO 12, KUTA, ID` as Kuta, IDAHO. */
+eq('a full name needs no ZIP', D.usPlace('SANDUSKY, OHIO').state, 'OHIO');
+eq('a bare code is refused',   D.usPlace('1 A St, Reston, VA'), null);
+eq('so an Indonesian address is refused',
    D.usPlace('JL RAYA KUTA NO 12, KUTA, ID'), null);
-eq('and so is a bare name', D.usPlace('The Westin Richmond'), null);
-eq('and a state with no ZIP', D.usPlace('100 Main St, Richmond, VA'), null);
+eq('and a country name is not a state',
+   D.usPlace('JL RAYA KUTA NO 12, KUTA, INDONESIA'), null);
+eq('nor is a bare name', D.usPlace('The Westin Richmond'), null);
+/* IDAHO STAYS IN THE TABLE - a host company can be in Sun Valley. What is
+   refused is the bare code, not the state. */
 eq('Idaho is still a state',
    D.usPlace('100 Main St, Sun Valley, ID 83353').state, 'IDAHO');
-eq('a ZIP+4 is read too',
-   D.usPlace('1 A St, Reston, VA 20190-1234').zip, '20190');
+
+/* The whole derivation, from the live cell. */
+const kal = D.toRecord({ 'Name': 'A, B',
+  'Point of contact address': '7000 KALAHARI DR, SANDUSKY, OHIO, 44870' });
+eq('the stay street from the live cell', kal.stayAddr1, '7000 KALAHARI DR');
+eq('the stay city',  kal.stayCity, 'SANDUSKY');
+eq('the stay state', kal.stayState, 'OHIO');
+eq('the stay ZIP',   kal.stayZip, '44870');
+eq('and the city trip.js falls back to', kal.hostCity, 'SANDUSKY');
 
 /* REFUSING IS THE SAFE DIRECTION - an empty box is a visible gap, a filled one
    is a sworn answer nobody rechecks - so the refusal is named, with the value

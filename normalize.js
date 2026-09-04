@@ -256,9 +256,7 @@
      The J1 sheet holds it as one free-text cell, so there is nothing else to
      read it from.
 
-     THE GATE IS A REAL USPS STATE CODE. `..., RICHMOND, VA 23230` is
-     unmistakable; `..., JAKARTA, ID` is not an American address and must not
-     be read as one. Anything that does not end in `, CITY, XX` with XX in this
+     THE GATE IS A REAL US STATE. Anything whose tail is not a state in this
      table returns null, and validate() then names the cell so the operator
      types the boxes - the same refusal `stayUnit` and `strictDate` already
      make. A shape this tight is not the parser that was banned.
@@ -284,34 +282,74 @@
     AS: 'AMERICAN SAMOA', GU: 'GUAM', MP: 'NORTHERN MARIANA ISLANDS',
     PR: 'PUERTO RICO', VI: 'U.S. VIRGIN ISLANDS',
   };
-  /* THE ZIP IS REQUIRED, and a probe is why. The first version made it
-     optional and claimed the state-code collisions were harmless because "an
-     Indonesian address does not produce that shape". It does:
+  /* READ FROM THE RIGHT, ONE COMMA AT A TIME - because the real cells are not
+     one shape. A live row reads
 
-       JL RAYA KUTA NO 12, KUTA, ID   ->  city KUTA, state IDAHO
+       7000 KALAHARI DR, SANDUSKY, OHIO, 44870
 
-     `ID` is Idaho and also the code Indonesia is written with, and the same
-     trap is set by IN/India, MO/Macao, MD/Moldova, MT/Malta, NE/Niger. Idaho
-     is a real state and a host company can be in Sun Valley, so the map keeps
-     it; what changes is that a bare two-letter tail is no longer enough.
+     with the state spelled out IN FULL and the ZIP behind its own comma, while
+     the DS-7002 writes
 
-     Requiring five digits is not proof - an Indonesian postcode is five digits
-     too - so it is not the only defence. `validate()` states the place it read
-     on every row, as a NOTE, so a wrong read is in front of the operator
-     rather than only in the boxes. And refusing is the safe direction: an
-     empty box is a visible gap, a filled one is a sworn answer nobody
-     rechecks. */
-  const US_TAIL = new RegExp(
-    ',\\s*([A-Za-z][A-Za-z .\'-]{1,28}?)\\s*,\\s*([A-Za-z]{2})\\.?' +
-    '\\s+(\\d{5})(?:-\\d{4})?\\s*$');
+       6631 W BROAD ST, RICHMOND, VA 23230
+
+     with a code and a space. The first version was a single regex demanding
+     `, CITY, XX 12345`; it matched the second and refused the first, so the
+     whole string went into Street Line 1 and no city was ever produced. One
+     regex cannot hold both without becoming unreadable, so this walks the
+     comma-separated parts backwards: ZIP, then state, then city, and whatever
+     is left is the street - which is also why a street containing a comma
+     survives intact.
+
+     THE STATE IS STILL THE GATE, and how tight it has to be depends on how it
+     is written:
+
+       full name  - OHIO, VIRGINIA. Unambiguous. No ZIP needed.
+       two-letter - VA, MO. A ZIP IS REQUIRED, because `ID` is Idaho and also
+                    the code Indonesia is written with, and IN/India, MO/Macao,
+                    MD/Moldova, MT/Malta and NE/Niger set the same trap. A
+                    probe on the first version read
+                    `JL RAYA KUTA NO 12, KUTA, ID` as Kuta, IDAHO. Idaho stays
+                    in the table - a host company can be in Sun Valley - so
+                    what is refused is the bare code, not the state.
+
+     `..., KUTA, ID 80361` would still read as Idaho: an Indonesian postcode is
+     five digits too. That is why validate() states the place it read on every
+     row, and why refusing is the safe direction - an empty box is a visible
+     gap, a filled one is a sworn answer nobody rechecks. */
+  const US_STATE_NAMES = {};
+  for (const c in US_STATES) US_STATE_NAMES[US_STATES[c]] = US_STATES[c];
+
+  function stateName(raw, hasZip) {
+    const t = upper(raw).replace(/\.$/, '').trim();
+    if (!t) return '';
+    if (US_STATE_NAMES[t]) return US_STATE_NAMES[t];
+    if (/^[A-Z]{2}$/.test(t) && hasZip) return US_STATES[t] || '';
+    return '';
+  }
+
   function usPlace(raw) {
-    const t = clean(raw);
-    const m = t.match(US_TAIL);
-    if (!m) return null;
-    const st = US_STATES[m[2].toUpperCase()];
-    if (!st) return null;
-    return { street: t.slice(0, m.index).trim(), city: upper(m[1]),
-             state: st, zip: m[3] || '' };
+    const parts = clean(raw).split(',').map(x => x.trim()).filter(Boolean);
+    if (parts.length < 2) return null;
+
+    /* The ZIP arrives either behind its own comma or glued to the state. */
+    let zip = '';
+    const last = parts[parts.length - 1];
+    let m = last.match(/^(\d{5})(?:-\d{4})?$/);
+    if (m) { zip = m[1]; parts.pop(); }
+    else {
+      m = last.match(/^(.*?)\s+(\d{5})(?:-\d{4})?$/);
+      if (m) { zip = m[2]; parts[parts.length - 1] = m[1].trim(); }
+    }
+    if (parts.length < 2) return null;
+
+    const state = stateName(parts[parts.length - 1], !!zip);
+    if (!state) return null;
+    parts.pop();
+
+    const city = parts.pop();
+    if (!city || !/[A-Za-z]/.test(city)) return null;
+
+    return { street: parts.join(', '), city: upper(city), state: state, zip: zip };
   }
 
   /* CEAC's two street boxes take 40 characters each - the maxlength on the
