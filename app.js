@@ -301,38 +301,73 @@
      URL itself - cross-origin, and behind the user's login. */
   const DOCS = {
     c1d: {
-      kind: 'letter', urlKey: 'supportingLetterUrl',
       button: 'Read supporting letter', what: 'supporting letter',
       paste: 'Paste the whole letter',
       none: 'No supporting letter link in this row &mdash; paste it below.',
       notFound: 'None of the expected lines were found - is this a C1/D supporting letter?',
       parser: () => DS160Letter,
+      links: [{ key: 'supportingLetterUrl', name: 'supporting letter' }],
     },
+    /* THREE ATTACHMENTS, ONE BUTTON, ONE PARSER. The J1 documents live in
+       columns CN, CO and CP, and j1docs.js identifies which one it was handed
+       from the document's own title - so they do not need three readers, and
+       pointing the wrong link at the wrong parser is not a mistake that can be
+       made.
+
+       Read together rather than one at a time, for a reason beyond clicks: the
+       DS-2019's "Form Covers Period" and the DS-7002's "Training/Internship
+       Dates" describe the SAME placement, and comparing them is only possible
+       in one pass. If they disagree, filling either is choosing a document to
+       believe, which is not ours to do - so compareDocs() reports it.
+
+       DS-7002 FIRST, and the order is load-bearing: it labels both the SEVIS
+       id and the programme number, where the DS-2019 prints the SEVIS id with
+       no label at all and carries a programme number in its own stationery.
+       First value wins on merge, so the better source has to be read first. */
     j1: {
-      kind: 'ds2019', urlKey: 'ds2019Url',
-      button: 'Read DS-2019', what: 'DS-2019',
-      paste: 'Paste the DS-2019 text',
-      none: 'No DS-2019 link in this row &mdash; paste it below. Without it there ' +
-            'is no arrival or departure date: the sheet has no column for either.',
-      notFound: 'No programme period found - is this a Form DS-2019? Item 3 of the ' +
-                'form is the part this reads.',
-      parser: () => DS160Ds2019,
+      button: 'Read J1 documents', what: 'J1 documents',
+      paste: 'Paste the text of a DS-7002, DS-2019 or SEVIS receipt',
+      none: 'No DS-7002, DS-2019 or SEVIS receipt link in this row &mdash; paste ' +
+            'one below. Without them there is no arrival or departure date: the ' +
+            'sheet has no column for either.',
+      notFound: 'That is not a DS-7002, a DS-2019 or a SEVIS receipt - those are ' +
+                'the three this reads.',
+      parser: () => DS160J1Docs,
+      links: [{ key: 'ds7002Url', name: 'DS-7002' },
+              { key: 'ds2019Url', name: 'DS-2019' },
+              { key: 'sevisReceiptUrl', name: 'SEVIS receipt' }],
     },
   };
 
   const activeDoc = () => DOCS[DS160Const.activeClass()] || null;
+  /* The links this row actually has. A row missing one is normal - 66 of the
+     69 J1 rows carry all three - and a missing one is skipped with a note
+     rather than treated as a failure. */
+  const docLinks = (doc, rec) =>
+    doc.links.map(l => ({ name: l.name, url: rec[l.key] })).filter(l => l.url);
 
   /* Fetching is the normal path; pasting is the fallback for when the
      link is a viewer page or the extension is not installed. */
   function letterBox(rec) {
     const doc = activeDoc();
     if (!doc) return '';
-    const url = rec[doc.urlKey];
+    const links = docLinks(doc, rec);
+    /* Each link is offered on its own as well as through the button, because
+       "open it" is how the operator checks what the parser was actually given
+       when a value looks wrong. With three documents an unlabelled link would
+       be a guessing game. */
+    const opens = links.map(l =>
+      '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.name) + '</a>'
+    ).join(' &middot; ');
+    const missing = doc.links.filter(l => !rec[l.key]).map(l => l.name);
     return '<div class="letter">' +
-      (url
-        ? '<button id="letterFetch" class="primary">' + doc.button + '</button> ' +
-          '<a href="' + esc(url) + '" target="_blank" rel="noopener">open it</a>'
+      (links.length
+        ? '<button id="letterFetch" class="primary">' + doc.button +
+          (links.length > 1 ? ' (' + links.length + ')' : '') + '</button> ' + opens
         : '<b>' + doc.none + '</b>') +
+      (links.length && missing.length
+        ? ' <span class="note">not in this row: ' + esc(missing.join(', ')) + '</span>'
+        : '') +
       ' <span id="letterMsg"></span>' +
       '<details><summary>paste it instead</summary>' +
       '<textarea id="letterText" placeholder="' + esc(doc.paste) + '"></textarea>' +
@@ -365,64 +400,152 @@
        trip block, and report the cross-check. The parser differs, the wording
        differs, nothing else does - so the C1/D letter and the J1 DS-2019 share
        this rather than having two copies to keep in step. */
-    function useLetterText(text) {
-      const doc = activeDoc();
-      if (!doc) return;
-      const parsed = doc.parser().parse(text);
-      if (!parsed.found) { letterMsg('err', doc.notFound); return; }
-      const answers = doc.parser().answers(parsed);
+    /* ONE OR SEVERAL DOCUMENTS, ONE REPORT. C1/D hands this a single letter;
+       J1 hands it up to three attachments read in one pass, which is what
+       makes comparing them possible at all. */
+    function applyParsed(doc, list) {
+      const P = doc.parser();
+      const usable = list.filter(x => x && x.parsed && x.parsed.found);
+      if (!usable.length) {
+        /* Nothing readable - but if a document was RECOGNISED and simply gave
+           nothing up, its hint is the most useful thing on screen, so it beats
+           the generic "that is not one of the three". */
+        const hinted = list.filter(x => x && x.parsed && x.parsed.hint);
+        letterMsg('err', hinted.length ? hinted.map(x => x.name + ': ' + x.parsed.hint).join(' ')
+                                       : doc.notFound);
+        return;
+      }
+
+      /* FIRST VALUE WINS, so the order of DOCS.links decides which document is
+         believed: DS-7002 before DS-2019, because it labels both the SEVIS id
+         and the programme number where the DS-2019 labels neither. */
+      const answers = {};
+      for (const u of usable) {
+        const a = P.answers(u.parsed);
+        for (const k in a) if (!(k in answers)) answers[k] = a[k];
+      }
       for (const k in answers) DS160Trip.set(rec, k, answers[k]);
-      const issues = doc.parser().crossCheck(parsed, rec);
+
+      const notes = [], problems = [];
+      for (const u of usable) {
+        const name = u.parsed.name || doc.what;
+        notes.push(name + (u.parsed.missing.length
+          ? ' (not in it: ' + u.parsed.missing.join(', ') + ')' : ''));
+        if (u.parsed.unconfirmed)
+          notes.push(name + ': its labels have never been checked against a real one');
+        for (const i of P.crossCheck(u.parsed, rec)) problems.push(i.msg);
+      }
+      /* TWO DOCUMENTS DESCRIBING ONE PLACEMENT MUST AGREE. If the DS-2019's
+         period and the DS-7002's training dates differ, filling either is
+         choosing a document to believe, which is not ours to do. */
+      if (P.compareDocs) {
+        for (let i = 0; i < usable.length; i++) {
+          for (let j = i + 1; j < usable.length; j++) {
+            for (const x of P.compareDocs(usable[i].parsed, usable[j].parsed)) problems.push(x.msg);
+          }
+        }
+      }
+      for (const f of list) if (f && f.error) problems.push(f.name + ': ' + f.error);
+      /* AN INTERACTIVE PDF LOOKS EXACTLY LIKE THIS: recognised, and every value
+         somewhere the page text cannot reach. The parser says what to do about
+         it, and the operator has no way to know otherwise. */
+      for (const f of list) if (f && f.parsed && f.parsed.hint) problems.push(f.parsed.hint);
+
       pendingLetter = {
-        kind: issues.length ? 'err' : 'ok',
-        text: Object.keys(answers).length + ' field(s) read from the ' + doc.what +
-          (parsed.missing.length ? '; not in this ' + doc.what + ': ' + parsed.missing.join(', ') : '') +
-          (issues.length ? ' — CHECK: ' + issues.map(i => i.msg).join(' | ') : ''),
+        kind: problems.length ? 'err' : 'ok',
+        text: Object.keys(answers).length + ' field(s) read from ' + notes.join('; ') +
+              (problems.length ? ' — CHECK: ' + problems.join(' | ') : ''),
       };
       rebuild();
     }
 
-    /* The page cannot fetch a Zoho URL itself - cross-origin, and behind
-       the user's login - so the extension does it and hands back bytes. */
-    if ($('letterFetch'))
-      $('letterFetch').addEventListener('click', () => fetchLetter(rec[activeDoc().urlKey]));
-
-    function fetchLetter(url) {
-      /* CAPTURED ONCE, not read again inside the handlers below. The fetch is
-         asynchronous - the extension answers on a message, up to 20s later -
-         and switching tabs in the meantime would change what activeDoc()
-         returns, so the reply would be parsed with the OTHER class's parser
-         and reported in the other document's words. */
+    /* A pasted document: the parser works out which of the three it is, so
+       there is nothing for the operator to choose. */
+    function useLetterText(text) {
       const doc = activeDoc();
       if (!doc) return;
+      applyParsed(doc, [{ parsed: doc.parser().parse(text) }]);
+    }
+
+    /* The page cannot fetch a Zoho URL itself - cross-origin, and behind
+       the user's login - so the extension does it and hands back bytes. */
+    if ($('letterFetch')) $('letterFetch').addEventListener('click', () => fetchDocs());
+
+    /* ONE LINK, AS A PROMISE. The page cannot fetch a Zoho URL itself -
+       cross-origin, and behind the user's login - so the extension does it and
+       posts the bytes back. Wrapped so several can be read in sequence, and it
+       RESOLVES on failure rather than rejecting: one unreadable attachment must
+       not throw away the two that were fine. */
+    function fetchOne(url) {
+      return new Promise(resolve => {
+        const id = 'f' + (letterSeq++);
+        const done = ev => {
+          const d = ev.data;
+          if (!d || d.channel !== 'cti-ds160' || d.type !== 'fetch-letter-result' || d.id !== id) return;
+          window.removeEventListener('message', done);
+          clearTimeout(timer);
+          if (!d.ok) { resolve({ error: d.error || 'could not be fetched' }); return; }
+          const bin = atob(d.b64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          PDFText.extract(bytes.buffer)
+            .then(text => resolve({ text: text }))
+            .catch(e => resolve({ error: 'could not be read as a PDF (' + e.message + ')' }));
+        };
+        window.addEventListener('message', done);
+        const timer = setTimeout(() => {
+          window.removeEventListener('message', done);
+          resolve({ error: 'the extension did not answer' });
+        }, 20000);
+        window.postMessage({ channel: 'cti-ds160', type: 'fetch-letter', url, id }, '*');
+      });
+    }
+
+    /* Every attachment this row has, read one after another.
+
+       THE DESCRIPTOR IS CAPTURED ONCE, before the first fetch. Three reads at
+       up to 20s each is a long time to hold a tab still, and switching class
+       mid-run would change what activeDoc() returns - so the replies would be
+       parsed by the other class's parser and reported in the other document's
+       words. */
+    async function fetchDocs() {
+      const doc = activeDoc();
+      if (!doc) return;
+      const links = docLinks(doc, rec);
+      if (!links.length) { letterMsg('err', doc.none.replace(/&mdash;/g, '-')); return; }
       if (!hasExtension()) {
         letterMsg('err', 'The extension is not loaded on this page, so the ' +
                           doc.what + ' cannot be fetched. Paste it instead.');
         return;
       }
-      letterMsg('', 'Fetching the ' + doc.what + '...');
-      const id = 'f' + (letterSeq++);
-      const done = ev => {
-        const d = ev.data;
-        if (!d || d.channel !== 'cti-ds160' || d.type !== 'fetch-letter-result' || d.id !== id) return;
-        window.removeEventListener('message', done);
-        clearTimeout(timer);
-        if (!d.ok) { letterMsg('err', d.error || 'The ' + doc.what + ' could not be fetched.'); return; }
-        letterMsg('', 'Reading ' + Math.round(d.bytes / 1024) + ' KB...');
-        const bin = atob(d.b64);
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        PDFText.extract(bytes.buffer)
-          .then(useLetterText)
-          .catch(e => letterMsg('err', 'Could not read the PDF: ' + e.message + '. Paste the text instead.'));
-      };
-      window.addEventListener('message', done);
-      const timer = setTimeout(() => {
-        window.removeEventListener('message', done);
-        letterMsg('err', 'The extension did not answer. Reload it, refresh this page, ' +
-                          'or paste the ' + doc.what + '.');
-      }, 20000);
-      window.postMessage({ channel: 'cti-ds160', type: 'fetch-letter', url, id }, '*');
+      const out = [];
+      for (let i = 0; i < links.length; i++) {
+        const l = links[i];
+        letterMsg('', 'Reading ' + l.name +
+                      (links.length > 1 ? ' (' + (i + 1) + ' of ' + links.length + ')' : '') + '...');
+        const got = await fetchOne(l.url);
+        if (got.error) { out.push({ name: l.name, error: got.error }); continue; }
+        out.push({ name: l.name, parsed: doc.parser().parse(got.text) });
+      }
+      applyParsed(doc, out);
+    }
+
+    /* A LINK PASTED BY HAND, rather than one of this row's own. It goes
+       through the same single-link fetch, and the parser still identifies what
+       came back - so pasting a DS-7002 link into a row whose CN column is
+       empty works, which is the point of the paste box. */
+    async function pasteOneLink(url) {
+      const doc = activeDoc();
+      if (!doc) return;
+      if (!hasExtension()) {
+        letterMsg('err', 'The extension is not loaded on this page, so a link cannot ' +
+                          'be fetched. Paste the text instead.');
+        return;
+      }
+      letterMsg('', 'Reading the pasted link...');
+      const got = await fetchOne(url);
+      if (got.error) { letterMsg('err', 'That link ' + got.error + '.'); return; }
+      applyParsed(doc, [{ name: 'the pasted link', parsed: doc.parser().parse(got.text) }]);
     }
 
     /* Guarded like letterFetch: with no class in play letterBox() renders
@@ -433,7 +556,7 @@
       if (!text) { letterMsg('err', 'Paste the ' + activeDoc().what + ' text, or its link.'); return; }
       // Pasting the link is the obvious thing to do; treat it as one.
       const url = text.match(/^https?:\/\/\S+$/i);
-      if (url) { fetchLetter(url[0]); return; }
+      if (url) { pasteOneLink(url[0]); return; }
       useLetterText(text);
     });
 

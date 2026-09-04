@@ -107,137 +107,158 @@ them on the record's own NA answer: quiet while greyed out, **loud the moment it
 is not**, which is how their real ids will get read off the page. A static
 `LEAVE_BLANK` entry would have been wrong half the time.
 
-## The DS-2019 parser (`ds2019.js`, 2026-09-04)
-J1 answers *specific travel plans* **YES** - the opposite of C1/D - and CEAC
-then demands a full itinerary. The J1 sheet has **no column for any of it**:
-`When did you arrive in the US?` is 0 of 69 rows filled and `Appointment Date`
-is the interview, not the trip. The dates exist in one place only: the
-participant's Form DS-2019, linked from **column CO**.
+## The three J1 attachments (`j1docs.js`, 2026-09-04)
+A J1 applicant has **three** documents in Zoho Drive, in their own folder
+(`My Folders / ... / J1 Visa Attachment`, *not* with the C1/D supporting
+letters), in sheet columns **CN, CO, CP**:
+
+| Column | Document | What it gives |
+|---|---|---|
+| **CN** | DS-7002 (Training/Internship Placement Plan) | the richest by far: SEVIS ID and Program Number **both labelled**, the training dates, the host organisation and its address, the supervisor who is the U.S. contact |
+| **CO** | DS-2019 (Certificate of Eligibility) | item 3, *Form Covers Period* |
+| **CP** | SEVIS receipt (I-901) | name, SEVIS ID, date of birth — a cross-check, not a source |
+
+J1 answers *specific travel plans* **YES**, so CEAC demands a full itinerary,
+and the sheet has **no arrival or departure column at all** (`When did you
+arrive in the US?` is 0 of 69 rows). These documents are the only source.
+
+### The parser identifies the document itself
+Three links in three columns is a mistake waiting to happen, and feeding a
+DS-7002 to a DS-2019 profile would be a silent half-parse. Each form carries a
+distinctive title, so `parse` detects which one it was handed. **An
+unrecognised document is refused, not guessed at** — a CEAC print-out is the
+realistic wrong file, and it is full of the same words.
+
+That also means **one button reads all three**, and the operator never has to
+match a link to a reader. They are read in one pass for a second reason: the
+DS-2019's period and the DS-7002's training dates describe the *same*
+placement, and `compareDocs()` can only compare them if both are in hand.
+
+**DS-7002 first, and the order is load-bearing.** First value wins on merge,
+and the DS-7002 labels both identifiers where the DS-2019 labels neither.
 
 ### From / To are the itinerary, and here is the evidence
-Item 3 of the form, *Form Covers Period*, gives From and To. Two independent
-documents agree:
-
 | Source | From / arrival | To / departure |
 |---|---|---|
 | the blank DS-2019 sample | 05-25-2026 | 05-24-2027 |
 | the filed DS-160 (JULIANA) | 24 NOVEMBER 2026 | 23 NOVEMBER 2027 |
+| a real DS-7002 | 09/16/2024 | 09/16/2025 |
 
-Both spans are **one year minus a day** - the shape a DS-2019 period has - and
-since the sheet holds no arrival or departure column, the DS-2019 is the only
-place those dates could have come from. So `programFrom` → `arrivalDate` and
-`programTo` → `departureDate`.
+The first two are one year minus a day, the third exactly a year — the shape a
+programme period has. With no column in the sheet, the documents are the only
+possible source. Both dates stay **editable**: a participant may enter the U.S.
+up to 30 days early, and then the arrival date is theirs.
 
-Both stay **editable** in the trip block: a participant may enter the U.S. up to
-30 days before the programme starts, and if they do, the arrival date is theirs
-and not the form's.
-
-### Two kinds of extraction, deliberately
-- **The dates are label-anchored**, because only the label says which order they
-  are written in. The form prints `(mm-dd-yyyy)` beside them, and `parseDate`'s
-  default is day-first (the Indonesian convention) - so without the
-  `monthFirst` hint, `05-12-2026` would come out as **5 December instead of 12
-  May**. A test pins exactly that case, because the sample's own dates happen to
-  be unambiguous and would not catch it.
-- **The SEVIS ID and programme number are found by pattern** (`N` + digits,
-  `P-n-nnnnn`). Nothing else on the page is shaped like either, and in the
-  sample the SEVIS ID arrives with **no label at all**.
-
-### It cross-checks the sheet, like `letter.js` does
-Columns CH and CI are typed in by hand *from this document*, so a disagreement
-means one of them is wrong on a sworn application and nothing else here would
-notice. Also caught: a period that **ends before it starts**, which is a misread
-rather than a fact.
-
-One detail worth keeping: **a redacted sample must not report a mismatch.**
-`N00375XXXXX` is a blanked-out id, not a contradiction, and reporting it would
-train the operator to ignore the check.
+**The dates are label-anchored, because only the label states the order.** The
+DS-2019 prints `(mm-dd-yyyy)` and the DS-7002 writes `09/16/2024`, while
+`parseDate`'s default is day-first — the Indonesian convention — so without the
+hint `05-12-2026` reads as 5 December instead of 12 May. A test pins exactly
+that case, because the samples' own dates happen to be unambiguous.
 
 ### THE FORM'S OWN STATIONERY IS SHAPED LIKE A PROGRAMME NUMBER
-Found by the first live run, and the comment in `ds2019.js` had claimed the
-opposite - *"nothing else on a DS-2019 is shaped like either"*. Every DS-2019
-carries the pre-printed 212(e) endorsement:
+The first version read the programme number by pattern, on the stated grounds
+that *"nothing else on a DS-2019 is shaped like either"*. Every DS-2019 carries
+the pre-printed 212(e) endorsement:
 
-> PRELIMINARY ENDORSEMENT ... REGARDING SECTION 212(e) ...
-> **PHYSICIANS SPONSORED BY P-3-04510 ARE SUBJECT TO** ...
+> **PHYSICIANS SPONSORED BY P-3-04510 ARE SUBJECT TO** …
 
-`P-3-04510` is **ECFMG's** programme number, printed on the form whoever the
-participant is. It was the **only** `P-n-nnnnn` in the blank sample - the clue,
-not the reassurance it was taken for - and a real applicant's form returned it
-too, against a sheet that said `P-4-44043`. So the pattern was reading the
-stationery on both, **and the cross-check then reported a mismatch on every
-form**, which is exactly how an operator learns to ignore a warning.
+`P-3-04510` is **ECFMG's** number, printed whoever the participant is. It was
+the **only** `P-n-nnnnn` in the blank sample — the clue, not the reassurance it
+was taken for — and a live applicant's form returned it too, against a sheet
+saying `P-4-44043`. **The cross-check then reported a mismatch on every form**,
+which is how an operator learns to ignore a warning.
 
-Stripped before anything is matched, and if nothing survives the field is
-reported **missing** - a visible gap beats a confident wrong answer, and with no
-value there `crossCheck()` stands down by itself.
+Stripped before matching, and **only the number, not the sentence**: the first
+attempt took everything up to the next full stop, and that block runs on for
+two more clauses without one, so it swallowed whatever followed.
 
-**Only the number goes, not the sentence around it.** The first attempt stripped
-`...BY P-3-04510[^.]*` - up to the next full stop - and that block runs on for
-another two clauses without one, so it swallowed whatever followed. Harmless on
-the blank sample; on a filled form it would eat the real programme number
-sitting after it.
+**Labels beat patterns, and it is not a style preference.** The DS-7002 labels
+both identifiers, which is why it is read first and why the trap cannot recur
+on it.
 
-The lesson, third time in this project: **a pattern is only as good as the
-things you checked it against.** A blank government form is stationery, and
-stationery is full of plausible-looking values.
+### Values are cut at the next label, whichever one it is
+Extracted text is reading order across a two-column form, so labels interleave
+— `Host Organization Name: The Westin Richmond Employer ID Number: 205500685` —
+and which label comes next depends on whose software made the PDF. A fixed
+order (`letter.js`'s approach, correct for a one-column letter) mis-cuts here.
 
-### What the live run proved, and what it did not
-**Proved:** `pdftext.js` **can** read a real DS-2019. The programme period came
-out on the first attempt - more than the CEAC print-out managed, which returned
-zero characters.
+Two details that took a real document to find:
 
-**Still open:** the **SEVIS ID was not found** on the real form, though it *is*
-found in the blank sample. That needs the extracted text of a real one in front
-of us; guessing a second pattern is how the stationery bug happened. Until then
-it is reported missing, which is the honest state.
+- **the longest label wins at any position.** `Category` is a substring of
+  `Occupational Category`, so a naive scan gives the occupation's value to the
+  category.
+- **whitespace between the words of a label is optional.** `pdftext.js` joins
+  the PDF's text runs with no separator, so a label the form *wraps* arrives
+  with the space missing — `Main ProgramSupervisor/POC:`, `Current Field
+  ofStudy/Profession:`. Matching literally failed and the value before it
+  swallowed the whole supervisor block. **The hand-typed test text hid this,
+  because a human types the spaces in** — so the fixture now reproduces the
+  glued form verbatim. Do not tidy it.
 
-`parse` takes text and where it comes from is the caller's problem, as with
-`letter.js`; `test/ds2019.test.js` runs end-to-end against a local form if one
-is present.
+### One boundary that cannot be found, and is not guessed
+The supervisor arrives as `Jackson, SheraeHuman Resources Managersherae.jackson@westinrichmond.com`.
+An earlier version pulled the email out and got
+`Managersherae.jackson@…` — the job title glued to the front. That boundary is
+undecidable: an email local part is letters and so is "Manager". The run is
+left **whole**, and the cross-check asks whether column CC's address appears
+**inside** it, which is exact in both directions.
 
-**The files live in a different Zoho Drive folder from the J1 supporting
-letters** - `My Folders / ... / J1 Visa Attachment` - which does not affect the
-fetch (`background.js` sends the user's cookies to any WorkDrive host), but it
-is where to look for one.
+### A value that is absurdly long is not that value
+One DS-7002 in circulation is an **interactive** PDF whose field values live in
+AcroForm objects rather than on the page. The parser identified it correctly and
+returned a programme number of **2,700 characters of capitalised attestation
+text** — a wrong value, not a visible gap.
 
-The samples are **gitignored** (`*.docx` joined `*.pdf`): the only DS-2019
-available is a third party's and **this repo is public**. The test therefore
-quotes the labels inline rather than committing a fixture - the labels are the
-government's own and stable, which is the part that matters.
+- **the two identifiers must match the shape their issuer prints**
+  (`P-n-nnnnn`, `N` + digits) and are dropped otherwise. The *sheet* side stays
+  tolerant and merely warns, because a person typed that and a person's typo is
+  worth showing; a document's own field is not.
+- **everything else has a length ceiling.**
+- **when nothing required survives, the parser says what to do**: print the
+  interactive PDF flat so the values land on the page. The operator has no way
+  to know that otherwise.
 
-### One attachment per class, one code path
-Each class has exactly one attachment carrying answers the intake sheet does
-not, so `app.js` holds a `DOCS` descriptor rather than two copies of the same
-logic:
+### What is proven, and what is not
+**Proven** — `pdftext.js` reads a real DS-2019 *and* a real DS-7002 (44,390
+characters out of the latter, every required field with it). More than the CEAC
+print-out managed, which returned zero.
 
-| | C1/D | J1 |
-|---|---|---|
-| document | supporting letter | **DS-2019** |
-| column | Supporting Letter | **CO** |
-| gives | vessel, IMO, joining date, US port | the programme period |
-| parser | `letter.js` | `ds2019.js` |
+**Not proven** — no real **SEVIS receipt** has been seen. The I-901 email that
+was available is only the notification and carries a payment confirmation
+number, not the SEVIS ID. That profile's labels are the standard field names,
+it is flagged `unconfirmed`, the report says so, and **no pattern fallback has
+been added** — that shortcut is what produced the P-3-04510 bug.
 
-**The tab chooses, not the record.** `index.html` says the tab is the authority
-for which class is in play, and the trip block belongs to whichever tab is open
-- so a J1 applicant is never offered the C1/D letter reader, and a C1/D one is
-never asked for a DS-2019 that does not exist.
+Also open: the SEVIS ID does **not** extract from a real DS-2019, which is one
+more reason the DS-7002 is read first.
 
-`parse` / `answers` / `crossCheck` all go through `doc.parser()`, and the fetch,
-the paste box, and every message the operator sees are shared. Only the parser
-and the wording differ.
+`test/j1docs.test.js` ends with an **end-to-end block over the real bytes** —
+`pdftext.js` over any DS-2019/DS-7002/SEVIS PDF in `~/Downloads`, or `J1_DOC=`.
+That block is what caught the whitespace bug and the runaway value; the typed
+text above it caught neither. The documents are gitignored (`*.pdf`, `*.docx`)
+because they are real people's and **this repo is public**.
 
-**`fetchLetter` captures the descriptor ONCE, before the fetch.** The extension
-answers on a message up to 20 seconds later, and switching tabs in between would
-change what `activeDoc()` returns - so the reply would be parsed with the *other*
-class's parser and reported in the other document's words. A test asserts that
-nothing re-reads it inside the async handlers.
+### One attachment set per class, one code path
+`app.js` holds a `DOCS` descriptor: C1/D one link and `letter.js`, J1 three
+links and `j1docs.js`. `parse` / `answers` / `crossCheck` / `compareDocs` all go
+through it, and only the parser and the wording differ.
 
-**Not verified in a browser, and it cannot be from here:** the worksheet is
-behind the Microsoft sign-in. `test/trip.test.js` asserts the wiring textually,
-the same arrangement `auth.test.js` and `extension-auth.test.js` use - which
-proves the two documents have not drifted into two copies, not that the button
-works.
+**The tab chooses, not the record** — `index.html` says the tab is the authority
+for which class is in play.
+
+**`fetchDocs` captures the descriptor once, before the first fetch.** Three
+reads at up to 20s each is a long time to hold a tab still, and switching class
+mid-run would change what `activeDoc()` returns — so replies would be parsed by
+the other class's parser and reported in the other document's words.
+
+**`fetchOne` resolves on failure rather than rejecting**, so one unreadable
+attachment does not throw away the two that were fine; the failure is carried
+into the report instead. A row missing an attachment is normal and is named
+rather than treated as an error.
+
+**Not verified in a browser** — the worksheet is behind the Microsoft sign-in.
+`test/trip.test.js` asserts the wiring textually, the arrangement
+`auth.test.js` and `extension-auth.test.js` already use.
 
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
@@ -440,9 +461,9 @@ still to wire, 1 leftover that is a typo of an admin column.
 #### Still to do for J1
 - the Additional Point of Contact block on the Student/Exchange Visitor page -
   blocked on one live J1 Fill report, see below.
-- **one human check**: press *Read DS-2019* on a real J1 row. It needs the
-  Microsoft sign-in and a real form, and it settles the one thing marked
-  unproven below - whether `pdftext.js` can read a DS-2019 PDF at all.
+- **one human check**: press *Read J1 documents* on a real row. It needs the
+  Microsoft sign-in, and it settles the last open question - whether a real
+  SEVIS receipt matches the labels that profile assumes.
 
 No build tools, no framework — plain HTML/CSS/JS, same house style as the J1
 Dashboard and the Indonesia Monitoring Dashboard.

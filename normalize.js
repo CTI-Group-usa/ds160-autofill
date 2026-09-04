@@ -663,10 +663,24 @@
       return links[header] || (/^https?:\/\//i.test(cell) ? cell : '');
     };
     rec.supportingLetterUrl = docUrl('Supporting Letter');
-    /* J1: column CO. It is the ONLY source of the programme dates - the J1
-       sheet has no arrival or departure column at all - and CEAC demands a full
-       itinerary once specific travel plans are YES. See ds2019.js. */
+    /* THE THREE J1 ATTACHMENTS - columns CN, CO and CP - which live in their
+       own Zoho Drive folder, not with the supporting letters. Between them they
+       carry every answer this sheet cannot:
+
+         DS-7002 (CN)  the richest: SEVIS id and programme number BOTH
+                       LABELLED, the training dates, the host organisation and
+                       its address, and the supervisor who is the U.S. contact
+         DS-2019 (CO)  item 3, the programme period - and the J1 sheet has no
+                       arrival or departure column at all, while CEAC demands a
+                       full itinerary once specific travel plans are YES
+         SEVIS   (CP)  the I-901 receipt: name, SEVIS id, date of birth. A
+                       cross-check rather than a source.
+
+       All three go to the same parser, which identifies the document itself -
+       see j1docs.js. */
+    rec.ds7002Url = docUrl('DS-7002');
     rec.ds2019Url = docUrl('DS-2019');
+    rec.sevisReceiptUrl = docUrl('SEVIS Receipt');
     for (const [k] of MISSING_FROM_INTAKE) if (!(k in rec)) rec[k] = '';
     rec._raw = row;
     return rec;
@@ -1047,7 +1061,8 @@
   ];
 
   const api = { toRecord, validate, SECTIONS, MAP, MISSING_FROM_INTAKE, stayUnit, stayCount, STAY_UNITS,
-                parseDate, fmtDate, dateStr, normPhone, splitName, yn, monthsBetween, toJs };
+                parseDate, fmtDate, dateStr, strictDate, normPhone, phoneAsWritten, deExp,
+                normMoney, splitName, yn, monthsBetween, toJs };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.DS160 = api;

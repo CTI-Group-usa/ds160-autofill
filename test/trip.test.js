@@ -88,17 +88,16 @@ eq('all trip fields are fillable',
    T.FIELDS.filter(f => !ruleKeys.has(f.key)).map(f => f.key), []);
 
 
-/* -- one attachment per visa class, one code path -------------------
+/* -- the class's attachments, and one code path ---------------------
    app.js is browser-only (an IIFE, no exports), so these are text assertions
    on the file - the same arrangement test/auth.test.js and
    test/extension-auth.test.js use for the gate and the popup. They cannot
-   prove the button works; they can prove the two documents did not drift into
-   two copies of the same logic, which is the thing that rots.
+   prove the button works; they can prove the documents have not drifted into
+   several copies of the same logic, which is the thing that rots.
 
-   Each class has exactly one attachment carrying answers the sheet does not:
-   C1/D the supporting letter (vessel, IMO, joining date, US port), J1 the
-   DS-2019 (the programme period, which is the itinerary CEAC demands once
-   "specific travel plans" is YES). */
+   C1/D has one attachment carrying answers the sheet does not - the supporting
+   letter (vessel, IMO, joining date, US port). J1 has THREE, in columns CN, CO
+   and CP: the DS-7002, the DS-2019 and the SEVIS receipt. */
 const fs = require('fs');
 const path = require('path');
 const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8')
@@ -106,36 +105,58 @@ const app = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8')
 /* This file has eq() but no ok(). */
 const ok = (label, cond) => eq(label, !!cond, true);
 
-ok('app.js declares a document per class', /const DOCS = \{[\s\S]{0,200}c1d:[\s\S]{0,400}j1:/.test(app));
-ok('C1/D reads the supporting letter', /urlKey: 'supportingLetterUrl'/.test(app));
-ok('J1 reads the DS-2019',             /urlKey: 'ds2019Url'/.test(app));
-ok('and each names its own parser',
-   /parser: \(\) => DS160Letter/.test(app) && /parser: \(\) => DS160Ds2019/.test(app));
+ok('app.js declares a document set per class', /const DOCS = \{[\s\S]{0,400}c1d:[\s\S]{0,2000}j1:/.test(app));
+ok('C1/D reads the supporting letter', /key: 'supportingLetterUrl'/.test(app));
+ok('J1 reads all three attachments',
+   /key: 'ds7002Url'/.test(app) && /key: 'ds2019Url'/.test(app) &&
+   /key: 'sevisReceiptUrl'/.test(app));
+ok('and each class names its own parser',
+   /parser: \(\) => DS160Letter/.test(app) && /parser: \(\) => DS160J1Docs/.test(app));
+
+/* DS-7002 FIRST, AND THE ORDER IS LOAD-BEARING. It labels both the SEVIS id
+   and the programme number, where the DS-2019 prints the SEVIS id with no
+   label at all and carries a programme number in its own stationery. First
+   value wins on merge, so the better source has to be read first. */
+ok('the DS-7002 is listed before the DS-2019',
+   app.indexOf("key: 'ds7002Url'") < app.indexOf("key: 'ds2019Url'"));
+ok('first value wins on merge', /if \(!\(k in answers\)\) answers\[k\] = a\[k\]/.test(app));
 
 /* THE TAB CHOOSES, NOT THE RECORD. index.html says the tab is the authority
    for which class is in play, and the trip block belongs to whichever tab is
    open - so a J1 applicant is never offered the C1/D letter reader, and a
    C1/D one is never asked for a DS-2019 that does not exist. */
-ok('the active class picks the document', /DOCS\[DS160Const\.activeClass\(\)\]/.test(app));
+ok('the active class picks the document set', /DOCS\[DS160Const\.activeClass\(\)\]/.test(app));
 
-/* ONE PARSE PATH, not two copies. The parser differs, the wording differs,
-   nothing else does. */
+/* ONE PARSE PATH, not one per document. The parser differs by class, the
+   wording differs, nothing else does - and within J1 the SAME parser handles
+   all three, identifying the document from its own title. */
 ok('the parse path goes through the descriptor',
-   /doc\.parser\(\)\.parse\(text\)/.test(app) &&
-   /doc\.parser\(\)\.answers\(parsed\)/.test(app) &&
-   /doc\.parser\(\)\.crossCheck\(parsed, rec\)/.test(app));
+   /doc\.parser\(\)\.parse\(/.test(app) && /P\.answers\(u\.parsed\)/.test(app) &&
+   /P\.crossCheck\(u\.parsed, rec\)/.test(app));
 ok('nothing calls DS160Letter directly any more',
    (app.match(/DS160Letter/g) || []).length === 1);
 
-/* CAPTURED ONCE, BEFORE THE ASYNC FETCH. The extension answers on a message
-   up to 20s later; switching tabs in between would change what activeDoc()
-   returns, and the reply would be parsed with the OTHER class's parser and
-   reported in the other document's words. */
-const fetchFn = app.slice(app.indexOf('function fetchLetter(url) {'));
-const fetchBody = fetchFn.slice(0, fetchFn.indexOf("window.postMessage({ channel: 'cti-ds160'"));
-ok('fetchLetter captures the document first',
-   /function fetchLetter\(url\) \{\s*\/\*[\s\S]*?\*\/\s*const doc = activeDoc\(\);/.test(fetchFn));
-ok('and never re-reads it inside the async handlers',
+/* READ IN ONE PASS, and not only to save clicks: the DS-2019's period and the
+   DS-7002's training dates describe the same placement, and comparing them is
+   only possible if both are in hand at once. */
+ok('the documents are compared against each other', /P\.compareDocs\(usable\[i\]/.test(app));
+
+/* ONE BAD ATTACHMENT MUST NOT DISCARD THE GOOD ONES. fetchOne resolves on
+   failure rather than rejecting, and the failure is carried into the report. */
+ok('a failed fetch resolves rather than rejects',
+   /resolve\(\{ error:/.test(app) && !/reject\(/.test(app));
+ok('and its error reaches the report',
+   /problems\.push\(f\.name \+ ': ' \+ f\.error\)/.test(app));
+
+/* THE DESCRIPTOR IS CAPTURED ONCE, before the first fetch. Three reads at up
+   to 20s each is a long time to hold a tab still, and switching class mid-run
+   would change what activeDoc() returns - so the replies would be parsed by
+   the other class's parser and reported in the other document's words. */
+const fetchFn = app.slice(app.indexOf('async function fetchDocs()'));
+const fetchBody = fetchFn.slice(0, fetchFn.indexOf('applyParsed(doc, out)'));
+ok('fetchDocs captures the document set first',
+   /async function fetchDocs\(\) \{\s*const doc = activeDoc\(\);/.test(fetchFn));
+ok('and never re-reads it while fetching',
    !/activeDoc\(\)/.test(fetchBody.slice(fetchBody.indexOf('const doc = activeDoc();') + 24)));
 
 /* Both handlers are guarded: with no class in play letterBox() renders
@@ -144,10 +165,14 @@ ok('and never re-reads it inside the async handlers',
 ok('the fetch button is guarded',  /if \(\$\('letterFetch'\)\)/.test(app));
 ok('the paste button too',         /if \(\$\('letterParse'\)\)/.test(app));
 
+/* A row missing one attachment is normal - and it is named rather than
+   treated as a failure, so the operator knows which one to go and find. */
+ok('missing links are named, not fatal', /not in this row: /.test(app));
+
 /* NOT VERIFIED IN A BROWSER, and it cannot be from here: the worksheet is
-   behind the Microsoft sign-in. Pressing "Read DS-2019" on a real J1 row is a
+   behind the Microsoft sign-in. Pressing the button on a real J1 row is a
    human check - and it is the same one that settles whether pdftext.js can
-   read a DS-2019 PDF at all, which ds2019.js flags as unproven. */
+   read a DS-7002 or a SEVIS receipt at all. */
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
