@@ -604,5 +604,34 @@ eq('the mother parses too, which is the problem', juliana.motherDob, '15-MAY-202
 has('the impossible parent is named', D.validate(juliana).warnings, 'motherDob', 'not before the applicant');
 none('a plausible father is not', D.validate(juliana).warnings, 'fatherDob');
 
+
+/* -- the CSV path needs the same guard as the xlsx path -------------
+   The real fix is in xlsx.js -> expandExp(), at the reader. But the worksheet
+   also takes CSV and pasted TSV, and Excel writes the same cell as
+   "6.2895410887918E+13" there - note the '+', which xlsx does not write. A fix
+   that covers only the route anyone tests is the worst kind. */
+eq('xlsx form',  D.toRecord({ 'Name': 'A, B', 'Phone Number': '6.281215303279E12' }).phone,  '6281215303279');
+eq('csv form',   D.toRecord({ 'Name': 'A, B', 'Phone Number': '6.281215303279E+12' }).phone, '6281215303279');
+eq('and a plain cell still normalises to 62',
+   D.toRecord({ 'Name': 'A, B', 'Phone Number': '081241811889' }).phone, '6281241811889');
+/* The exponent used to become phone digits: 628121530327912, fifteen digits,
+   which CEAC accepts on length and which is not anyone's number. */
+none('no length error on an expanded number',
+     D.validate(D.toRecord({ 'Name': 'A, B', 'Phone Number': '6.281215303279E12' })).errors, 'phone');
+/* Third-party numbers take the same route through phoneAsWritten. */
+eq("the employer's phone",
+   D.toRecord({ 'Name': 'A, B', "Current Workplace's Phone Number": '3.612092288E9' }).employerPhone,
+   '3612092288');
+/* ID numbers are numbers too - 79 rows of the C1/D export hold the last visa
+   number this way, and 11 hold the KTP. */
+eq('the last visa number',
+   D.toRecord({ 'Name': 'A, B', 'Last Visa Number': '2.008259981006E12' }).lastVisaNumber, '2008259981006');
+eq('the KTP',
+   D.toRecord({ 'Name': 'A, B', 'KTP Number': '5.1040355020001E13' }).nationalId, '51040355020001');
+/* A DATE SERIAL MUST NOT GO THROUGH IT. deExp only fires on an exponent, so
+   this is really an assertion that the two never meet. */
+eq('a serial date is still a date',
+   D.toRecord({ 'Name': 'A, B', 'Date of Birth': '39035' }).dob, '14-NOV-2006');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

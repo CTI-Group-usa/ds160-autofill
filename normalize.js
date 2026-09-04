@@ -145,7 +145,7 @@
      derivation below reads it that way. Returning '0' would type a zero
      income onto a sworn form. */
   function normMoney(raw) {
-    let t = clean(raw).replace(/[^0-9.,]/g, '');
+    let t = deExp(raw).replace(/[^0-9.,]/g, '');
     t = t.replace(/[.,](\d{1,2})$/, '');
     t = t.replace(/[.,]/g, '');
     if (!/^\d+$/.test(t)) return '';
@@ -159,11 +159,30 @@
      that does not exist. An Indonesian landline starts with 0 too (0361, 021),
      so a prefix cannot tell them apart - and CEAC takes the local format. Only
      the applicant's own number, which is always Indonesian, is normalised. */
-  const phoneAsWritten = raw => clean(raw).replace(PHONE_DIGITS, '');
+  /* A BACKSTOP FOR EXPONENTIAL NUMBERS, mirroring xlsx.js -> expandExp().
+     That is where the real fix lives - at the reader, so it covers every
+     column - but the worksheet also takes CSV and pasted TSV, and Excel writes
+     the same cell as "6.2895410887918E+13" there. Without this, the CSV route
+     keeps the bug the xlsx route no longer has, which is the worst shape for a
+     bug to have: fixed on the path anyone tests and live on the other one.
+
+     Note the '+', which xlsx does not write and CSV does. */
+  function deExp(raw) {
+    const t = clean(raw);
+    if (!/^[-+]?\d+(\.\d+)?[eE]\+?\d+$/.test(t)) return t;
+    const n = Number(t);
+    if (!isFinite(n)) return t;
+    return Number.isInteger(n) ? n.toFixed(0) : String(n);
+  }
+
+  /* Digits of a numeric cell, exponent expanded first. For ID numbers that
+     are numbers rather than measurements - a KTP, a visa number, a SEVIS id. */
+  const numText = raw => deExp(raw).replace(/\s+/g, ' ').trim();
+  const phoneAsWritten = raw => deExp(raw).replace(PHONE_DIGITS, '');
 
   /* Indonesian mobile numbers arrive as 08xx, 628xx, +62 8xx, 8xx... */
   function normPhone(raw) {
-    let s = clean(raw).replace(PHONE_DIGITS, '');
+    let s = deExp(raw).replace(PHONE_DIGITS, '');
     if (!s) return '';
     if (s.startsWith('0')) s = '62' + s.slice(1);
     else if (s.startsWith('8')) s = '62' + s;
@@ -210,7 +229,7 @@
     'Place of Birth':                                                ['pobCity', upper],
     'Province of Birth':                                             ['pobProvince', upper],
     'Nationality':                                                   ['nationality', upper],
-    'KTP Number':                                                    ['nationalId', s => clean(s).replace(/\D/g, '')],
+    'KTP Number':                                                    ['nationalId', s => deExp(s).replace(/\D/g, '')],
     "Countries I've Been to in the Last 5 Years":                    ['countries5y', clean],
     'Do you have US Driver License?':                                ['usDriverLicense', yn],
     'Have you ever been issued U.S. Visa?':                          ['priorUsVisa', yn],
@@ -218,7 +237,7 @@
     'Period Type of Stay in the US':                                 ['stayUnit', clean],
     'How long did you stay in the US?':                              ['stayLength', clean],
     'Date last Visa was issued':                                     ['lastVisaIssued', dateStr],
-    'Last Visa Number':                                              ['lastVisaNumber', upper],
+    'Last Visa Number':                                              ['lastVisaNumber', s => upper(numText(s))],
     'Are you applying for the same type of visa?':                   ['sameVisaType', yn],
     'Has your U.S. Visa / passport ever been lost or stolen?':       ['visaLostStolen', yn],
     'Explain Details of Loss/Theft':                                 ['lostDetails', clean],
@@ -302,7 +321,7 @@
     'Date last U.S. Visa was issued':                                ['lastVisaIssued', dateStr],
 
     /* Fields the J1 form collects that the C1/D one never does. */
-    'National Identification Number (KTP)':                          ['nationalId', clean],
+    'National Identification Number (KTP)':                          ['nationalId', numText],
     'U.S. Social Security Number (if any)':                          ['ssn', clean],
     'U.S. Taxpayer ID Number (if any)':                              ['taxId', clean],
     'Monthly Salary':                                                ['monthlyIncome', normMoney],

@@ -1444,10 +1444,54 @@ same number without one, which was the clue).
 an **error** rather than a warning - CEAC refuses the page when Next is pressed,
 so it is not a matter of taste.
 
-The number above also survives a second look: `628195201137810` is 15 digits
-where an Indonesian mobile is 12-13, so the intake cell most likely holds a stray
-digit or two numbers run together. That is a separate warning quoting the value,
-because guessing which digits to drop from a phone number is not ours to do.
+### THAT NUMBER WAS NOT A TYPO - IT WAS AN EXPONENT (found 2026-09-04)
+`628195201137810` was written off above as "a stray digit or two numbers run
+together". **It was neither.** It is a valid thirteen-digit Indonesian mobile
+with a two-digit **exponent** glued on the end.
+
+Zoho stores phone numbers, ID numbers and payment references as **numbers**, and
+its xlsx writer serialises the large ones in exponential form:
+
+```xml
+<c r="AA2" s="2"><v>6.2895410887918E13</v></c>
+```
+
+That is a perfectly legal numeric cell. `xlsx.js` passed the `<v>` text through
+verbatim, so every digit-taking helper downstream read the exponent as part of
+the value:
+
+| Cell | Was | Should be |
+|---|---|---|
+| `6.281215303279E12` | `628121530327912` | `6281215303279` |
+| `6.2895410887918E13` | `6289541088791813` | `62895410887918` |
+
+**Scale, measured rather than guessed:** in the C1/D export, **690 of the 2564
+rows** carry the applicant's own phone (column AA) that way — plus 529 employer
+phones, 294 previous-employer phones, 79 last-visa numbers and 11 KTPs. Of a
+400-row sample of column AA, **341 produced a number CEAC refuses outright** and
+the rest were still wrong while passing the length check. In the J1 export it is
+columns N, Y, AW, BD, CB, CF, and one row each of CH and CI.
+
+**The fix is `expandExp()` in `xlsx.js`, at the reader** — one change covering
+every column, mapped, unmapped and future, in both sheets. After it, 398 of those
+400 are valid; the two that remain are genuine oddities and `validate()` names
+them. Two details:
+
+- **only the numeric branch.** A shared-string cell that looks exponential is
+  text somebody typed, and rewriting it would be a guess.
+- **only a non-negative exponent**, so a genuine tiny fraction survives as
+  written — and a date serial like `45848` never enters the branch at all, which
+  matters more than anything else here: if it did, every date in the sheet would
+  move.
+
+**`deExp()` in `normalize.js` is the backstop for the CSV path**, where Excel
+writes the same cell as `6.2895410887918E+13` — note the `+`, which xlsx does not
+write. A fix that covers only the route anyone tests is the worst shape a bug can
+have.
+
+The general lesson, and it has now cost this project twice: **when a value looks
+like a plausible number with something extra on the end, suspect the export
+before suspecting the typist.**
 
 ### The address stays one string
 The sheet has **only** column Z, `Address` - none of the 95 columns holds a city,

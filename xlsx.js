@@ -102,6 +102,31 @@
     return n - 1;
   }
 
+  /* A NUMERIC CELL WRITTEN IN EXPONENTIAL FORM.
+
+     Zoho stores phone numbers, ID numbers and payment references as numbers,
+     and its xlsx writer serialises the large ones as "6.2895410887918E13" -
+     a perfectly legal numeric cell. Passed downstream as that TEXT, every
+     digit-taking helper reads the EXPONENT as part of the value:
+     normPhone('6.281215303279E12') returned 628121530327912, which is the
+     real thirteen-digit number with the "12" glued on the end.
+
+     690 rows of the C1/D export carry the applicant's own phone that way, and
+     341 of a 400-row sample came out as something CEAC refuses outright. It is
+     also the true cause of the "stray digit" phone diagnosed - wrongly - as a
+     data-entry error on 2026-09-01: +628195201137810 is a valid number plus a
+     two-digit exponent.
+
+     Expanded HERE, at the reader, so one change covers every column - mapped,
+     unmapped and future - in both sheets. Only a NON-NEGATIVE exponent is
+     touched, so a genuine tiny fraction is left exactly as written, and a
+     plain date serial like 45848 never enters this branch at all. */
+  function expandExp(text) {
+    if (!/^[-+]?\d+(\.\d+)?[eE]\+?\d+$/.test(text)) return text;
+    const n = Number(text);
+    if (!isFinite(n)) return text;
+    return Number.isInteger(n) ? n.toFixed(0) : String(n);
+  }
   function sheetToGrid(xml, strings) {
     const grid = [];
     const rowRe = /<row\b[^>]*>([\s\S]*?)<\/row>/g;
@@ -122,7 +147,11 @@
         } else {
           const v = (body.match(/<v\b[^>]*>([\s\S]*?)<\/v>/) || [])[1];
           if (v !== undefined) {
-            value = type === 's' ? (strings[+v] !== undefined ? strings[+v] : '') : unesc(v);
+            /* Only the numeric branch is expanded. A SHARED-STRING cell holding
+               exponential-looking text is text somebody typed, and rewriting it
+               would be a guess. */
+            value = type === 's' ? (strings[+v] !== undefined ? strings[+v] : '')
+                                 : expandExp(unesc(v));
           }
         }
         const at = ref ? colIndex(ref) : cells.length;
@@ -217,7 +246,7 @@
     };
   }
 
-  const api = { read, unzip, sharedStrings, sheetToGrid, sheetTargets, hyperlinks, colIndex, unesc };
+  const api = { read, unzip, sharedStrings, sheetToGrid, expandExp, sheetTargets, hyperlinks, colIndex, unesc };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.XLSXLite = api;
 })(typeof self !== 'undefined' ? self : this);
