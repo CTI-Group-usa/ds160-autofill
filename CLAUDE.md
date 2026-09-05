@@ -1095,6 +1095,48 @@ AcroForm reader, the Section 4 labels, the `from` chain, the one cache token.
 But the order was wrong: **before improving how a document is read, prove the
 document arrives.**
 
+### THE VALUE OF A FILLED FIELD IS OFTEN NOT `/V` - IT IS DRAWN
+With the report finally saying something, the row came back:
+
+> DS-7002: nothing - ... **(no form field in it carries a value)**
+> DS-2019: arrivalDate, departureDate
+
+All three links present, the DS-7002 fetched and correctly identified, and not
+one field carrying a value - on a form the operator can see is full.
+
+**That count was measuring the reader, not the file.** `formFields` read `/V`
+and nothing else. A widget looks like this, and a blank template carries
+neither entry:
+
+```
+42 0 obj <</FT/Tx/Rect[...]/Subtype/Widget/T(ProgramNumber)/Type/Annot>>
+```
+
+Fill it in and Acrobat writes `/V (P-4-44043)` **and** an appearance stream.
+Several other writers - and any form flattened on save - write **only** the
+appearance: `/AP<</N 91 0 R>>`, object 91 being a small content stream that
+draws the text.
+
+`/AP /N` is an object reference, and **streams cannot live inside object
+streams**, so the widget may be compressed while the appearance it points at is
+always in the plain bytes. Name and value in one dictionary: no page tree, no
+coordinates, no guess about position. **It is a different problem from placing
+an XObject on a page**, which is still refused - the earlier 300-400 line
+estimate was for that one, and it does not apply here.
+
+`appearanceText()` resolves the reference, inflates the stream and runs
+`textFromContent` over it. `/V` still wins where it exists; a field with
+neither stays empty; both real DS-7002s on this machine are unchanged, one
+having no fields at all and the other being a genuinely blank template.
+
+#### A conclusion that was nearly published wrong
+Under the `/V`-only reader the next step was going to be a report line saying
+*"this looks like a blank copy - check the link"*. For any form filled by
+drawing that sentence is **false**, and it would have sent the operator hunting
+a file that was never the problem. It is only safe now because both places a
+value can live are read - and the comment beside it says so, which is the
+lesson from `docLinks` one section above.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

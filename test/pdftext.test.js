@@ -92,6 +92,33 @@ const LETTER_PDF = process.env.LETTER_PDF ||
   eq('and in either order',   by['ZIP Code'], '44870');
   eq('a field with no value', by['Suite'], '');
 
+  /* THE VALUE OF A FILLED FIELD IS OFTEN NOT `/V` - IT IS DRAWN.
+     Acrobat writes both `/V` and an appearance stream; several other writers,
+     and any form flattened on save, write ONLY the appearance:
+     `/AP<</N 9 0 R>>`, object 9 being a little content stream that draws the
+     text. Reading `/V` alone reports "no field carries a value" for a form
+     that is visibly full - which a live report said, and it nearly became the
+     conclusion "this must be a blank copy". The count was measuring the
+     reader, not the file.
+
+     Streams cannot live inside object streams, so the widget may be compressed
+     while the appearance it points at is always in the plain bytes. Name and
+     value in one dictionary: no page tree, no coordinates, no guess about
+     position - a different problem entirely from placing an XObject, which
+     this file still refuses. */
+  const drawn = '1 0 obj <</Subtype/Widget/T(Phase Site Name)/AP<</N 9 0 R>>/Type/Annot>> endobj\n' +
+                '9 0 obj <</Length 60>>\nstream\nBT /Arial 8 Tf 1 0 0 1 1 3.5 Tm ' +
+                '(Kalahari Resort - Sandusky OH) Tj ET\nendstream\nendobj\n' +
+                '2 0 obj <</Subtype/Widget/T(ZIP Code)/V (44870)/Type/Annot>> endobj\n' +
+                '3 0 obj <</Subtype/Widget/T(Suite)/Type/Annot>> endobj';
+  const drawnGot = await P.formFields(new TextEncoder().encode(drawn));
+  const drawnBy = {};
+  for (const f of drawnGot) drawnBy[f.name] = f.value;
+  eq('an appearance-only value is read', drawnBy['Phase Site Name'],
+     'Kalahari Resort - Sandusky OH');
+  eq('a /V value still wins where there is one', drawnBy['ZIP Code'], '44870');
+  eq('and a field with neither stays empty', drawnBy['Suite'], '');
+
   /* NOTHING IS EMITTED FOR AN EMPTY FIELD. A blank form must stay blank, not
      arrive as a run of labels for the parser to mistake for values - which is
      the failure this whole path exists to avoid. */

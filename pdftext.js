@@ -188,6 +188,46 @@
      when a document gives nothing, exactly as the popup's "Not recognised"
      list is how every real CEAC id got here. Guessing has never once worked;
      asking the file has. */
+  /* THE VALUE OF A FILLED FIELD IS OFTEN NOT `/V` - IT IS DRAWN.
+     A widget annotation looks like this, and a blank template carries neither:
+
+       42 0 obj <</FT/Tx/Rect[...]/Subtype/Widget/T(ProgramNumber)/Type/Annot>>
+
+     Fill it in and the writer adds `/V (P-4-44043)` - or, very often, ONLY an
+     appearance stream: `/AP<</N 91 0 R>>`, object 91 being a little content
+     stream that draws the text. Acrobat writes both; several other writers
+     write only the appearance, and a form flattened on save keeps only that.
+
+     Reading `/V` alone therefore reports "no field carries a value" for a form
+     that is visibly full - which is exactly what a live report said, and it
+     nearly became the conclusion "this must be a blank copy". The count was
+     measuring the reader, not the file.
+
+     `/AP /N` is an object REFERENCE, and streams cannot live inside object
+     streams - so the widget may be compressed but the appearance it points at
+     is always in the plain bytes. That is the whole pairing: name and value in
+     one dictionary, no page tree, no coordinates, no guess about position. It
+     is a completely different problem from placing an XObject on a page, which
+     is the one this file still refuses. */
+  async function appearanceText(bytes, plain, objNum) {
+    const re = new RegExp('(?:^|[^0-9])' + objNum + '\\s+0\\s+obj\\b');
+    const m = re.exec(plain);
+    if (!m) return '';
+    const from = m.index + m[0].length;
+    const sAt = plain.indexOf('stream', from);
+    if (sAt < 0 || sAt - from > 800) return '';   // not a stream object
+    let a = sAt + 6;
+    if (plain.charCodeAt(a) === 13) a++;
+    if (plain.charCodeAt(a) === 10) a++;
+    let b = plain.indexOf('endstream', a);
+    if (b < 0) return '';
+    while (b > a && /[\r\n ]/.test(plain[b - 1])) b--;
+    let body;
+    try { body = latin1(await inflate(bytes.subarray(a, b))); }
+    catch (e) { body = plain.slice(a, b); }        // an uncompressed appearance
+    return textFromContent(body).replace(/\s+/g, ' ').trim();
+  }
+
   async function formFields(buf) {
     const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
     let hay = '';
@@ -236,6 +276,21 @@
         if (d < dist) { dist = d; best = i; }
       }
       if (best >= 0) taken[best] = v.text;
+    }
+
+    /* WHERE THERE IS NO `/V`, THE APPEARANCE IS THE VALUE. `/AP<</N M 0 R>>`
+       sits in the same dictionary as the name, so it is looked for between
+       this name and the next - the same bound the pairing above uses, and the
+       reason a fixed window was wrong. */
+    const plain = latin1(bytes);
+    for (let i = 0; i < names.length; i++) {
+      if (taken[i]) continue;
+      const upto = i + 1 < names.length ? names[i + 1].at : names[i].at + 1200;
+      const near = hay.slice(names[i].at, Math.min(upto, names[i].at + 1200));
+      const ap = /\/AP\s*<<[^>]*?\/N\s+(\d+)\s+0\s+R/.exec(near);
+      if (!ap) continue;
+      const drawn = await appearanceText(bytes, plain, ap[1]);
+      if (drawn) taken[i] = drawn;
     }
 
     const out = [], seen = {};

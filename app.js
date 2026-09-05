@@ -480,11 +480,38 @@
              count turns "it is still empty" into a measurement. Same reason
              the popup lists unrecognised control ids: guessing what a document
              contains has never once worked here. */
-          const fc = f.formFields;
-          lines.push(pr.name + ': nothing - ' + pr.hint +
-                     (fc === undefined ? ''
-                      : fc ? ' (' + fc + ' form field(s) in it do carry a value - tell Claude)'
-                           : ' (no form field in it carries a value)'));
+          /* THREE DIFFERENT FILES LOOK IDENTICAL FROM THE OUTSIDE, and the
+             advice for each is different - so the counts decide, not a guess.
+
+             A form with named fields and not one value - no `/V` AND nothing
+             drawn in any appearance - is a blank copy. Printing that flat
+             produces a blank page, so the old hint was sending the operator to
+             do something useless.
+
+             This is stated carefully because the first version of it was
+             stated carelessly. `formFields` then read `/V` only, and a form
+             filled by DRAWING - which is most of them - reported zero values
+             while being visibly full. "It looks blank" would have been wrong
+             and would have sent the operator hunting a file that was never the
+             problem. The sentence is only safe now because both places a value
+             can live are read. */
+          const fc = f.formFields, nf = f.namedFields;
+          let why = '';
+          if (nf && !fc) {
+            /* Only sayable because BOTH places a value can live were looked
+               at - `/V` and the drawn appearance. On `/V` alone this sentence
+               would be wrong for any form whose writer filled it by drawing,
+               and it would send the operator hunting the wrong thing. */
+            why = ' (its ' + nf + ' form fields are all empty - no typed value ' +
+                  'and nothing drawn in them - so this looks like a blank copy ' +
+                  'of the form rather than this applicant\'s filled one)';
+          } else if (fc) {
+            why = ' (' + fc + ' form field(s) in it do carry a value - tell Claude)';
+          } else if (nf === 0) {
+            why = ' (it has no form fields at all)';
+          }
+          lines.push(pr.name + ': nothing - ' +
+                     (nf && !fc ? 'nothing was found, and here is why.' : pr.hint) + why);
         } else if (pr.missing.length) {
           lines.push(pr.name + ': read, but no ' + pr.missing.join(', '));
         } else {
@@ -590,7 +617,9 @@
           Promise.all([PDFText.extract(bytes.buffer), PDFText.formFields(bytes)])
             .then(([text, fields]) => {
               const extra = PDFText.formText(fields);
+              const named = (fields || []).length;
               resolve({ text: extra ? (text + ' ' + extra) : text,
+                        namedFields: named,
                         formFields: (fields || []).filter(f => f.value).length });
             })
             .catch(e => resolve({ error: 'could not be read as a PDF (' + e.message + ')' }));
@@ -633,7 +662,7 @@
            that gave nothing has readable form values in it - the one fact that
            separates "print it flat" from "this reader needs a label". */
         out.push({ name: l.name, parsed: doc.parser().parse(got.text),
-                   formFields: got.formFields });
+                   formFields: got.formFields, namedFields: got.namedFields });
       }
       /* Named, in the same list as the ones that were read, so "nothing came
          from the DS-7002" and "there is no DS-7002 to come from" can never
@@ -658,7 +687,7 @@
       const got = await fetchOne(url);
       if (got.error) { letterMsg('err', 'That link ' + got.error + '.'); return; }
       applyParsed(doc, [{ name: 'the pasted link', parsed: doc.parser().parse(got.text),
-                          formFields: got.formFields }]);
+                          formFields: got.formFields, namedFields: got.namedFields }]);
     }
 
     /* Guarded like letterFetch: with no class in play letterBox() renders
