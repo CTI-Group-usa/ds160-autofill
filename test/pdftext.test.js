@@ -69,6 +69,46 @@ const LETTER_PDF = process.env.LETTER_PDF ||
     eq('dob read from the real PDF', parsed.fields.letterDob, '16-SEP-1987');
   }
 
+  /* -- A FILLED INTERACTIVE PDF KEEPS ITS VALUES IN NAMED FIELDS -----
+     Every DS-7002 read so far has come back as a run of blank labels, because
+     its values are drawn inside Form XObjects whose placement lives in the
+     page stream - a pairing this file deliberately does not build.
+
+     There is a second shape and it is cheap. A form filled in and never
+     flattened keeps each value in its AcroForm field, beside the field's own
+     NAME. Measured on the real interactive DS-7002: 79 named fields, called
+     `Organization Name`, `Phase Site Name`, `City`, `State`, `ZIP Code`,
+     `ProgramNumber`. Those ARE the printed labels, so the existing j1docs
+     profile reads them with no new mapping and no guess about position. */
+  const acro = '1 0 obj << /T (Phase Site Name) /V (Kalahari Resort - Sandusky OH) >> endobj ' +
+               '2 0 obj << /V (44870) /T (ZIP Code) >> endobj ' +
+               '3 0 obj << /T (Suite) >> endobj';
+  const got = await P.formFields(new TextEncoder().encode(acro));
+  const by = {};
+  for (const f of got) by[f.name] = f.value;
+  eq('the field name is read', by['Phase Site Name'], 'Kalahari Resort - Sandusky OH');
+  /* `/V` BEFORE `/T` IS THE SAME DICTIONARY - they sit in either order, so the
+     window looks both ways. */
+  eq('and in either order',   by['ZIP Code'], '44870');
+  eq('a field with no value', by['Suite'], '');
+
+  /* NOTHING IS EMITTED FOR AN EMPTY FIELD. A blank form must stay blank, not
+     arrive as a run of labels for the parser to mistake for values - which is
+     the failure this whole path exists to avoid. */
+  eq('a blank form contributes nothing',
+     P.formText([{ name: 'City', value: '' }, { name: 'State', value: '' }]), '');
+
+  /* THE SECTION 2 MARKERS ARE PUT BACK, because that is where those cells sit
+     on the form and `scope` in j1docs reads the short labels - City, State,
+     ZIP Code - there and nowhere else. Without them the scoped pass never
+     fires and all four are dropped. */
+  const laid = P.formText([{ name: 'Phase Site Name', value: 'Kalahari' },
+                           { name: 'City', value: 'Sandusky' }]);
+  eq('the host cells are bracketed by their section',
+     /SECTION 2: HOST ORGANIZATION INFORMATION City Sandusky SECTION 3/.test(laid), true);
+  eq('and everything else stays outside it',
+     /^Phase Site Name Kalahari SECTION 2/.test(laid), true);
+
   console.log('\n' + pass + ' passed, ' + fail + ' failed' + (skipped ? ', end-to-end skipped' : ''));
   process.exit(fail ? 1 : 0);
 })();

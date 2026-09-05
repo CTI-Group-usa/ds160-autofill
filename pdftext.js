@@ -168,7 +168,124 @@
     return content.map(textFromContent).join('');
   }
 
-  const api = { extract, inflateStreams, looksLikeContent, textFromContent, readLiteral, readHex, readable };
+  /* AN INTERACTIVE PDF'S VALUES ARE NOT ON THE PAGE, AND THIS SAYS WHETHER
+     THEY ARE REACHABLE AT ALL.
+
+     Every DS-7002 seen so far has failed the same way: the page text is the
+     blank form's printed labels, because each value is drawn inside a Form
+     XObject whose placement lives in the page stream. Pairing those needs the
+     object graph, which this file deliberately does not build.
+
+     But there is a SECOND shape, and it is cheap: a form that was filled in
+     and never flattened keeps each value in its AcroForm field, next to the
+     field's own NAME - `/T (Phase Site Name) ... /V (Kalahari Resort)`. A name
+     beside a value is a label beside a value, which is the one thing this
+     project can always work with.
+
+     So this does not try to fill anything. It answers the question that
+     decides whether a reader is worth writing at all: are there named fields
+     carrying values, and what are they called? The report prints the answer
+     when a document gives nothing, exactly as the popup's "Not recognised"
+     list is how every real CEAC id got here. Guessing has never once worked;
+     asking the file has. */
+  async function formFields(buf) {
+    const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+    let hay = '';
+    for (let i = 0; i < bytes.length; i++) hay += String.fromCharCode(bytes[i]);
+
+    /* OBJECT STREAMS HOLD MOST OBJECTS IN A MODERN PDF, so the plain bytes
+       alone find nothing - the first version of this scanned only those and
+       reported zero named fields on a file that has 79 of them. `inflateStreams`
+       is async, which is the other half of why: awaiting it was missed and a
+       Promise has no `.length`. */
+    try {
+      const parts = await inflateStreams(bytes);
+      if (parts && parts.length) hay += '\n' + parts.join('\n');
+    } catch (e) { /* a stream that will not inflate tells us nothing here */ }
+
+    /* EVERY NAME AND EVERY VALUE FIRST, THEN PAIR THEM BY DISTANCE.
+       The first version took a fixed window either side of each `/T` and used
+       the first `/V` in it. A window wide enough to hold one dictionary is
+       wider than the gap between two, so every field picked up the PREVIOUS
+       object's value - on a file with 79 of them, all 79 would have been
+       wrong. Its own test caught it, which is the only reason this is not in
+       the repository.
+
+       `/T` and `/V` sit in the same dictionary in either order and PDFs pack
+       objects tight, so the honest rule is: each value belongs to the nearest
+       name that has not already claimed one. No nesting to track, no window to
+       tune, and it is right whichever order the writer used. */
+    const grab = (tag) => {
+      const found = [], re = new RegExp('/' + tag + '\\s*(\\(|<)', 'g');
+      let m;
+      while ((m = re.exec(hay))) {
+        const r = m[1] === '(' ? readLiteral(hay, re.lastIndex) : readHex(hay, re.lastIndex);
+        if (r) found.push({ at: m.index, text: String(r.value || '').trim() });
+        if (found.length >= 2000) break;
+      }
+      return found;
+    };
+    const names = grab('T'), values = grab('V');
+
+    const taken = new Array(names.length).fill(null);
+    for (const v of values) {
+      let best = -1, dist = Infinity;
+      for (let i = 0; i < names.length; i++) {
+        if (taken[i] !== null) continue;
+        const d = Math.abs(names[i].at - v.at);
+        if (d < dist) { dist = d; best = i; }
+      }
+      if (best >= 0) taken[best] = v.text;
+    }
+
+    const out = [], seen = {};
+    for (let i = 0; i < names.length; i++) {
+      if (!names[i].text) continue;
+      const value = taken[i] === null ? '' : taken[i];
+      const key = names[i].text + '\u0000' + value;
+      if (seen[key]) continue;
+      seen[key] = 1;
+      out.push({ name: names[i].text, value: value });
+      if (out.length >= 300) break;
+    }
+    return out;
+  }
+
+  /* THE FIELD NAMES ARE LABELS, SO THE PAIRS CAN BE READ AS A DOCUMENT.
+     Measured on the real interactive DS-7002: 79 named fields, called
+     `Organization Name`, `Phase Site Name`, `City`, `State`, `ZIP Code`,
+     `ProgramNumber`, `Training Start Date`. Those are the printed labels, so
+     laying them out as `label value label value` lets the existing profile
+     read them with no new mapping and no guess about position - which is the
+     whole reason the XObject route was refused.
+
+     THE SECTION 2 MARKERS ARE PUT BACK because that is where those cells are
+     on the form, and `scope` reads the short labels - City, State, ZIP Code -
+     there and nowhere else. Without them the scoped pass never fires and those
+     four are dropped.
+
+     Nothing is emitted for a field with no value: a blank form must stay
+     blank, not arrive as a run of labels for the parser to mistake for
+     values. */
+  const HOST_BLOCK = ['Organization Name', 'Suite', 'City', 'State', 'ZIP Code',
+                      'Website URL', 'Employer ID Number', 'Address1', 'Address2'];
+  function formText(fields) {
+    const filled = (fields || []).filter(f => f && f.name && f.value);
+    if (!filled.length) return '';
+    const host = [], rest = [];
+    for (const f of filled) {
+      (HOST_BLOCK.indexOf(f.name) >= 0 ? host : rest).push(f.name + ' ' + f.value);
+    }
+    let out = rest.join(' ');
+    if (host.length) {
+      out += ' SECTION 2: HOST ORGANIZATION INFORMATION ' + host.join(' ') +
+             ' SECTION 3: CERTIFICATIONS';
+    }
+    return out.trim();
+  }
+
+  const api = { extract, inflateStreams, looksLikeContent, textFromContent, readLiteral, readHex, readable,
+                formFields, formText };
   if (isNode) module.exports = api;
   root.PDFText = api;
 })(typeof self !== 'undefined' ? self : this);

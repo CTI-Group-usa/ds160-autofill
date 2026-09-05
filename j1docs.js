@@ -180,6 +180,11 @@
          page wants it in Organization Name, and the sheet has no column for
          it at all. */
       { label: 'Phase Site Name', key: 'phaseSiteName' },
+      /* The AcroForm calls the Section 2 cell exactly this. `Host Organization
+         Name` is longer and overlaps it, so on a document carrying both the
+         longer one still wins - which is the same rule that keeps `Category`
+         off `Occupational Category`. */
+      { label: 'Organization Name', key: 'hostOrgName' },
       { label: 'Phone', key: 'supervisorPhone' },
       /* Cut points only - these labels are not wanted as values, but naming
          them stops the value before them running on into their text. */
@@ -206,6 +211,36 @@
       { label: 'Description of Trainee', key: null },
       { label: 'E-mail', key: null },
       { label: 'Phone Number', key: null },
+      /* THE ACROFORM'S OWN FIELD NAMES, as cut points. A filled interactive
+         DS-7002 is read by laying its `name value` pairs out as text (see
+         `formText` in pdftext.js), and a name that is not declared here is
+         invisible to the scanner - so the value before it runs straight on
+         into the next pair. Measured: `Phase Site Name` came back as
+         "Kalahari Resort - Sandusky OH Phase Supervisor Hannah Berkey
+         Training". These are the names the real form uses. */
+      { label: 'TraineeLastName', key: null },
+      { label: 'TraineeFirstName', key: null },
+      { label: 'ProgramNumber', key: 'programNumber' },
+      { label: 'Phase Supervisor Title', key: null },
+      { label: 'Phase Supervisor Phone', key: null },
+      { label: 'Phase Supervisor Email', key: null },
+      { label: 'Phase Supervisor', key: null },
+      { label: 'PrimarySupervisorName', key: null },
+      { label: 'Printed Name of Supervisor', key: null },
+      { label: 'Training Start Date', key: null },
+      { label: 'Training End Date', key: null },
+      { label: 'Phase Start Date', key: null },
+      { label: 'Phase End Date', key: null },
+      { label: 'Phase Number', key: null },
+      { label: 'Phase Count', key: null },
+      { label: 'TrainingField', key: null },
+      { label: 'RoleDescription', key: null },
+      { label: 'PaxEmail', key: null },
+      { label: 'LastName', key: null },
+      { label: 'FirstName', key: null },
+      { label: 'ExchangeVisitorIs', key: null },
+      { label: 'Program Category', key: null },
+      { label: 'Name of Sponsor Organization', key: null },
     ],
     patterns: [],
     /* SHORT LABELS ARE SCOPED TO THEIR SECTION, and two measurements are why.
@@ -285,6 +320,12 @@
   const SHAPES = {
     sevisId: /^N[0-9X]{8,11}$/i,
     programNumber: /^P-[0-9]-[0-9]{5}$/i,
+    /* A DATE RANGE HAS DIGITS IN IT. The blank interactive form prints
+       `Training/Internship Dates (mm-dd-yyyy) From To`, and that ran through
+       as a value the moment the surrounding cut points changed - a wrong value
+       that also counted towards `required`, so the document stopped reporting
+       itself as unreadable. Two dates, and something between them. */
+    trainingDates: /\d.*\d/,
   };
   const MAX_LEN = {
     docName: 80, docEmail: 100, docDob: 20, sponsor: 80, category: 40,

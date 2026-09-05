@@ -921,6 +921,78 @@ rule: **before writing "no value in record", ask whether re-sending the
 applicant could possibly change it.** If not, it belongs in
 `MISSING_FROM_INTAKE` or `_blankOnPurpose`, never in the banner.
 
+### A FILLED INTERACTIVE PDF KEEPS ITS VALUES IN NAMED FIELDS (2026-09-05)
+The organisation name stayed empty, and the user said again that it is in the
+DS-7002. The chain was proved end to end first - parse, `answers`,
+`DS160Trip.set`, `apply` - and it works. So the blocker was the document, and
+the evidence for that was already in their own reports: `arrivalDate` and
+`departureDate` were filled on a sheet that **has no arrival column**, so
+*Read J1 documents* had been pressed and the **DS-2019 read fine**. Only the
+DS-7002 gave nothing.
+
+Then the measurement that changed the answer:
+
+| | Named AcroForm fields | Carrying a value |
+|---|---|---|
+| the flattened DS-7002 | **0** | 0 |
+| the interactive one | **79** | 0 *(that copy is blank)* |
+
+And the names are not opaque. They are the **printed labels**:
+
+> `Organization Name` | `Phase Site Name` | `City` | `State` | `ZIP Code` |
+> `ProgramNumber` | `Phase Supervisor` | `Training Start Date`
+
+**A name beside a value is a label beside a value**, which is the one thing
+this project can always work with - and it is a completely different problem
+from the XObject geometry that was refused. No object graph, no placement, no
+guess about position.
+
+So `pdftext.js` gained `formFields()` (read `/T` + `/V`, inflating object
+streams because that is where they live) and `formText()` (lay the pairs out as
+`label value`), and `app.js` appends that **after** the page text. A flattened
+document is unaffected - first value wins - and **a blank form contributes
+nothing at all**, because a value-less field is skipped rather than emitted as
+a bare label for the parser to mistake for a value.
+
+`formText` puts the **Section 2 markers back** around `Organization Name`,
+`Suite`, `City`, `State`, `ZIP Code`, `Website URL`, `Employer ID Number` and
+the two address lines. That is where those cells are on the form, and `scope`
+reads the short labels there and nowhere else - without the markers the scoped
+pass never fires and all four are dropped.
+
+#### Two defects its own tests caught before they shipped
+**Every field took the previous object's value.** The first version used a
+fixed ±600-character window around each `/T` and took the first `/V` in it. A
+window wide enough to hold one dictionary is wider than the gap between two, so
+on a file with 79 fields **all 79 would have been wrong** - filled, plausible,
+and invisible. It collects every name and every value first and pairs each
+value with the **nearest name that has not already claimed one**: no nesting to
+track, no window to tune, right whichever order the writer used.
+
+**Three wrong assumptions in the first probe**, all found by running it rather
+than reading it: `readLiteral`/`readHex` return `.value`, not `.text`; their
+index must be *after* the opening delimiter; and `inflateStreams` is **async**,
+so a missing `await` left only the raw bytes searched - which reported **zero**
+named fields on a file that has seventy-nine.
+
+#### And a wrong value that reached the required list
+Adding the AcroForm names as cut points changed where values cut on the blank
+form, and `Training/Internship Dates` came back as
+`(mm-dd-yyyy)FromToSECTION 2: HOST ORGANIZATION INFORMATION`. That counted
+towards `required`, so the document **stopped reporting itself as unreadable**.
+`SHAPES.trainingDates` now demands two digits with something between them - a
+date range has digits in it.
+
+#### What this does and does not settle
+It settles a **filled** interactive DS-7002: its organisation name, host city,
+state, ZIP and supervisor now read exactly, with no mapping table.
+
+It does **not** touch the flattened kind, whose values are XObject page content
+- those still need printing flat, and the hint still says so. Which shape the
+user's own file is has not been measured; the next *Read J1 documents* report
+answers it, and until then the organisation name can be typed once in Trip
+details.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

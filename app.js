@@ -540,8 +540,20 @@
           const bin = atob(d.b64);
           const bytes = new Uint8Array(bin.length);
           for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-          PDFText.extract(bytes.buffer)
-            .then(text => resolve({ text: text }))
+          /* A FILLED INTERACTIVE PDF KEEPS ITS VALUES IN NAMED FORM FIELDS,
+             not on the page - which is why every DS-7002 so far has read as a
+             run of blank labels. `formFields` reads those pairs and
+             `formText` lays them out as `label value`, because the names ARE
+             the printed labels: `Organization Name`, `Phase Site Name`,
+             `City`, `State`, `ZIP Code`. Appended AFTER the page text, so a
+             flattened document is completely unaffected - first value wins,
+             and a blank form contributes nothing at all. */
+          Promise.all([PDFText.extract(bytes.buffer), PDFText.formFields(bytes)])
+            .then(([text, fields]) => {
+              const extra = PDFText.formText(fields);
+              resolve({ text: extra ? (text + ' ' + extra) : text,
+                        formFields: (fields || []).filter(f => f.value).length });
+            })
             .catch(e => resolve({ error: 'could not be read as a PDF (' + e.message + ')' }));
         };
         window.addEventListener('message', done);
