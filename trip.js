@@ -86,7 +86,9 @@
     { key: 'usPocGiven', page: 'U.S. Contact', label: 'Contact person - given names',
       def: '', from: 'hostPocGiven' },
     { key: 'usPocOrg', page: 'U.S. Contact', label: 'Organization name', def: '',
-      hint: 'The DS-7002 calls it the Phase Site Name.' },
+      from: 'hostOrg',
+      hint: 'The DS-7002 calls it the Phase Site Name. A "Host organization ' +
+            'name" column in the sheet would fill it for every applicant.' },
     { key: 'jobTitleAboard', page: 'Crew Visa', label: 'Specific job title aboard the vessel', def: '',
       hint: 'The "Working in the Capacity of" line in the supporting letter.' },
     { key: 'vesselName', page: 'Crew Visa', label: 'Seagoing Ship / Vessel Name', def: '',

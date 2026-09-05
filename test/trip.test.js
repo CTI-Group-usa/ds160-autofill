@@ -337,5 +337,24 @@ const noPocTrip = T.apply({ passportNumber: 'POC2' });
 eq('nothing is invented on C1/D', noPocTrip.usPocSurname, undefined);
 eq('nor the organisation',        noPocTrip.usPocOrg, undefined);
 
+
+/* -- THE ORGANISATION NAME IS WIRED AHEAD OF ITS COLUMN --------------
+   CEAC asks for the host organisation on the U.S. Contact page and J1 fills
+   it, but the sheet's four `Point of contact` columns name the person, the
+   address, the phone and the email - not the company. Today it comes from the
+   DS-7002 or is typed once here, and both depend on something outside the
+   sheet.
+
+   `hostOrg` is mapped under every spelling the header is likely to take, so
+   the day the column is added it simply starts working, for every row at once.
+   Same trade as the thirteen SEVIS cells: one column filled by hand beats a
+   reader that has to be maintained. */
+const orgRec = { passportNumber: 'ORG1', hostOrg: 'Kalahari Resort Sandusky OH' };
+eq('the sheet column fills it', T.apply(orgRec).usPocOrg, 'Kalahari Resort Sandusky OH');
+T.set(orgRec, 'usPocOrg', 'TYPED BY OPERATOR');
+eq('and the operator still wins', T.apply(orgRec).usPocOrg, 'TYPED BY OPERATOR');
+eq('no column, nothing invented',
+   T.apply({ passportNumber: 'ORG2' }).usPocOrg, undefined);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

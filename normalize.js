@@ -526,6 +526,24 @@
 
     /* And its U.S. contact is the host employer, collected per applicant,
        where C1/D has the cruise line's as a constant. */
+    /* THE HOST ORGANISATION'S NAME, AND THE SHEET HAS NO COLUMN FOR IT YET.
+       CEAC asks for it on the U.S. Contact page and J1 fills it, but the four
+       `Point of contact` columns name the person, the address, the phone and
+       the email - not the company. Today it comes from the DS-7002 or is typed
+       once in Trip details, and both depend on something outside the sheet.
+
+       Mapped ahead of the column existing, under every spelling the header is
+       likely to take, so the day it is added it simply starts working - for
+       every row at once and for ever. That is the same trade as the thirteen
+       SEVIS cells: one column filled by hand beats a reader that has to be
+       maintained. Matching is on header TEXT, so where the column sits does
+       not matter. */
+    'Host organization name':                                        ['hostOrg', clean],
+    'Host Organization':                                             ['hostOrg', clean],
+    'Host company name':                                             ['hostOrg', clean],
+    'Host Company':                                                  ['hostOrg', clean],
+    'Name of host organization':                                     ['hostOrg', clean],
+    'Organization name':                                             ['hostOrg', clean],
     'Point of contact':                                              ['usPocName', upper],
     'Point of contact address':                                      ['usPocAddress', clean],
     'Point of contact phone number':                                 ['usPocPhone', phoneAsWritten],
@@ -604,7 +622,7 @@
        this can only come from the DS-7002 (Section 4's Phase Site Name, or
        Host Organization Name) or be typed once in Trip details, and the report
        has to say that instead of asking for a re-send that cannot help. */
-    ['usPocOrg',      'US point of contact - organisation name (J1: the DS-7002, or type it in Trip details)'],
+    ['usPocOrg',      'US point of contact - organisation name (J1: add a "Host organization name" column, or read the DS-7002, or type it in Trip details)'],
     ['travelLocation','Places you will visit (J1: the host organisation city)'],
     ['stayAddr1',     'Address where you will stay - street (J1: the host organisation address)'],
     ['stayAddr2',     'Address where you will stay - second line'],

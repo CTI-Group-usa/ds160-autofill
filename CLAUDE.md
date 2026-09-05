@@ -988,10 +988,32 @@ It settles a **filled** interactive DS-7002: its organisation name, host city,
 state, ZIP and supervisor now read exactly, with no mapping table.
 
 It does **not** touch the flattened kind, whose values are XObject page content
-- those still need printing flat, and the hint still says so. Which shape the
-user's own file is has not been measured; the next *Read J1 documents* report
-answers it, and until then the organisation name can be typed once in Trip
-details.
+- those still need printing flat, and the hint still says so.
+
+### THE DURABLE FIX IS A COLUMN, AND IT IS ALREADY WIRED
+The report came back with the organisation name still empty. Two things are
+worth separating, because only one of them is a defect:
+
+- **Reading the documents does not re-send the record.** `applyParsed` calls
+  `rebuild()`, which redraws the worksheet - the extension still holds whatever
+  was sent before. So the order is **Read J1 documents, then Send to
+  extension, then Fill**, and a record sent first will not carry what the
+  documents gave.
+- **Everything else on that page now fills from the sheet**, including the
+  contact's name, which is what proves the `from` chain works end to end in a
+  browser.
+
+Both remaining routes depend on something outside the sheet - a document that
+may not parse, or an operator remembering to type. **A column removes both.**
+`hostOrg` is mapped under six plausible header spellings - `Host organization
+name`, `Host Organization`, `Host company name`, `Host Company`, `Name of host
+organization`, `Organization name` - and `usPocOrg` reads it through `from`, so
+the day that column exists it fills for every row at once, and the operator's
+own entry still wins over it.
+
+Matching is on header **text**, so where the column sits does not matter. This
+is the same trade as the thirteen SEVIS cells: one column filled by hand beats
+a reader that has to be maintained.
 
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
