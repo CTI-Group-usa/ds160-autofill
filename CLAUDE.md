@@ -1036,6 +1036,35 @@ contains has never once worked here, and asking it has.**
 `trip.test.js` asserts that chain textually, because the worksheet is behind
 the Microsoft sign-in.
 
+### THE REAL REASON FOUR ROUNDS WERE WASTED: THE CACHE TOKENS
+The operator reloaded, read the documents, re-sent, and the box stayed empty -
+four times. The cause was not the document. **Six shared files were changed on
+2026-09-05 and not one `?v=` token was bumped**, so the browser went on serving
+the previous day's `pdftext.js`, `app.js`, `trip.js` and `normalize.js`. The
+code being debugged was never running.
+
+This file already warned about it, in the hard-refresh section, and it happened
+anyway - because the tokens were **per file and dated by hand**
+(`20260831t`, `20260902tabs`, `20260904j1docs`), so keeping them right meant
+remembering which of eleven tags to edit on every change. **A token that is
+only sometimes bumped is worse than none: it makes the cache look managed.**
+
+Every asset in `index.html` and `login.html` now carries **one** token, and
+`auth.test.js` fails if they are ever not all identical - proved by breaking
+one on purpose. One string, one edit to release, and no file can be left
+behind.
+
+The hard-refresh button remains the operator's answer to a stale asset; the
+token is the developer's, and it was the half that was missing.
+
+#### And the answer to "why is this so hard - you got Hannah Berkey easily"
+Because **`Hannah Berkey` never came from the DS-7002.** It comes from the
+sheet's `Point of contact` column, split into Surnames and Given Names. The
+organisation name two lines below it on the form has **no column at all**, so
+it is the one value on that page that has only ever had the document as a
+source - and the document has not been read successfully once. The two look
+adjacent on paper and come from opposite places.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

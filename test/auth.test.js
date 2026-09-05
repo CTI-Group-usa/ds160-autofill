@@ -202,5 +202,22 @@ ok('the spin animation exists', /button\.icon\.spin svg\{animation:spin/.test(cs
 ok('and is dropped for reduced motion',
    /prefers-reduced-motion:reduce\)\{button\.icon\.spin svg\{animation:none/.test(css));
 
+
+/* -- ONE CACHE TOKEN, AND NO FILE LEFT BEHIND -----------------------
+   The tokens used to be per-file and dated by hand - `20260831t`,
+   `20260902tabs`, `20260904j1docs`. On 2026-09-05 six shared files were
+   changed and not one token was bumped, so the browser went on serving the
+   previous day's `pdftext.js`, `app.js`, `trip.js` and `normalize.js`: four
+   rounds of "it is still empty" spent on code that was never running.
+
+   A token that is only sometimes bumped is WORSE than none, because it makes
+   the cache look managed. One string for every asset, one edit to release, and
+   this fails the moment a file is left behind. */
+const tokens = (index.match(/\?v=[0-9A-Za-z]+/g) || [])
+  .concat(login.match(/\?v=[0-9A-Za-z]+/g) || []);
+ok('every asset carries a cache token', tokens.length >= 15);
+eq('and every one of them is the same string',
+   tokens.filter((t, i, a) => a.indexOf(t) === i).length, 1);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 if (fail) process.exit(1);
