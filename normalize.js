@@ -1673,7 +1673,40 @@
       ['paymentStatus','Payment Status'], ['notes','Notes'] ] },
   ];
 
-  const api = { toRecord, validate, SECTIONS, MAP, MISSING_FROM_INTAKE, stayUnit, stayCount, STAY_UNITS,
+  /* THE ONE LIST THAT NEEDS BOTH THE SHEET AND THE PACK.
+     CEAC's Additional Point of Contact block is a repeater taking two
+     contacts, and the user's arrangement is:
+
+       Name (1)              <- CTI Indonesia, a constant on every application
+       Add Another -> Name (2) <- the sheet's own contact, columns CD-CG
+
+     Every other repeater list is built in `toRecord()` from sheet columns
+     alone. This one cannot be: row 1 comes from the constants pack, which
+     `apply()` merges AFTER the record exists. So it is a separate step, run
+     last, and `app.js` calls it where the pipeline ends.
+
+     ROW 2 HAS FOUR COLUMNS, not eight. CD-CG give the name, the address, the
+     phone and the email; CEAC also asks that contact for city, state, postal
+     zone and country, and the sheet has none of them. They are left empty
+     rather than copied from row 1 - CTI's address against a stranger's name
+     would be filled, plausible and wrong.
+
+     A row with no name is dropped, so an applicant whose CD cell is empty
+     gets one contact and an `Add Another` pressed after it is left alone. */
+  function finalise(rec) {
+    const rows = [
+      { label: 'CTI Indonesia', name: rec.addPoc1Name, addr1: rec.addPoc1Addr1,
+        city: rec.addPoc1City, state: rec.addPoc1State, postal: rec.addPoc1Postal,
+        country: rec.addPoc1Country, phone: rec.addPoc1Phone, email: rec.addPoc1Email },
+      { label: "the sheet's contact", name: rec.addPoc2Name, addr1: rec.addPoc2Address,
+        city: '', state: '', postal: '', country: '',
+        phone: rec.addPoc2Phone, email: rec.addPoc2Email },
+    ].filter(r => r.name);
+    if (rows.length) rec._addPocList = rows;
+    return rec;
+  }
+
+  const api = { toRecord, validate, finalise, SECTIONS, MAP, MISSING_FROM_INTAKE, stayUnit, stayCount, STAY_UNITS,
                 parseDate, fmtDate, dateStr, strictDate, normPhone, phoneAsWritten, deExp,
                 normMoney, splitName, yn, monthsBetween, toJs, usPlace, twoLines };
 

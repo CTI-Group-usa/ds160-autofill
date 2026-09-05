@@ -124,6 +124,52 @@ eq('and the monthly income box', j1rec.monthlyIncomeNA, 'YES');
    "no value in record" on every J1 row while a test guarded the hole. Both
    packs answer ENGLISH now, at the user's word. */
 eq('J1 answers the language question too', j1rec.languageSpoken, 'ENGLISH');
+
+/* -- THE ADDITIONAL POINT OF CONTACT IS TWO ROWS, FROM TWO PLACES ----
+   The user's arrangement: Name (1) is CTI Indonesia on every application, and
+   Add Another opens Name (2), which takes the sheet's own contact from columns
+   CD-CG.
+
+   THIS IS THE ONE LIST THAT NEEDS BOTH HALVES. Every other repeater list is
+   built in toRecord() from sheet columns alone; row 1 here comes from the
+   constants pack, which apply() merges after the record exists - so
+   `finalise()` runs last and app.js calls it where the pipeline ends. */
+const N2 = require('../normalize.js');
+const poc = N2.finalise(C.apply(N2.toRecord({
+  'Name': 'A, B',
+  'Additional point of contact': 'Ni Wayan Sari',
+  'Additional point of contact address': 'JL GATOT SUBROTO 10, DENPASAR',
+  'Additional point of contact phone number': '628123456789',
+  'Additional point of contact email Address': 'sari@example.com',
+})));
+eq('two contacts, CTI first',
+   poc._addPocList.map(r => r.name).join(' | '),
+   "OKTAVIANIA, DORKAS | NI WAYAN SARI");
+eq('row 1 carries the whole CTI block',
+   [poc._addPocList[0].city, poc._addPocList[0].state,
+    poc._addPocList[0].postal, poc._addPocList[0].country].join('/'),
+   'DENPASAR/BALI/80239/INDONESIA');
+/* ROW 2 HAS FOUR COLUMNS, NOT EIGHT. CD-CG give a name, an address, a phone
+   and an email; CEAC also asks that contact for city, state, postal zone and
+   country and the sheet has none of them. Left empty rather than copied from
+   row 1 - CTI's address against a stranger's name would be filled, plausible
+   and wrong. */
+eq('row 2 leaves what the sheet lacks empty',
+   [poc._addPocList[1].city, poc._addPocList[1].state,
+    poc._addPocList[1].postal, poc._addPocList[1].country].join(''), '');
+eq('but keeps what it has',
+   poc._addPocList[1].addr1 + ' / ' + poc._addPocList[1].email,
+   'JL GATOT SUBROTO 10, DENPASAR / sari@example.com');
+/* An empty CD cell gives one contact, and an Add Another pressed after it is
+   left alone by beyondList(). */
+eq('no sheet contact, one row',
+   N2.finalise(C.apply(N2.toRecord({ 'Name': 'A, B' })))._addPocList.length, 1);
+/* C1/D HAS NO SUCH BLOCK AT ALL - that page is J1 only, and its pack carries
+   none of these constants, so no list is published. */
+C.use('c1d');
+eq('C1/D publishes no contact list',
+   N2.finalise(C.apply(N2.toRecord({ 'Name': 'A, B' })))._addPocList, undefined);
+C.use('j1');
 /* THE J1 PACK WAS MISSING BOTH RELATIVE QUESTIONS while C1/D has carried them
    since the Family page was wired. A key a pack does not name is not an
    unanswered question on the page - the report calls it "no value in record",

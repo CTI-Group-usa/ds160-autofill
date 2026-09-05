@@ -97,7 +97,10 @@
     people = rows
       .filter(r => (r['Name'] || '').trim())
       .map(r => {
-        const rec = DS160Const.apply(DS160Trip.apply(DS160.toRecord(r)));
+        /* `finalise` runs LAST because the additional-contact list needs both
+           halves: row 1 is a constant and row 2 is the sheet's own cell, and
+           the constants are not on the record until apply() has run. */
+        const rec = DS160.finalise(DS160Const.apply(DS160Trip.apply(DS160.toRecord(r))));
         return { rec, val: DS160.validate(rec) };
       });
     $('loader').hidden = true;

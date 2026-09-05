@@ -1378,6 +1378,34 @@ Work, and that prefix is unknown until one live J1 Fill reports it.
 `test/fake-student-exchange.html` carries **both** rows for exactly this reason.
 Do not "fix" it by deleting the second one; it is what makes the leak provable.
 
+#### The list is built and waiting; only the ids are missing (2026-09-05)
+The user confirmed the arrangement in full - *Name (1)* is CTI Indonesia on
+every application, *Add Another* opens *Name (2)* and that takes the sheet's
+own contact from **columns CD-CG** - and the eight `addPoc1*` constants were
+already correct, value for value, against the filed print-out. Nothing in the
+data needed changing.
+
+**`_addPocList` is the one list that needs both halves.** Every other repeater
+list is built in `toRecord()` from sheet columns alone; row 1 here comes from
+the constants **pack**, which `apply()` merges after the record exists. So
+`normalize.finalise(rec)` runs last and `app.js` calls it where the pipeline
+ends.
+
+**Row 2 has four columns, not eight.** CD-CG give a name, an address, a phone
+and an email. CEAC also asks that contact for city, state, postal zone and
+country, and the sheet has none of them - they are left **empty** rather than
+copied from row 1, because CTI's address against a stranger's name would be
+filled, plausible and wrong. An empty CD cell gives one row, and `beyondList()`
+leaves an *Add Another* pressed after it alone.
+
+**What is still missing is only the ids**, and no rule has been written on a
+guess. The constants carry `field: false` so the "all constants are fillable"
+test does not fail over a block that cannot be filled yet - that flag is the
+honest record of the gap, not a workaround for it. One Fill on the Student /
+Exchange Visitor page puts every one of those boxes in *Not recognised* with
+its real id, and the rules plus the `REPEATED` entries are a few lines after
+that.
+
 ### What that fixture found immediately
 `homeAddress` and `email` had no guard that reached this page and claimed **four
 boxes across the two contact blocks** - the applicant's own address and email in
