@@ -1015,6 +1015,27 @@ Matching is on header **text**, so where the column sits does not matter. This
 is the same trade as the thirteen SEVIS cells: one column filled by hand beats
 a reader that has to be maintained.
 
+### The report now says which kind of document it was handed
+The operator reloaded everything, read the documents and re-sent, and the box
+was still empty - which is a fact about their DS-7002 that nothing on screen
+was reporting. A document that gives nothing is one of **two** different
+documents and they look identical from the outside:
+
+| What the file has | What to do |
+|---|---|
+| named form fields, **none** carrying a value | its values are page drawings this reader cannot place - **print it flat** |
+| no named fields at all | the same, from the other direction |
+| named fields **with** values | they are readable, and anything still missing is a label this profile has not been taught - **a fixable** |
+
+The hint line now carries the count: *"(no form field in it carries a value)"*
+or *"(N form field(s) in it do carry a value - tell Claude)"*. That is the same
+discipline as the popup's unrecognised-id list - **guessing what a document
+contains has never once worked here, and asking it has.**
+
+`formFields` rides from `fetchOne` through the per-document list to the report;
+`trip.test.js` asserts that chain textually, because the worksheet is behind
+the Microsoft sign-in.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

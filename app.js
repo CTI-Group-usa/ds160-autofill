@@ -447,8 +447,30 @@
           lines.push(pr.name + ': ' + gave.join(', '));
         } else if (pr.hint) {
           /* The hint already explains the emptiness; repeating the missing
-             field names beside it adds nothing. */
-          lines.push(pr.name + ': nothing - ' + pr.hint);
+             field names beside it adds nothing.
+
+             WHAT IS ADDED IS THE ONE FACT THAT DECIDES WHAT TO DO NEXT. A
+             DS-7002 that gives nothing is one of two different documents, and
+             the operator cannot tell them apart by looking:
+
+               named form fields, none with a value -> the form was never
+                 filled in, or it was filled and flattened, and its values are
+                 page drawings this reader cannot place. Print it flat.
+               no named fields at all               -> the same, from the
+                 other direction.
+               named fields WITH values             -> they are readable, and
+                 anything still missing is a label this profile has not been
+                 taught. That is a fixable, and the count is how anyone knows.
+
+             The third case is why `formFields` exists at all, and printing the
+             count turns "it is still empty" into a measurement. Same reason
+             the popup lists unrecognised control ids: guessing what a document
+             contains has never once worked here. */
+          const fc = f.formFields;
+          lines.push(pr.name + ': nothing - ' + pr.hint +
+                     (fc === undefined ? ''
+                      : fc ? ' (' + fc + ' form field(s) in it do carry a value - tell Claude)'
+                           : ' (no form field in it carries a value)'));
         } else if (pr.missing.length) {
           lines.push(pr.name + ': read, but no ' + pr.missing.join(', '));
         } else {
@@ -589,7 +611,11 @@
                       (links.length > 1 ? ' (' + (i + 1) + ' of ' + links.length + ')' : '') + '...');
         const got = await fetchOne(l.url);
         if (got.error) { out.push({ name: l.name, error: got.error }); continue; }
-        out.push({ name: l.name, parsed: doc.parser().parse(got.text) });
+        /* `formFields` rides along so the report can say whether a document
+           that gave nothing has readable form values in it - the one fact that
+           separates "print it flat" from "this reader needs a label". */
+        out.push({ name: l.name, parsed: doc.parser().parse(got.text),
+                   formFields: got.formFields });
       }
       applyParsed(doc, out);
     }
@@ -609,7 +635,8 @@
       letterMsg('', 'Reading the pasted link...');
       const got = await fetchOne(url);
       if (got.error) { letterMsg('err', 'That link ' + got.error + '.'); return; }
-      applyParsed(doc, [{ name: 'the pasted link', parsed: doc.parser().parse(got.text) }]);
+      applyParsed(doc, [{ name: 'the pasted link', parsed: doc.parser().parse(got.text),
+                          formFields: got.formFields }]);
     }
 
     /* Guarded like letterFetch: with no class in play letterBox() renders

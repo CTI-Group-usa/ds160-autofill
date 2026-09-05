@@ -356,5 +356,27 @@ eq('and the operator still wins', T.apply(orgRec).usPocOrg, 'TYPED BY OPERATOR')
 eq('no column, nothing invented',
    T.apply({ passportNumber: 'ORG2' }).usPocOrg, undefined);
 
+
+/* -- the report has to say what the document actually contained -----
+   Asserted textually because the worksheet is behind the Microsoft sign-in -
+   the arrangement auth.test.js and extension-auth.test.js already use.
+
+   A DS-7002 that gives nothing is one of two different documents and the
+   operator cannot tell them apart by looking: values drawn on the page inside
+   form containers (print it flat), or values in named form fields (readable,
+   and a missing one is a label this profile has not been taught). The count is
+   the only thing that separates them, and without it "it is still empty" is
+   not a measurement. */
+const APP = require('fs').readFileSync(
+  require('path').join(__dirname, '..', 'app.js'), 'utf8');
+ok('the form-field count is read off the bytes',
+   /PDFText\.formFields\(bytes\)/.test(APP));
+ok('and laid out as label/value text for the profile',
+   /PDFText\.formText\(fields\)/.test(APP));
+ok('it survives into the per-document list',
+   /formFields: got\.formFields/.test(APP));
+ok('and the report prints it beside the hint',
+   /form field\(s\) in it do carry a value/.test(APP));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);
