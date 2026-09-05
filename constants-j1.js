@@ -275,10 +275,19 @@
       label: 'Do you intend to study in the U.S.?',
       def: 'NO', why: 'A J1 trainee or intern is not enrolled in a course of study. Answer ' +
                       'Yes only for a student category, where CEAC then asks for the school.' },
-    { key: 'addPoc1Name', kind: 'text', page: 'Student / Exchange Visitor',
-      label: 'Additional point of contact 1 - name', def: 'OKTAVIANIA, DORKAS',
+    /* TWO BOXES, SO TWO CONSTANTS - and splitting the printed string would
+       have got it backwards. The filed application renders this contact as
+       `OKTAVIANIA, DORKAS`, which is CEAC printing "Surnames, Given Names";
+       `splitName()` takes the LAST token as the surname, so it would have
+       sworn DORKAS as the surname. The sheet's own name column really is
+       given-first, which is why row 2 is split and row 1 is not - the two look
+       alike on the page and mean opposite things. */
+    { key: 'addPoc1Surname', kind: 'text', page: 'Student / Exchange Visitor',
+      label: 'Additional point of contact 1 - surnames', def: 'OKTAVIANIA',
       why: 'CTI Indonesia is the first additional contact on every application. Same person ' +
            'and address as the manning agency block in the C1/D pack.' },
+    { key: 'addPoc1Given', kind: 'text', page: 'Student / Exchange Visitor',
+      label: 'Additional point of contact 1 - given names', def: 'DORKAS' },
     { key: 'addPoc1Addr1', kind: 'text', page: 'Student / Exchange Visitor',
       label: 'Additional point of contact 1 - street address',
       def: 'JL. HANG TUAH NO.14B, RENON' },

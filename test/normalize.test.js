@@ -1264,5 +1264,55 @@ eq('and its phone',                          c1dwork.employerPhone, '02380655000
 eq('and one previous row only',
    c1dwork._prevEmplList.map(w => w.name).join(' | '), 'PT SAMUDERA BAHARI');
 
+/* -- THE ADDITIONAL POINT OF CONTACT LIST ----------------------------
+   `finalise()` is the one list-builder that runs AFTER the constants pack,
+   because row 1 is a constant and row 2 is the sheet's. constants.test.js
+   drives it with a real pack; here the two constants are handed in directly,
+   so what is under test is the wrapping and the two name boxes rather than
+   the pack.
+
+   ROW 1 IS NOT SPLIT AND ROW 2 IS. The filed print-out renders CTI's contact
+   `OKTAVIANIA, DORKAS` - CEAC's own "Surnames, Given Names" - so splitting it
+   would swear DORKAS as the surname; the sheet's column is given-first like
+   every other name column, so splitName() is right there. */
+const pocRec = D.finalise(Object.assign(
+  D.toRecord({ 'Name': 'A, B',
+               'Additional point of contact': 'Kadek, Widiada',
+               'Additional point of contact address':
+                 'JL RAYA PUPUTAN RENON NO 142 BLOK C, DENPASAR SELATAN, BALI' }),
+  { addPoc1Surname: 'OKTAVIANIA', addPoc1Given: 'DORKAS',
+    addPoc1Addr1: 'JL. HANG TUAH NO.14B, RENON' }));
+eq('two rows, CTI first',
+   pocRec._addPocList.map(r => r.surname + '/' + r.given).join(' | '),
+   'OKTAVIANIA/DORKAS | WIDIADA/KADEK');
+/* CEAC's street boxes cap at 40 characters and the browser clips the tail in
+   silence, so a long address is wrapped across the two on a space. */
+eq('a long address wraps onto line 2',
+   pocRec._addPocList[1].addr1 + ' | ' + pocRec._addPocList[1].addr2,
+   'JL RAYA PUPUTAN RENON NO 142 BLOK C, | DENPASAR SELATAN, BALI');
+eq('a short one does not',
+   pocRec._addPocList[0].addr1 + ' | ' + pocRec._addPocList[0].addr2,
+   'JL. HANG TUAH NO.14B, RENON | ');
+/* AND THE EMPTY LINE 2 IS NOT A GAP. CEAC marks it *Optional*; it is empty
+   because the address fitted. Reported as "no value in record" it would raise
+   the red re-send banner, and no re-send can lengthen an address. */
+eq('so line 2 is left blank on purpose',
+   pocRec._blankOnPurpose.includes('addPocAddr2'), true);
+/* ROW 2 HAS FOUR COLUMNS, NOT EIGHT, so its city / state / postal / country
+   are named in MISSING_FROM_INTAKE rather than nagged about. */
+const missKeys = D.MISSING_FROM_INTAKE.map(m => m[0]);
+eq('the four uncollected contact fields are named',
+   ['addPocCity', 'addPocState', 'addPocPostal', 'addPocCountry']
+     .filter(k => !missKeys.includes(k)).join(',') || 'all present', 'all present');
+/* An empty CD cell gives one row and publishes no second one, so an
+   `Add Another` pressed after it is left alone by beyondList(). */
+eq('no sheet contact, one row',
+   D.finalise(Object.assign(D.toRecord({ 'Name': 'A, B' }),
+     { addPoc1Surname: 'OKTAVIANIA' }))._addPocList.length, 1);
+/* NEITHER HALF PRESENT PUBLISHES NOTHING AT ALL - which is C1/D, where this
+   page does not exist. */
+eq('and no contacts at all, no list',
+   D.finalise(D.toRecord({ 'Name': 'A, B' }))._addPocList, undefined);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

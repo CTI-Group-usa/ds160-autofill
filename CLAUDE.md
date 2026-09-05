@@ -1367,13 +1367,18 @@ filed it substituted the host school's contact instead of using the cell.
 The keys are `addPoc2*`, not `addPoc*`: the J1 pack carries **Name (1)** as
 constants (CTI Indonesia), so the sheet's contact is CEAC's second block.
 
-### THE ADDITIONAL POINT OF CONTACT BLOCK HAS NO RULES, ON PURPOSE
+### THE ADDITIONAL POINT OF CONTACT BLOCK IS MATCHED ON THE REPEATER PREFIX ALONE
 CEAC takes **two** contacts there and every sub-label is shared between them -
 Street Address, City, State/Province, Postal Zone/ZIP Code, Country/Region,
 Telephone Number, Email Address. A label-only rule matches **both rows** and
 would write CTI Indonesia's address into the second contact's boxes. Only the
 repeater id prefix can separate them, the way `dtlPrevEmpl` does on Previous
-Work, and that prefix is unknown until one live J1 Fill reports it.
+Work - so the ten rules here carry **no `labels` at all**, and a bare "City" on
+this page stays unclaimed on purpose.
+
+That prefix was unknown until 2026-09-05, when one live Fill reported it; the
+rules were written **only then**, and the section two below records what
+arrived.
 
 `test/fake-student-exchange.html` carries **both** rows for exactly this reason.
 Do not "fix" it by deleting the second one; it is what makes the leak provable.
@@ -1413,12 +1418,30 @@ suffix stays, because the exact spelling still has not been read off the page.
 fill on that page and the eighteen contact boxes are honestly unrecognised;
 the U.S. Contact page still fills all ten. Sweep: no unmatched drift anywhere.
 
-#### The list is built and waiting; only the ids are missing (2026-09-05)
+#### And then the ids arrived, so the block is wired (2026-09-05)
 The user confirmed the arrangement in full - *Name (1)* is CTI Indonesia on
-every application, *Add Another* opens *Name (2)* and that takes the sheet's
-own contact from **columns CD-CG** - and the eight `addPoc1*` constants were
-already correct, value for value, against the filed print-out. Nothing in the
-data needed changing.
+every application, *Name (2)* takes the sheet's own contact from **columns
+CD-CG** - and the eight `addPoc1*` constants were already correct, value for
+value, against the filed print-out. Nothing in the data needed changing.
+
+One Fill on the Student / Exchange Visitor page then returned **twenty**
+unrecognised controls and eight deliberate ones, which is every box in the
+block with its real id:
+
+| | |
+|---|---|
+| repeater | `dtlStudentAddPOC_ctl00_` and `dtlStudentAddPOC_ctl01_` |
+| boxes | `tbxADD_POC_SURNAME`, `..._GIVEN_NAME`, `..._ADDR_LN1`, `..._ADDR_LN2`, `..._ADDR_CITY`, `..._ADDR_STATE`, `..._ADDR_POSTAL_CD`, `ddlADD_POC_ADDR_CTRY`, `tbxADD_POC_TEL`, `tbxADD_POC_EMAIL_ADDR` |
+| ticks | `cbxADD_POC_ADDR_STATE_NA`, `..._POSTAL_CD_NA`, `..._TEL_NA`, `..._EMAIL_ADDR_NA`, per row |
+
+**BOTH ROWS ARE ON SCREEN AT ONCE**, unlike every other repeater in this
+project - there is no *Add Another* to press and no postback to pace, so one
+Fill fills both contacts.
+
+That report also **proved `NOT_EXCHANGE_PAGE` on the live page**:
+`tbxADD_POC_SURNAME` contains `POC_SURNAME`, and the box came back unrecognised
+instead of holding the host employer's contact. The guard shipped an hour
+earlier was the reason those ids could be read at all.
 
 **`_addPocList` is the one list that needs both halves.** Every other repeater
 list is built in `toRecord()` from sheet columns alone; row 1 here comes from
@@ -1426,20 +1449,52 @@ the constants **pack**, which `apply()` merges after the record exists. So
 `normalize.finalise(rec)` runs last and `app.js` calls it where the pipeline
 ends.
 
+##### TWO NAME BOXES, AND THE TWO ROWS REACH THEM BY OPPOSITE ROUTES
+This is the detail worth reading twice, because the two look identical on the
+page and mean the reverse of each other:
+
+| Row | Source | Why |
+|---|---|---|
+| 1 | **two separate constants**, `addPoc1Surname` / `addPoc1Given` | the filed print-out renders it `OKTAVIANIA, DORKAS`, which is CEAC printing *"Surnames, Given Names"*. `splitName()` takes the **last** token as the surname, so splitting that string would have sworn **DORKAS** as the surname |
+| 2 | `splitName()` on column CD | that column is given-first (`Kadek, Widiada`, `Wayne, Moore`) like every other name column in the sheet, so the ordinary split is right |
+
+The old single `addPoc1Name` constant is gone. A row is present if it has a
+**surname**, not a `name` - there is no single name box on this page, and a
+field that means different things in the two rows is the kind of thing that
+gets read the wrong way round a month later.
+
 **Row 2 has four columns, not eight.** CD-CG give a name, an address, a phone
 and an email. CEAC also asks that contact for city, state, postal zone and
 country, and the sheet has none of them - they are left **empty** rather than
 copied from row 1, because CTI's address against a stranger's name would be
-filled, plausible and wrong. An empty CD cell gives one row, and `beyondList()`
-leaves an *Add Another* pressed after it alone.
+filled, plausible and wrong. All four joined `MISSING_FROM_INTAKE`, so the
+popup shows the calm grey note instead of the red re-send banner; row 1 fills
+them from the pack and stays quiet, because that list is only consulted when a
+key is empty.
 
-**What is still missing is only the ids**, and no rule has been written on a
-guess. The constants carry `field: false` so the "all constants are fillable"
-test does not fail over a block that cannot be filled yet - that flag is the
-honest record of the gap, not a workaround for it. One Fill on the Student /
-Exchange Visitor page puts every one of those boxes in *Not recognised* with
-its real id, and the rules plus the `REPEATED` entries are a few lines after
-that.
+**`addPocAddr2` joins `_blankOnPurpose`** whenever a row's street fits one box.
+CEAC marks line 2 *Optional* and `twoLines()` only uses it past the
+40-character cap, so an empty one is the wrap saying it was not needed. It is
+keyed on **a row** leaving it empty rather than on the key being absent,
+because with two rows on screen one may wrap and the other not. Same trap as
+`stayAddr2` and `usPocAddr2`, for the seventh time: *before writing "no value
+in record", ask whether re-sending the applicant could possibly change it.*
+
+**The four `_NA` twins carry negative lookaheads** even though `kindAllows`
+already separates a text rule from a checkbox. `ADD_POC_ADDR_STATE` is a prefix
+of `ADD_POC_ADDR_STATE_NA`, and ticking one greys out a value we do fill - the
+same shape as the four on the previous-employer repeater and the vessel owner's
+two boxes.
+
+An empty CD cell gives one row, and `beyondList()` leaves an *Add Another*
+pressed after it alone.
+
+**Verified in a browser:** seventeen fields fill on that page, **nothing
+unrecognised**, zero postbacks, row 1 holding OKTAVIANIA / DORKAS and CTI's
+Denpasar block while row 2 holds WIDIADA / KADEK - and the host employer's
+BERKEY / HANNAH, sitting in the same record, reaches neither. Sweep: every
+other page byte-identical, and `student-exchange` went from three filled plus
+eighteen unrecognised to seventeen filled and none.
 
 ### What that fixture found immediately
 `homeAddress` and `email` had no guard that reached this page and claimed **four
@@ -1554,8 +1609,6 @@ understood**, 9 admin/workflow columns ignored on purpose, 6 document links
 still to wire, 1 leftover that is a typo of an admin column.
 
 #### Still to do for J1
-- the Additional Point of Contact block on the Student/Exchange Visitor page -
-  blocked on one live J1 Fill report, see below.
 - **one human check**: press *Read J1 documents* on a real row. It needs the
   Microsoft sign-in, and it settles the last open question - whether a real
   SEVIS receipt matches the labels that profile assumes.
@@ -2599,11 +2652,10 @@ single entry fills row 1 and leaves 2 and 3 empty; a gapped repeater puts the
 senior high in `ctl02`; **zero postbacks** throughout. The cross-fixture sweep
 (`test/sweep-fixtures.html`) confirms all twenty-one other pages are unchanged.
 
-**The same mechanism now fits three more places that are still "first only":**
-languages spoken, countries visited in the last five years, and the second
-Additional Point of Contact. Each needs its list published the way `_eduList`
-is, plus - for the point of contact - the repeater ids that only a live Fill
-report can give.
+**The same mechanism now fits two more places that are still "first only":**
+languages spoken, and countries visited in the last five years. Each needs its
+list published the way `_eduList` is. The Additional Point of Contact was the
+third and is done - `_addPocList`, on ids a live Fill report supplied.
 
 `attendedEducation` = YES because CEAC's own help counts *any* secondary school
 attended for any length of time, and every seafarer CTI files has at least an SMA

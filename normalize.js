@@ -623,6 +623,14 @@
        Host Organization Name) or be typed once in Trip details, and the report
        has to say that instead of asking for a re-send that cannot help. */
     ['usPocOrg',      'US point of contact - organisation name (J1: add a "Host organization name" column, or read the DS-7002, or type it in Trip details)'],
+    /* Row 2 of the Additional Point of Contact block. Columns CD-CG give a
+       name, an address, a phone and an email; CEAC also asks that contact for
+       these four and the sheet has none of them. Reported only when EMPTY, so
+       row 1 - which the pack fills completely - stays quiet. */
+    ['addPocCity',    'Additional point of contact - city (not collected for the second contact)'],
+    ['addPocState',   'Additional point of contact - state/province (not collected for the second contact)'],
+    ['addPocPostal',  'Additional point of contact - postal zone (not collected for the second contact)'],
+    ['addPocCountry', 'Additional point of contact - country/region (not collected for the second contact)'],
     ['travelLocation','Places you will visit (J1: the host organisation city)'],
     ['stayAddr1',     'Address where you will stay - street (J1: the host organisation address)'],
     ['stayAddr2',     'Address where you will stay - second line'],
@@ -1694,15 +1702,53 @@
      A row with no name is dropped, so an applicant whose CD cell is empty
      gets one contact and an `Add Another` pressed after it is left alone. */
   function finalise(rec) {
+    /* TWO NAME BOXES on the live page - `tbxADD_POC_SURNAME` and
+       `tbxADD_POC_GIVEN_NAME` - and the two rows reach them by opposite
+       routes, which is the detail worth reading twice:
+
+         row 1 comes from the pack as two separate constants, because the
+           filed print-out renders it `OKTAVIANIA, DORKAS` - CEAC's own
+           "Surnames, Given Names" - and splitting that would swear DORKAS as
+           the surname;
+         row 2 comes from the sheet, whose name column is given-first like
+           every other name column in it, so `splitName()` is right there.
+
+       The address is one free-text cell either way, wrapped across CEAC's two
+       street boxes at their 40-character cap. */
+    const poc2 = splitName(rec.addPoc2Name);
+    const poc1Addr = twoLines(rec.addPoc1Addr1);
+    const poc2Addr = twoLines(rec.addPoc2Address);
     const rows = [
-      { label: 'CTI Indonesia', name: rec.addPoc1Name, addr1: rec.addPoc1Addr1,
+      { label: 'CTI Indonesia',
+        surname: rec.addPoc1Surname, given: rec.addPoc1Given,
+        addr1: poc1Addr[0], addr2: poc1Addr[1],
         city: rec.addPoc1City, state: rec.addPoc1State, postal: rec.addPoc1Postal,
         country: rec.addPoc1Country, phone: rec.addPoc1Phone, email: rec.addPoc1Email },
-      { label: "the sheet's contact", name: rec.addPoc2Name, addr1: rec.addPoc2Address,
+      { label: "the sheet's contact",
+        surname: poc2.surname, given: poc2.given,
+        addr1: poc2Addr[0], addr2: poc2Addr[1],
+        /* No columns for these four - CD-CG give a name, an address, a phone
+           and an email. Left empty rather than copied from row 1: CTI's city
+           against a stranger's name would be filled, plausible and wrong. */
         city: '', state: '', postal: '', country: '',
         phone: rec.addPoc2Phone, email: rec.addPoc2Email },
-    ].filter(r => r.name);
-    if (rows.length) rec._addPocList = rows;
+      /* A ROW IS PRESENT IF IT HAS A SURNAME, not a `name` - there is no
+         single name box on this page and a row carrying one would be a field
+         that means different things in the two rows. An applicant whose CD
+         cell is empty gets one contact, and an `Add Another` pressed after it
+         is left alone by `beyondList()`. */
+    ].filter(r => r.surname);
+    if (!rows.length) return rec;
+    rec._addPocList = rows;
+    /* CEAC MARKS STREET LINE 2 *Optional*, and `twoLines()` only uses it when
+       the address is over the 40-character cap - so an empty one is the wrap
+       saying it was not needed, never a gap. Without this the box reports "no
+       value in record", which popup.js reads as "stale record, send it again",
+       and no re-send can lengthen an address. Same arrangement as stayAddr2
+       and usPocAddr2, and it is keyed on the ROW leaving it empty rather than
+       on the key being absent: with two rows on screen at once, one may wrap
+       and the other not. */
+    if (rows.some(r => !r.addr2)) (rec._blankOnPurpose || []).push('addPocAddr2');
     return rec;
   }
 

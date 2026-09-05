@@ -57,6 +57,22 @@ const REC = {
   payerCompany:'KETUT PURNA YASA', payerSurname:'YASA', payerGivenNames:'KETUT PURNA',
   payerPhone:'85935221510', payerEmail:'cimut@gmail.com',
   payerRelationship:'PARENT', payerAddressSameAsHome:'YES',
+  /* THE ADDITIONAL POINT OF CONTACT IS TWO ROWS ON ONE SCREEN - row 1 is CTI
+     Indonesia from the constants pack, row 2 the sheet's own contact from
+     columns CD-CG. It is here because a leak in this block is invisible any
+     other way: both rows share every sub-label, so a rule that lost its
+     repeater prefix would fill Name (2) with CTI's address and the report
+     would call it correct. */
+  _addPocList:[
+    {label:'CTI Indonesia', surname:'OKTAVIANIA', given:'DORKAS',
+     addr1:'JL. HANG TUAH NO.14B, RENON', addr2:'', city:'DENPASAR',
+     state:'BALI', postal:'80239', country:'INDONESIA',
+     phone:'6285333735407', email:'indonesia@cti-usa.com'},
+    {label:"the sheet's contact", surname:'WIDIADA', given:'KADEK',
+     addr1:'JL GATOT SUBROTO 10, DENPASAR', addr2:'', city:'',
+     state:'', postal:'', country:'', phone:'628123456789',
+     email:'widiada@example.com'},
+  ],
 };
 const out = document.getElementById('out');
 (async () => {

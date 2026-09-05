@@ -1169,7 +1169,12 @@ const listRec = N.toRecord({
   "Current Workplace's Name": 'GRAND HYATT BALI',
   'Previous Work Place Name': 'HOTEL SANUR',
   'Point of contact address': '7000 KALAHARI DR, SANDUSKY, OHIO, 44870',
+  /* The additional-contact list is the one list that needs the constants pack
+     as well - row 1 is CTI Indonesia - so it is published by `finalise()`
+     rather than `toRecord()`. Column CD alone is enough to give it a row. */
+  'Additional point of contact': 'Kadek, Widiada',
 });
+N.finalise(listRec);
 const stray = [];
 for (const k in M.REPEATED) {
   const r = M.REPEATED[k], row = (listRec[r.list] || [])[0];
@@ -1292,14 +1297,47 @@ eq('and the purpose label cannot claim it',
    uses for `surname`, `givenNames`, `homeAddress` and `email`. */
 const exchPage = 'Student/Exchange Visitor Information Additional Point of Contact ' +
                  'Information Name (1) Surnames Given Names ?node=StudentExchangeVisitor exchange';
+const AP = 'dtlStudentAddPOC_ctl00_';
 eq('the contact surname box is not the U.S. contact',
-   ph('dtlAddPoc_ctl00_tbxAPOC_SURNAME', 'Surnames', exchPage), undefined);
+   ph(AP + 'tbxADD_POC_SURNAME', 'Surnames', exchPage), 'addPocSurname');
 eq('nor the second row',
-   ph('dtlAddPoc_ctl01_tbxAPOC_SURNAME', 'Surnames', exchPage), undefined);
+   ph('dtlStudentAddPOC_ctl01_tbxADD_POC_SURNAME', 'Surnames', exchPage), 'addPocSurname');
 eq('nor its email',
-   ph('dtlAddPoc_ctl00_tbxAPOC_EMAIL_ADDR', 'Email Address', exchPage), undefined);
+   ph(AP + 'tbxADD_POC_EMAIL_ADDR', 'Email Address', exchPage), 'addPocEmail');
 eq('nor its phone',
-   ph('dtlAddPoc_ctl00_tbxAPOC_HOME_TEL', 'Telephone Number', exchPage), undefined);
+   ph(AP + 'tbxADD_POC_TEL', 'Telephone Number', exchPage), 'addPocPhone');
+
+/* -- and the rest of the block, on its ids alone ---------------------
+   NO LABELS ON ANY OF THESE TEN RULES. Both rows are on screen at once and
+   every sub-label is shared between them, so a bare "City" here has to stay
+   unclaimed - the repeater prefix is the only thing that separates Name (1)
+   from Name (2), exactly as dtlPrevEmpl separates the two employer blocks. */
+eq('given names',    ph(AP + 'tbxADD_POC_GIVEN_NAME', 'Given Names', exchPage), 'addPocGiven');
+eq('street line 1',  ph(AP + 'tbxADD_POC_ADDR_LN1', 'Street Address (Line 1)', exchPage), 'addPocAddr1');
+eq('street line 2',  ph(AP + 'tbxADD_POC_ADDR_LN2', 'Street Address (Line 2)', exchPage), 'addPocAddr2');
+eq('city',           ph(AP + 'tbxADD_POC_ADDR_CITY', 'City', exchPage), 'addPocCity');
+eq('state',          ph(AP + 'tbxADD_POC_ADDR_STATE', 'State/Province', exchPage), 'addPocState');
+eq('postal',         ph(AP + 'tbxADD_POC_ADDR_POSTAL_CD', 'Postal Zone/ZIP Code', exchPage), 'addPocPostal');
+eq('country',        ph(AP + 'ddlADD_POC_ADDR_CTRY', 'Country/Region', exchPage), 'addPocCountry');
+
+/* THE FOUR `_NA` TWINS SHARE THEIR VALUE BOX'S WHOLE PREFIX, which is the trap
+   already laid in four other blocks - ticking one greys out a value we fill.
+   `kindAllows` separates a text rule from a checkbox on the live page, but
+   these calls pass no type at all, so only the negative lookaheads keep them
+   apart here - and a rule that is right only because the caller happened to
+   say `checkbox` is not right. */
+eq('the state Does-Not-Apply box is claimed by nobody',
+   ph(AP + 'cbxADD_POC_ADDR_STATE_NA', 'Does Not Apply', exchPage), undefined);
+eq('nor the postal one',
+   ph(AP + 'cbxADD_POC_ADDR_POSTAL_CD_NA', 'Does Not Apply', exchPage), undefined);
+eq('nor the telephone one',
+   ph(AP + 'cbxADD_POC_TEL_NA', 'Does Not Apply', exchPage), undefined);
+eq('nor the email one',
+   ph(AP + 'cbxADD_POC_EMAIL_ADDR_NA', 'Does Not Apply', exchPage), undefined);
+
+/* A BARE LABEL FROM THIS BLOCK, OUTSIDE THE REPEATER, MUST STAY UNCLAIMED. */
+eq('no label rule reaches these boxes',
+   ph('tbxOpaqueContactBox', 'Postal Zone/ZIP Code', exchPage), undefined);
 
 /* AND THE U.S. CONTACT PAGE IS UNTOUCHED - that is the half worth guarding.
    The guard must be `exchange`, NOT `point of contact`: this page's own

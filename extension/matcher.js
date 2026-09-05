@@ -781,21 +781,43 @@
          Program Number: P-3-05133
          Do you intend to study in the U.S.? NO
 
-       WHAT IS DELIBERATELY MISSING: the Additional Point of Contact block.
-       CEAC takes TWO contacts there - the print-out numbers them Name (1) and
-       Name (2) - and every sub-label is shared between them: Street Address,
-       City, State/Province, Postal Zone/ZIP Code, Country/Region, Telephone
-       Number, Email Address. A label-only rule would match BOTH rows and write
-       CTI Indonesia's address into the second contact's boxes, which is the
-       wrong-fill class this project keeps getting caught by. Only the repeater
-       id prefix can separate them, the way dtlPrevEmpl does on Previous Work,
-       and that prefix is not known yet. One live Fill report settles it;
-       test/fake-student-exchange.html reproduces both rows so the leak is
-       provable either way. */
+       The Additional Point of Contact block follows below. */
     { key: 'sevisId',       kind: 'text',  ids: [], labels: [/^sevis id/i] },
     { key: 'programNumber', kind: 'text',  ids: [], labels: [/program number/i] },
     { key: 'intendToStudy', kind: 'yesno', ids: [],
       labels: [/do you intend to study in the u\.?\s?s/i] },
+    /* ---- Additional Point of Contact: TEN BOXES, TWICE OVER --------------
+       CEAC takes two contacts here and shows both rows at once, so one Fill
+       press fills them both. Every sub-label is shared between the rows -
+       Street Address, City, State/Province, Postal Zone/ZIP Code,
+       Country/Region, Telephone Number, Email Address - so a label-only rule
+       would match BOTH and write CTI Indonesia's address into a stranger's
+       boxes. **Only the repeater prefix separates them**, exactly as
+       `dtlPrevEmpl` does on Previous Work, and these rules carry NO labels at
+       all for that reason: a bare "City" here must stay unclaimed.
+
+       THE IDS ARE READ OFF A LIVE FILL REPORT, not guessed - twenty controls
+       under `dtlStudentAddPOC_ctl00_` and `dtlStudentAddPOC_ctl01_`. That
+       report is also what confirmed `NOT_EXCHANGE_PAGE` holds on the real
+       page: `tbxADD_POC_SURNAME` contains `POC_SURNAME`, and the box came
+       back unrecognised rather than filled with the U.S. contact.
+
+       The four `_NA` twins share their value box's whole id prefix -
+       `ADD_POC_ADDR_STATE` against `ADD_POC_ADDR_STATE_NA`, and the same for
+       postal, telephone and email. `kindAllows` already separates a text rule
+       from a checkbox, but the lookaheads are here as well because this is the
+       fourth block where that trap has been laid and ticking one of those
+       would grey out a value we do fill. */
+    { key: 'addPocSurname', kind: 'text', ids: [/ADD_POC_SURNAME/i] },
+    { key: 'addPocGiven',   kind: 'text', ids: [/ADD_POC_GIVEN_NAME/i] },
+    { key: 'addPocAddr1',   kind: 'text', ids: [/ADD_POC_ADDR_LN1/i] },
+    { key: 'addPocAddr2',   kind: 'text', ids: [/ADD_POC_ADDR_LN2/i] },
+    { key: 'addPocCity',    kind: 'text', ids: [/ADD_POC_ADDR_CITY/i] },
+    { key: 'addPocState',   kind: 'text', ids: [/ADD_POC_ADDR_STATE(?!.*_NA)/i] },
+    { key: 'addPocPostal',  kind: 'text', ids: [/ADD_POC_ADDR_POSTAL(?!.*_NA)/i] },
+    { key: 'addPocCountry', kind: 'text', ids: [/ADD_POC_ADDR_CTRY/i] },
+    { key: 'addPocPhone',   kind: 'text', ids: [/ADD_POC_TEL(?!.*_NA)/i] },
+    { key: 'addPocEmail',   kind: 'text', ids: [/ADD_POC_EMAIL_ADDR(?!.*_NA)/i] },
     /* Sign and Submit. The filler fills the three answers CEAC asks for here
        and NOTHING else: the CAPTCHA is FORBIDDEN (/codetextbox/) and the Sign
        and Submit button is FORBIDDEN too (/sign(and)?submit/, /btnsign/).
@@ -1112,6 +1134,21 @@
     eduCourse:  { list: '_eduList', field: 'course' },
     eduFrom:    { list: '_eduList', field: 'from' },
     eduTo:      { list: '_eduList', field: 'to' },
+    /* BOTH ROWS ARE ON SCREEN AT ONCE here, unlike every other repeater in
+       this file - CEAC renders Name (1) and Name (2) together - so one Fill
+       press fills them both and neither row costs a postback. The list is
+       built by `normalize.finalise()`: row 1 from the constants pack, row 2
+       from sheet columns CD-CG. */
+    addPocSurname: { list: '_addPocList', field: 'surname' },
+    addPocGiven:   { list: '_addPocList', field: 'given' },
+    addPocAddr1:   { list: '_addPocList', field: 'addr1' },
+    addPocAddr2:   { list: '_addPocList', field: 'addr2' },
+    addPocCity:    { list: '_addPocList', field: 'city' },
+    addPocState:   { list: '_addPocList', field: 'state' },
+    addPocPostal:  { list: '_addPocList', field: 'postal' },
+    addPocCountry: { list: '_addPocList', field: 'country' },
+    addPocPhone:   { list: '_addPocList', field: 'phone' },
+    addPocEmail:   { list: '_addPocList', field: 'email' },
   };
 
   function isDoesNotApply(ctl) {

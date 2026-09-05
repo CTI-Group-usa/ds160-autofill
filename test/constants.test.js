@@ -142,9 +142,16 @@ const poc = N2.finalise(C.apply(N2.toRecord({
   'Additional point of contact phone number': '628123456789',
   'Additional point of contact email Address': 'sari@example.com',
 })));
+/* TWO NAME BOXES, AND THE TWO ROWS REACH THEM BY OPPOSITE ROUTES.
+   Row 1 comes from the pack as two separate constants, because the filed
+   print-out renders it `OKTAVIANIA, DORKAS` - CEAC's own "Surnames, Given
+   Names" - and splitName() takes the LAST token as the surname, so splitting
+   that string would have sworn DORKAS as the surname. Row 2's column is
+   given-first like every other name column in the sheet, so splitName() is
+   right there. The two look alike on the page and mean opposite things. */
 eq('two contacts, CTI first',
-   poc._addPocList.map(r => r.name).join(' | '),
-   "OKTAVIANIA, DORKAS | NI WAYAN SARI");
+   poc._addPocList.map(r => r.surname + '/' + r.given).join(' | '),
+   'OKTAVIANIA/DORKAS | SARI/NI WAYAN');
 eq('row 1 carries the whole CTI block',
    [poc._addPocList[0].city, poc._addPocList[0].state,
     poc._addPocList[0].postal, poc._addPocList[0].country].join('/'),
@@ -224,7 +231,7 @@ const c1drec = C.apply({ fullName: 'BUDI SANTOSO' });
 eq('a C1/D record is stamped c1d', c1drec._class, 'c1d');
 eq('nothing from the exchange-visitor page leaks the other way',
    c1drec.intendToStudy, undefined);
-eq('nor the CTI additional contact', c1drec.addPoc1Name, undefined);
+eq('nor the CTI additional contact', c1drec.addPoc1Surname, undefined);
 eq('C1/D purpose is unchanged', c1drec.purposeOfTrip, 'ALIEN IN TRANSIT (C)');
 eq('and it still answers No to specific travel plans', c1drec.specificTravelPlans, 'NO');
 

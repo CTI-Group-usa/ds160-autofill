@@ -20,17 +20,32 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
        Program Number: P-3-05133
        Do you intend to study in the U.S.? NO
 
-     WHY BOTH CONTACT ROWS ARE HERE. CEAC takes TWO additional points of
-     contact, and every sub-label is shared between them - Street Address, City,
-     State/Province, Postal Zone/ZIP Code, Country/Region, Telephone Number,
-     Email Address. A label-only rule would match BOTH rows and write CTI
-     Indonesia's address into the second contact's boxes: filled, plausible and
-     wrong, which is the worst class of bug this project produces. So there are
-     no rules for this block yet, and these fourteen boxes SHOULD come back
-     unrecognised - that is the honest state, and it is what one live Fill
-     report turns into the repeater prefix (the way dtlPrevEmpl separates the
-     two employer blocks on Previous Work). Do not "fix" this fixture by
-     deleting the second row; it is what makes the leak provable. -->
+     THE CONTACT BLOCK'S IDS ARE REAL, and they are the only real ones here.
+     They come from a live Fill report - twenty controls under
+     `dtlStudentAddPOC_ctl00_` and `_ctl01_`, plus the eight `_NA` checkboxes -
+     and they are what turned this block from "no rules on purpose" into ten
+     rules keyed on the repeater prefix.
+
+     WHY BOTH ROWS ARE HERE. CEAC takes TWO additional points of contact and
+     shows both at once, and every sub-label is shared between them - Street
+     Address, City, State/Province, Postal Zone/ZIP Code, Country/Region,
+     Telephone Number, Email Address. A label-only rule would match BOTH rows
+     and write CTI Indonesia's address into the second contact's boxes: filled,
+     plausible and wrong, which is the worst class of bug this project produces.
+     Only the repeater prefix separates them, the way dtlPrevEmpl does on
+     Previous Work. Do not "fix" this fixture by deleting the second row; it is
+     what makes the leak provable.
+
+     THE `_NA` CHECKBOXES ARE HERE FOR THE SAME REASON. All four share their
+     value box's whole id prefix (`ADD_POC_ADDR_STATE` against
+     `..._STATE_NA`), which is the trap that has already been laid in four
+     other blocks - ticking one greys out a value we do fill.
+
+     AND THE ROW-1 IDS CARRY `POC_SURNAME` / `POC_EMAIL_ADDR`, which is how a
+     live application came back with the HOST employer's contact in both rows:
+     every `usPoc*` rule matches those bare fragments and the id pass runs
+     first. `NOT_EXCHANGE_PAGE` is what keeps them off, and this page is where
+     that is proved. -->
 <h2 id="ctl00_SiteContentPlaceHolder_FormView1_lblTitle">Student/Exchange Visitor Information</h2>
 
 <table>
@@ -57,25 +72,39 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
   <legend>Name (1)</legend>
   <table>
     <tr><td>Surnames</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_SURNAME_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_SURNAME"></td></tr>
     <tr><td>Given Names</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_GIVEN_NAME_PLACEHOLDER"></td></tr>
-    <tr><td>Street Address</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_ADDR_LN1_PLACEHOLDER" maxlength="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_GIVEN_NAME"></td></tr>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_ADDR_LN1" maxlength="40"></td></tr>
+    <tr><td>Street Address (Line 2)<br><i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_ADDR_LN2" maxlength="40"></td></tr>
     <tr><td>City</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_ADDR_CITY_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_ADDR_CITY"></td></tr>
     <tr><td>State/Province</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_ADDR_STATE_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_ADDR_STATE">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_ADDR_STATE_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_ADDR_STATE_NA">Does Not Apply</label>
+        </td></tr>
     <tr><td>Postal Zone/ZIP Code</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_ADDR_POSTAL_CD_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_ADDR_POSTAL_CD">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_ADDR_POSTAL_CD_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_ADDR_POSTAL_CD_NA">Does Not Apply</label>
+        </td></tr>
     <tr><td>Country/Region</td>
-        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_ddlCountry_PLACEHOLDER">
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_ddlADD_POC_ADDR_CTRY">
               <option value="">- SELECT ONE -</option><option>INDONESIA</option>
               <option>UNITED STATES OF AMERICA</option></select></td></tr>
     <tr><td>Telephone Number</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_HOME_TEL_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_TEL">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_TEL_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_TEL_NA">Does Not Apply</label>
+        </td></tr>
     <tr><td>Email Address</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl00_tbxAPOC_EMAIL_ADDR_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_tbxADD_POC_EMAIL_ADDR">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_EMAIL_ADDR_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl00_cbxADD_POC_EMAIL_ADDR_NA">Does Not Apply</label>
+        </td></tr>
   </table>
 </fieldset>
 
@@ -83,25 +112,39 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
   <legend>Name (2)</legend>
   <table>
     <tr><td>Surnames</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_SURNAME_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_SURNAME"></td></tr>
     <tr><td>Given Names</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_GIVEN_NAME_PLACEHOLDER"></td></tr>
-    <tr><td>Street Address</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_ADDR_LN1_PLACEHOLDER" maxlength="40"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_GIVEN_NAME"></td></tr>
+    <tr><td>Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_ADDR_LN1" maxlength="40"></td></tr>
+    <tr><td>Street Address (Line 2)<br><i>*Optional</i></td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_ADDR_LN2" maxlength="40"></td></tr>
     <tr><td>City</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_ADDR_CITY_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_ADDR_CITY"></td></tr>
     <tr><td>State/Province</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_ADDR_STATE_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_ADDR_STATE">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_ADDR_STATE_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_ADDR_STATE_NA">Does Not Apply</label>
+        </td></tr>
     <tr><td>Postal Zone/ZIP Code</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_ADDR_POSTAL_CD_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_ADDR_POSTAL_CD">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_ADDR_POSTAL_CD_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_ADDR_POSTAL_CD_NA">Does Not Apply</label>
+        </td></tr>
     <tr><td>Country/Region</td>
-        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_ddlCountry_PLACEHOLDER">
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_ddlADD_POC_ADDR_CTRY">
               <option value="">- SELECT ONE -</option><option>INDONESIA</option>
               <option>UNITED STATES OF AMERICA</option></select></td></tr>
     <tr><td>Telephone Number</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_HOME_TEL_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_TEL">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_TEL_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_TEL_NA">Does Not Apply</label>
+        </td></tr>
     <tr><td>Email Address</td>
-        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlAddPoc_ctl01_tbxAPOC_EMAIL_ADDR_PLACEHOLDER"></td></tr>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_tbxADD_POC_EMAIL_ADDR">
+        <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_EMAIL_ADDR_NA">
+        <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlStudentAddPOC_ctl01_cbxADD_POC_EMAIL_ADDR_NA">Does Not Apply</label>
+        </td></tr>
   </table>
 </fieldset>
 
