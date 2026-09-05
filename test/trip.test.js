@@ -304,5 +304,38 @@ eq('nothing is invented', T.apply({ passportNumber: 'HOST2',
 eq('a closed gate keeps the city out', T.apply({ passportNumber: 'HOST3',
    specificTravelPlans: 'NO', hostCity: 'RICHMOND' }).departureCity, undefined);
 
+
+/* -- THE U.S. CONTACT HAS THREE POSSIBLE SOURCES, IN THIS ORDER -----
+   On J1 the point of contact is the host organisation - a different one for
+   nearly every participant - so it is per applicant, not a constant. Three
+   things can supply it and the order is the whole design:
+
+     1. this applicant's own entry, which is also where `applyParsed` stores
+        what the DS-7002 gave, so an operator can correct a document;
+     2. the sheet's `Point of contact` cell, read through `from`;
+     3. nothing - C1/D's cruise-line constants then fill the boxes, because
+        `apply()` skips an empty value and never overwrites a set one.
+
+   `usPocOrg` has no `from`: the sheet has NO host-organisation-name column at
+   all, which is why the user pointed at Section 4 of the DS-7002. */
+const pocRec = { passportNumber: 'POC1',
+                 hostPocSurname: 'BERKEY', hostPocGiven: 'HANNAH' };
+eq('the sheet fills the surname', T.apply(pocRec).usPocSurname, 'BERKEY');
+eq('and the given names',        T.apply(pocRec).usPocGiven, 'HANNAH');
+eq('the organisation has no sheet source', T.apply(pocRec).usPocOrg, undefined);
+
+T.set(pocRec, 'usPocSurname', 'JACKSON');
+T.set(pocRec, 'usPocOrg', 'Kalahari Resort - Sandusky OH');
+eq('a document or the operator wins', T.apply(pocRec).usPocSurname, 'JACKSON');
+eq('the other half is untouched',     T.apply(pocRec).usPocGiven, 'HANNAH');
+eq('and the organisation lands',      T.apply(pocRec).usPocOrg,
+   'Kalahari Resort - Sandusky OH');
+
+/* C1/D MUST BE UNAFFECTED. No sheet column, no entry - all three stay empty,
+   `apply()` sends nothing, and that pack's constants fill the boxes. */
+const noPocTrip = T.apply({ passportNumber: 'POC2' });
+eq('nothing is invented on C1/D', noPocTrip.usPocSurname, undefined);
+eq('nor the organisation',        noPocTrip.usPocOrg, undefined);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

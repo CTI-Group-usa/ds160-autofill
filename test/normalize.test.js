@@ -1093,5 +1093,29 @@ const wrapped = D.toRecord({ 'Name': 'A, B',
 eq('a long host street wraps', wrapped.stayAddr2, 'SUITE 900 BUILDING C');
 eq('on both blocks',           wrapped.usPocAddr2, 'SUITE 900 BUILDING C');
 
+
+/* -- the U.S. contact is one cell and two boxes ---------------------
+   `Point of contact` holds a person; CEAC has Surnames and Given Names. The
+   sheet's cell was landing NOWHERE - the FOURTH time that shape has turned up,
+   after `payerPersonPhone`, `payerPersonName` and `usPocAddress`, and the live
+   report said `usPocSurname - no value in record` on a row whose cell is
+   filled.
+
+   Published under `hostPoc*` rather than written onto `usPocSurname`, because
+   those are trip fields now: the DS-7002 names the supervisor too, and the
+   operator has to be able to correct either. trip.js reads these LAST. */
+const poc = D.toRecord({ 'Name': 'A, B', 'Point of contact': 'Hannah Berkey' });
+eq('the contact surname',    poc.hostPocSurname, 'BERKEY');
+eq('and the given names',    poc.hostPocGiven, 'HANNAH');
+eq('written for trip.js, not straight onto the box',
+   poc.usPocSurname, undefined);
+has('the split is named as a guess', D.validate(poc).warnings,
+    'usPocSurname', 'split as a guess');
+/* NO COLUMN, NO ASSERTION - so C1/D's cruise-line constants still fill the
+   boxes and the panel switch stays live. */
+const noPoc = D.toRecord({ 'Name': 'A, B' });
+eq('nothing is invented', noPoc.hostPocSurname, undefined);
+none('and nothing is warned about', D.validate(noPoc).warnings, 'usPocSurname');
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

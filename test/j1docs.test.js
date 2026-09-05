@@ -243,9 +243,20 @@ eq('a redacted id is skipped in the comparison',
 /* The sponsor, the stipend, the hours, the field of study are read so the
    operator can see them and so the cross-checks have something to compare -
    not because any DS-160 box asks for them. */
-eq('only two answers reach the form',
-   Object.keys(P.answers(a)).sort().join(','), 'arrivalDate,departureDate');
-eq('the host organisation is not one of them', P.answers(a).hostOrgName, undefined);
+/* The U.S. contact joined them: CEAC wants an organisation name and two name
+   boxes, the sheet has one cell for the person and NO column for the
+   organisation, so this form is the only source for it. `usPocOrg` comes from
+   `Host Organization Name` on the revision that parses and from Section 4's
+   `Phase Site Name` on the other. */
+eq('the answers that reach the form',
+   Object.keys(P.answers(a)).sort().join(','),
+   'arrivalDate,departureDate,usPocOrg');
+/* Under its OWN name, not the parser's - `hostOrgName` is what the document
+   calls it and `usPocOrg` is what the DS-160 box is. Everything else stays
+   read-but-not-filled. */
+eq('the host organisation is named for its box', P.answers(a).usPocOrg,
+   'The Westin Richmond');
+eq("not under the parser's own key", P.answers(a).hostOrgName, undefined);
 eq('nor the SEVIS id', P.answers(a).sevisId, undefined);
 
 // -- the SEVIS receipt is honest about being unconfirmed -------------
@@ -314,8 +325,17 @@ const blankForm = P.parse(
   'Title Email Phone Fax Please list the names and titles of those');
 eq('it is still recognised', blankForm.doc, 'ds7002');
 ok('and reported empty', !!blankForm.hint);
+/* The longer Section 4 label claims it now, so the junk lands in
+   `supervisorName` instead - but junk it remains: `Title Email`, the two
+   labels that follow. */
 ok('it did pick up label text as a value',
-   /Host Organization/.test(blankForm.fields.supervisor || ''));
+   /Title/.test(blankForm.fields.supervisorName || blankForm.fields.supervisor || ''));
+/* AND THAT IS WHY `answers()` REFUSES A HINTED DOCUMENT. Split, `Title Email`
+   becomes Surname "Email" / Given "Title" - two capitalised words that no
+   shape check can reject, heading for the U.S. Contact page. The dates were
+   safe only because `parseDate` refuses words; the moment a document supplied
+   a NAME, luck ran out. */
+eq('and answers nothing at all', Object.keys(P.answers(blankForm)).length, 0);
 /* THE GATE. A document that gave up none of its required fields cannot be
    cross-checked, and trying is worse than not. */
 eq('so nothing is cross-checked against it',

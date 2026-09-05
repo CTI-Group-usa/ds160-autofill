@@ -985,6 +985,25 @@
       rec._hostPlace = !!place;
     }
 
+    /* THE U.S. CONTACT IS A PERSON AND CEAC ASKS FOR TWO BOXES. The sheet
+       holds one cell, `Point of contact`, and the matcher has `usPocSurname`
+       and `usPocGiven` - so it was landing NOWHERE. That is the FOURTH time
+       this exact shape has turned up, after `payerPersonPhone`,
+       `payerPersonName` and `usPocAddress`, and every one of them was a value
+       sitting in the sheet with the report naming a cause that was not true.
+
+       Published under its own names rather than written straight onto
+       `usPocSurname`, because those are trip fields now: the DS-7002 names the
+       supervisor too, and the operator must be able to correct either. trip.js
+       reads these as the LAST resort - their own entry, then the document,
+       then this. Same arrangement as `hostCity`. */
+    if (rec.usPocName) {
+      const poc = splitName(rec.usPocName);
+      rec.hostPocSurname = poc.surname;
+      rec.hostPocGiven   = poc.given;
+      rec._hostPocGuessed = poc.guessed;
+    }
+
     if (rec.ssn)           rec.ssnNA = 'NO';
     if (rec.taxId)         rec.taxIdNA = 'NO';
     if (rec.monthlyIncome) rec.monthlyIncomeNA = 'NO';
@@ -1182,6 +1201,15 @@
                     '", which does not end in a US city, state and ZIP ' +
                     'code - so the stay city, state and ZIP, and the arrival ' +
                     'and departure cities, have to be typed in');
+
+    /* AND SO IS THE U.S. CONTACT'S. One cell, two boxes, last token taken as
+       the surname - the same guess and worth the same sentence. It is only
+       raised when the sheet is the source: a DS-7002 that names the supervisor
+       in its own cell is not a guess, and trip.js prefers that. */
+    if (rec._hostPocGuessed)
+      W('usPocSurname', 'The U.S. contact name is split as a guess: Surname "' +
+                        rec.hostPocSurname + '" / Given "' + rec.hostPocGiven +
+                        '" - check it against the DS-7002');
 
     /* THE PAYER'S NAME SPLIT IS THE SAME GUESS AS THE APPLICANT'S, so it is
        named the same way. Nobody checks this half against a passport, but the

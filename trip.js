@@ -63,6 +63,30 @@
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
     { key: 'departureCity', page: 'Travel', label: 'Departure City', def: '', from: 'hostCity',
       showWhen: { key: 'specificTravelPlans', is: 'YES' } },
+    /* THE U.S. POINT OF CONTACT IS PER APPLICANT ON J1 - it is the host
+       organisation, and a different one for nearly every participant. On C1/D
+       it is the cruise line and lives in that pack; these stay empty there,
+       `apply()` skips an empty value, and the constants still fill the boxes.
+
+       They are HERE rather than derived onto the record because there are
+       three possible sources and the order matters:
+         1. this applicant's own entry - an operator correcting a document;
+         2. the DS-7002, which `applyParsed` stores in that same slot;
+         3. the sheet's `Point of contact` cell, read through `from`.
+       Deriving them onto the record would put the sheet FIRST, because
+       `apply()` never overwrites a value the record already holds - exactly
+       backwards, and the same trap `arrivalCity` was kept out of.
+
+       `usPocOrg` has no `from`: the sheet has no host-organisation-name
+       column at all. It comes from the DS-7002's Phase Site Name, or it is
+       typed here. */
+    { key: 'usPocSurname', page: 'U.S. Contact', label: 'Contact person - surnames',
+      def: '', from: 'hostPocSurname',
+      hint: 'The host organisation contact. From the DS-7002, or the sheet.' },
+    { key: 'usPocGiven', page: 'U.S. Contact', label: 'Contact person - given names',
+      def: '', from: 'hostPocGiven' },
+    { key: 'usPocOrg', page: 'U.S. Contact', label: 'Organization name', def: '',
+      hint: 'The DS-7002 calls it the Phase Site Name.' },
     { key: 'jobTitleAboard', page: 'Crew Visa', label: 'Specific job title aboard the vessel', def: '',
       hint: 'The "Working in the Capacity of" line in the supporting letter.' },
     { key: 'vesselName', page: 'Crew Visa', label: 'Seagoing Ship / Vessel Name', def: '',

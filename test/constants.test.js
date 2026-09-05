@@ -119,7 +119,15 @@ eq('J1 ticks the SSN box by default', j1rec.ssnNA, 'YES');
 eq('and the tax ID box', j1rec.taxIdNA, 'YES');
 eq('and the monthly income box', j1rec.monthlyIncomeNA, 'YES');
 eq('no ENGLISH language constant leaks in', j1rec.languageSpoken, undefined);
-eq('and no Do-Not-Know on the organisation name', j1rec.usPocOrgNA, undefined);
+/* THE ORGANISATION BOX STAYS CLEAR ON J1 - but 'NO' says so, where omitting
+   the key used to. The page behaves the same either way; the report does not.
+   Omitted, it came back as `usPocOrgNA - no value in record` on every J1 row,
+   which is the string popup.js reads as "stale record, send it again" - and no
+   re-send could ever clear it. 'NO' is the `ssnNA` device: it blocks a default
+   and setCheckbox leaves the box unticked. */
+eq('J1 leaves the organisation Do-Not-Know clear', j1rec.usPocOrgNA, 'NO');
+eq("and C1/D still ticks it", (C.use('c1d'), C.apply({ fullName: 'A B' }).usPocOrgNA), 'YES');
+C.use('j1');
 
 /* THE LEAK THAT USED TO MATTER, TESTED WITH THE WRONG PACK ON PURPOSE.
    A J1 row filed while the C1/D pack is active still keeps its salary and its

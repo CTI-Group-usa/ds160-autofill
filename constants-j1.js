@@ -211,6 +211,20 @@
        relationship is not a column, and it is the same on every placement.
        Note the Organization Name IS filled here, where C1/D ticks
        "Do Not Know" - so there is no usPocOrgNA in this pack. */
+    /* LEFT UNTICKED, EXPLICITLY. J1 fills the Organization Name - the host
+       employer - where C1/D ticks "Do Not Know", so this pack used to omit the
+       key entirely. Omitting it is not the same as answering it: the box then
+       reported `usPocOrgNA - no value in record` on every J1 row, which is the
+       string popup.js reads as "stale record, send it again", and no re-send
+       could ever clear it.
+
+       'NO' is the same device as `ssnNA`: it blocks any default and
+       `setCheckbox` leaves the box clear. */
+    { key: 'usPocOrgNA', kind: 'checkbox', page: 'U.S. Point of Contact',
+      label: 'Organization Name - Do Not Know', def: 'NO',
+      why: 'J1 fills the host organisation name, so this box stays clear. ' +
+           'The name comes from the DS-7002 (Phase Site Name) or is typed in ' +
+           'the U.S. contact block for that applicant.' },
     { key: 'usPocRelationship', kind: 'text', page: 'U.S. Point of Contact',
       label: 'U.S. contact - relationship to you', def: 'EMPLOYER',
       why: 'The J1 host is the participant\'s employer. From the filed sample; change it ' +

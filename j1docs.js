@@ -168,7 +168,18 @@
       { label: 'U.S. Department of State', key: null },
       { label: 'Exchange Visitor Hours per week', key: 'hoursPerWeek' },
       { label: 'Stipend', key: 'stipend' },
+      /* SECTION 4 SPELLS THE SUPERVISOR'S NAME OUT ON ITS OWN, and gives the
+         title, phone and email their own cells beside it. The short label
+         below is the older revision's, where all four run together into one
+         undecidable string - so BOTH are declared and the longest wins where
+         both appear. Only the clean one is split into surname and given
+         names; splitting the glued run would put a job title in a name box. */
+      { label: 'Main Program Supervisor/POC at Host Organization', key: 'supervisorName' },
       { label: 'Main Program Supervisor/POC', key: 'supervisor' },
+      /* The host organisation under its Section 4 name. CEAC's U.S. Contact
+         page wants it in Organization Name, and the sheet has no column for
+         it at all. */
+      { label: 'Phase Site Name', key: 'phaseSiteName' },
       { label: 'Phone', key: 'supervisorPhone' },
       /* Cut points only - these labels are not wanted as values, but naming
          them stops the value before them running on into their text. */
@@ -182,6 +193,19 @@
       { label: 'Non-Monetary Compensation', key: null },
       { label: 'Certifications', key: null },
       { label: 'Additional Participant Details', key: null },
+      /* Section 4 cut points. None of these is wanted as a value; naming them
+         stops the value BEFORE each one running on into its label text. */
+      { label: 'The Exchange Visitor is', key: null },
+      { label: 'Supervisor Contact Information', key: null },
+      { label: 'Training/Internship Field', key: null },
+      { label: 'Primary Phase Supervisor', key: null },
+      { label: 'Supervisor Title', key: null },
+      { label: 'Phase Name', key: null },
+      { label: 'Start Date', key: null },
+      { label: 'End Date', key: null },
+      { label: 'Description of Trainee', key: null },
+      { label: 'E-mail', key: null },
+      { label: 'Phone Number', key: null },
     ],
     patterns: [],
     /* SHORT LABELS ARE SCOPED TO THEIR SECTION, and two measurements are why.
@@ -449,6 +473,30 @@
       out.departureCity = out.hostCity;
     }
 
+    /* THE U.S. POINT OF CONTACT IS THE HOST ORGANISATION AND ITS SUPERVISOR.
+       CEAC asks for an organisation name and two name boxes; the sheet has one
+       cell for the person and NO column at all for the organisation, which is
+       why the user pointed at this form.
+
+       All three are trip fields, so `applyParsed` stores them as this
+       applicant's own entry and they stay editable - the operator can correct
+       a document, which is the whole point of storing them per applicant. */
+    const org = out.hostOrgName || out.phaseSiteName;
+    if (org) out.usPocOrg = org;
+    /* SPLIT ONLY THE CLEAN CELL. On the older revision the supervisor arrives
+       as `Jackson, SheraeHuman Resources Managersherae.jackson@...` - name,
+       title and email with no boundary between them, which this file already
+       records as undecidable. Splitting THAT would put "Managersherae" in a
+       given-name box on a sworn form. `supervisorName` only exists when the
+       form labelled the cell on its own. */
+    if (out.supervisorName) {
+      const parts = String(out.supervisorName).trim().split(/\s+/).filter(Boolean);
+      if (parts.length > 1) {
+        out.usPocSurname = parts[parts.length - 1];
+        out.usPocGiven = parts.slice(0, -1).join(' ');
+      }
+    }
+
     /* Applied LAST, so it judges the finished value rather than a fragment
        part-way through the normalising above. */
     for (const k in out) {
@@ -603,9 +651,26 @@
      sponsor, the stipend, the hours, the field of study - is read so the
      operator can see it and so the cross-checks have something to compare,
      not because the form asks for it. */
-  const ANSWER_KEYS = ['arrivalDate', 'departureDate', 'arrivalCity', 'departureCity'];
+  const ANSWER_KEYS = ['arrivalDate', 'departureDate', 'arrivalCity', 'departureCity',
+                       'usPocOrg', 'usPocSurname', 'usPocGiven'];
   function answers(parsed) {
     const out = {};
+    /* A DOCUMENT THAT GAVE UP NONE OF ITS REQUIRED FIELDS ANSWERS NOTHING.
+       `hint` means exactly that, and `crossCheck` has returned early on it
+       since the first live run. This is the same gate on the other side, and
+       a probe is what showed it was missing: an interactive DS-7002's page
+       text is the blank form's LABELS, so
+
+         Main Program Supervisor/POC at Host Organization | Title | Email
+
+       gave `supervisorName = "Title Email"`, which split into Surname "Email",
+       Given "Title" - two capitalised words, no shape check can refuse them,
+       and they would have gone onto the U.S. Contact page as the contact's
+       name. Filled, plausible, wrong, and invisible.
+
+       The dates were safe only by luck: they go through `parseDate`, which
+       refuses words. The moment a document supplied a NAME, luck ran out. */
+    if (parsed.hint) return out;
     for (const k of ANSWER_KEYS) if (parsed.fields && parsed.fields[k]) out[k] = parsed.fields[k];
     return out;
   }

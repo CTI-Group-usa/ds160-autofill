@@ -839,10 +839,63 @@ The sheet's own column answers all five stay boxes and both cities today - the
 Kalahari row proves it end to end - so the document buys a cross-check, not an
 answer.
 
-**Still offered, not done:** `Organization Name` inside Section 2 would give
-the U.S. contact's organisation name on that revision. It is left alone
-because `hostOrgName` already reads on the revision that parses, and adding a
-shorter alias risks the value that works for a benefit nobody asked for.
+### Section 4 answers the U.S. Contact page (2026-09-05)
+A live report on that page filled the address, phone and email and left the
+name and the organisation empty. The user pointed at the form: *"kamu bisa
+menemukan informasi ini di DS 7002 ... untuk organization name kamu bisa
+menemukan di section phrase information di subsection phase site name"*.
+
+**The sheet's own cell was landing nowhere, again.** `Point of contact` holds a
+person and CEAC asks for Surnames and Given Names, so `usPocName` reached no
+box at all - **the fourth time this exact shape has turned up**, after
+`payerPersonPhone`, `payerPersonName` and `usPocAddress`. Every one of them was
+a value sitting in the sheet with the report naming a cause that was not true.
+
+**Three sources, and the order is the design.** These are per applicant on J1 -
+the host organisation differs for nearly every participant - so they are trip
+fields now:
+
+| | |
+|---|---|
+| 1 | **this applicant's own entry** - which is also where `applyParsed` stores what the DS-7002 gave, so an operator can correct a document |
+| 2 | **the sheet**, through `from: 'hostPocSurname'` / `'hostPocGiven'` |
+| 3 | **nothing** - C1/D's cruise-line constants then fill the boxes, because `apply()` skips an empty value and never overwrites a set one |
+
+`usPocOrg` has **no `from`**: the sheet has no host-organisation-name column at
+all, which is exactly why the user pointed at the form. It comes from
+`Host Organization Name` on the revision that parses, or Section 4's
+`Phase Site Name` on the other.
+
+**`usPocOrgNA` is `'NO'` in the J1 pack now, not absent.** Omitting a key is not
+the same as answering it: the box reported *"no value in record"* on every J1
+row, which is the string `popup.js` reads as *"stale record, send it again"*,
+and no re-send could ever clear it. `'NO'` is the `ssnNA` device - it blocks a
+default and `setCheckbox` leaves the box clear.
+
+#### THE PROBE CAUGHT A WRONG FILL I HAD JUST WRITTEN
+Section 4 labels the supervisor on its own, so the name can be split - unlike
+the older revision, where it arrives as
+`Jackson, SheraeHuman Resources Managersherae.jackson@...` and the boundary is
+undecidable. Only the clean cell is split. That much was deliberate.
+
+What was not: on an **interactive** DS-7002 the page text is the blank form's
+labels, so
+
+> `Main Program Supervisor/POC at Host Organization` | `Title` | `Email`
+
+gave `supervisorName = "Title Email"`, which split into **Surname "Email",
+Given "Title"** - two capitalised words that no shape check can refuse, heading
+for the U.S. Contact page as the contact's name.
+
+**`answers()` now returns nothing when `parsed.hint` is set.** `crossCheck` has
+returned early on that flag since the first live run; this is the same gate on
+the other side, and it was missing. The dates were safe only because
+`parseDate` refuses words - **the moment a document supplied a NAME, luck ran
+out.**
+
+Verified in a browser: nine fields fill on the U.S. Contact page, `usPocOrg`
+among them, the Do-Not-Know box stays **unticked**, nothing unrecognised. Sweep:
+no unmatched drift on any page.
 
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
