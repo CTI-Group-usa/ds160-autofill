@@ -897,6 +897,30 @@ Verified in a browser: nine fields fill on the U.S. Contact page, `usPocOrg`
 among them, the Do-Not-Know box stays **unticked**, nothing unrecognised. Sweep:
 no unmatched drift on any page.
 
+#### The next report left two lines that no re-send could clear
+The name filled from the sheet. Two lines remained, and both were asking for
+something that cannot help:
+
+**`usPocOrg - no value in record`.** There is no column for it *anywhere* - the
+four `Point of contact` columns name the person, the address, the phone and the
+email. It joins `MISSING_FROM_INTAKE`, so the popup shows the calm grey *"the
+intake form does not collect this"* instead of the red re-send banner, and the
+line names both ways to fill it: **press *Read J1 documents*** (Section 4's
+Phase Site Name, or Host Organization Name), or **type it once in Trip
+details** - the box is there, under a *U.S. Contact* heading, with its hint.
+
+**`usPocAddr2 - no value in record`.** CEAC marks the second street line
+*Optional* and `7000 Kalahari Dr` fits the first box with room to spare, so it
+is empty **on purpose** - it joins `_blankOnPurpose` alongside `stayAddr2`.
+Guarded on the address having been read: with no host address at all these are
+honestly missing, and `MISSING_FROM_INTAKE` says so instead. Verified all three
+ways - short street, long street (line 2 fills), and no address.
+
+That is the same trap for the sixth time in two days, and worth stating as a
+rule: **before writing "no value in record", ask whether re-sending the
+applicant could possibly change it.** If not, it belongs in
+`MISSING_FROM_INTAKE` or `_blankOnPurpose`, never in the banner.
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it

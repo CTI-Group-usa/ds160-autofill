@@ -1117,5 +1117,34 @@ const noPoc = D.toRecord({ 'Name': 'A, B' });
 eq('nothing is invented', noPoc.hostPocSurname, undefined);
 none('and nothing is warned about', D.validate(noPoc).warnings, 'usPocSurname');
 
+
+/* -- two lines the report was asking to be re-sent for ---------------
+   Both are "no value in record" cases that no re-send could ever fix, which is
+   the string popup.js reads as "stale record, send it again".
+
+   THE SECOND STREET LINE. CEAC marks it *Optional* and `7000 Kalahari Dr` fits
+   the first box with room to spare, so the second is empty ON PURPOSE - but
+   only when the address was actually read. With no host address at all these
+   are honestly missing, and MISSING_FROM_INTAKE says so instead. */
+const oneLine = D.toRecord({ 'Name': 'A, B',
+  'Point of contact address': '7000 KALAHARI DR, SANDUSKY, OHIO, 44870' });
+eq('a short street leaves both line 2s blank on purpose',
+   oneLine._blankOnPurpose.filter(k => /Addr2$/.test(k)).sort().join(','),
+   'stayAddr2,usPocAddr2');
+const twoLine = D.toRecord({ 'Name': 'A, B',
+  'Point of contact address': '1234 SOME VERY LONG STREET NAME AVENUE SUITE 900 BUILDING C, RESTON, VA 20190' });
+eq('a long one fills line 2 instead', twoLine.usPocAddr2, 'SUITE 900 BUILDING C');
+eq('and claims nothing is deliberate',
+   twoLine._blankOnPurpose.filter(k => /Addr2$/.test(k)).length, 0);
+eq('no address at all, nothing deliberate either',
+   D.toRecord({ 'Name': 'A, B' })._blankOnPurpose.filter(k => /Addr2$/.test(k)).length, 0);
+
+/* THE ORGANISATION NAME HAS NO COLUMN ANYWHERE. The four `Point of contact`
+   columns name the person, the address, the phone and the email - not the
+   organisation. It can only come from the DS-7002 or be typed once in Trip
+   details, so the report must say that rather than ask for a re-send. */
+eq('the organisation name is named as not collected',
+   D.MISSING_FROM_INTAKE.map(x => x[0]).indexOf('usPocOrg') >= 0, true);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

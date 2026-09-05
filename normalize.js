@@ -599,6 +599,12 @@
     ['departureCity', 'Departure city (J1: read from the host organisation address)'],
     ['arrivalFlight', 'Arrival flight (no column on either sheet)'],
     ['departureFlight','Departure flight (no column on either sheet)'],
+    /* NO COLUMN ANYWHERE. The four `Point of contact` columns name the
+       person, the address, the phone and the email - not the organisation. So
+       this can only come from the DS-7002 (Section 4's Phase Site Name, or
+       Host Organization Name) or be typed once in Trip details, and the report
+       has to say that instead of asking for a re-send that cannot help. */
+    ['usPocOrg',      'US point of contact - organisation name (J1: the DS-7002, or type it in Trip details)'],
     ['travelLocation','Places you will visit (J1: the host organisation city)'],
     ['stayAddr1',     'Address where you will stay - street (J1: the host organisation address)'],
     ['stayAddr2',     'Address where you will stay - second line'],
@@ -959,6 +965,14 @@
       rec.stayAddr1  = lines[0];
       rec.usPocAddr1 = lines[0];
       if (lines[1]) { rec.stayAddr2 = lines[1]; rec.usPocAddr2 = lines[1]; }
+      /* A SECOND STREET LINE THE ADDRESS DOES NOT NEED IS NOT A GAP. CEAC
+         marks it *Optional* and `7000 Kalahari Dr` fits the first box with
+         room to spare - but both boxes were reporting `no value in record`,
+         the string popup.js reads as "stale record, send it again". No
+         re-send can invent a second line, so the banner would nag for ever.
+         Recorded only when the address WAS read: with no host address at all
+         these are honestly missing, and MISSING_FROM_INTAKE says so. */
+      else (rec._blankOnPurpose || []).push('stayAddr2', 'usPocAddr2');
       if (place) {
         rec.stayCity   = place.city;
         rec.stayState  = place.state;
