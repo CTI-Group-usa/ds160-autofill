@@ -1280,5 +1280,48 @@ eq('Specify is still its own', ph('ddlOtherPurpose', 'Specify', purpBlk), 'speci
 eq('and the purpose label cannot claim it',
    ph('tbxOpaque', 'Specify', purpBlk), 'specifyPurpose');
 
+
+/* -- THE HOST EMPLOYER'S CONTACT IN BOTH ADDITIONAL-CONTACT ROWS -----
+   A live application filled Name (1) AND Name (2) with BERKEY / HANNAH and the
+   host's email - columns BZ-CC, the U.S. point of contact - because every
+   `usPoc*` rule matches a bare `POC_SURNAME` / `POC_EMAIL_ADDR` id fragment
+   and the Additional Point of Contact block's ids carry those letters too.
+   Filled, plausible, wrong, and invisible: a filled field is not a gap.
+
+   `exchange` comes from pageTag() and is the same signal this page already
+   uses for `surname`, `givenNames`, `homeAddress` and `email`. */
+const exchPage = 'Student/Exchange Visitor Information Additional Point of Contact ' +
+                 'Information Name (1) Surnames Given Names ?node=StudentExchangeVisitor exchange';
+eq('the contact surname box is not the U.S. contact',
+   ph('dtlAddPoc_ctl00_tbxAPOC_SURNAME', 'Surnames', exchPage), undefined);
+eq('nor the second row',
+   ph('dtlAddPoc_ctl01_tbxAPOC_SURNAME', 'Surnames', exchPage), undefined);
+eq('nor its email',
+   ph('dtlAddPoc_ctl00_tbxAPOC_EMAIL_ADDR', 'Email Address', exchPage), undefined);
+eq('nor its phone',
+   ph('dtlAddPoc_ctl00_tbxAPOC_HOME_TEL', 'Telephone Number', exchPage), undefined);
+
+/* AND THE U.S. CONTACT PAGE IS UNTOUCHED - that is the half worth guarding.
+   The guard must be `exchange`, NOT `point of contact`: this page's own
+   heading is "U.S. Point of Contact Information", so that phrase would switch
+   every one of these rules off where they belong. */
+const uscPage = 'U.S. Point of Contact Information Contact Person or Organization ' +
+                'in the United States Surnames Given Names';
+eq('the real contact surname still fills',
+   ph('tbxUS_POC_SURNAME', 'Surnames', uscPage), 'usPocSurname');
+eq('and its email',
+   ph('tbxUS_POC_EMAIL_ADDR', 'Email Address', uscPage), 'usPocEmail');
+eq('and its city',
+   ph('tbxUS_POC_ADDR_CITY', 'City', 'U.S. Point of Contact Address City'), 'usPocCity');
+
+/* RELATIVE_OR_THIRD_PARTY CANNOT BE REUSED HERE. It contains `POC`, which
+   every one of these rules carries in its own id - reusing it would exclude
+   them from their own block, the sibling-guard trap recorded three times in
+   CLAUDE.md. */
+eq('the exchange guard is its own constant',
+   /const NOT_EXCHANGE_PAGE = \/exchange\/i;/.test(
+     require('fs').readFileSync(
+       require('path').join(__dirname, '..', 'extension', 'matcher.js'), 'utf8')), true);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

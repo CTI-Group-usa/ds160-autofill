@@ -1378,6 +1378,41 @@ Work, and that prefix is unknown until one live J1 Fill reports it.
 `test/fake-student-exchange.html` carries **both** rows for exactly this reason.
 Do not "fix" it by deleting the second one; it is what makes the leak provable.
 
+#### THE HOST EMPLOYER'S CONTACT WAS IN BOTH ROWS (2026-09-05)
+A live application came back with **Name (1) and Name (2) both holding
+`BERKEY / HANNAH`** and the host's email - columns BZ-CC, the **U.S. point of
+contact**. Filled, plausible, wrong, and invisible.
+
+Every `usPoc*` rule matches a bare `POC_SURNAME` / `POC_EMAIL_ADDR` id
+fragment, and this block's ids carry those letters too. The **id pass runs
+before any label pass across every rule**, so the labels ("Surnames", "Email
+Address") never got a say - and nothing kept those rules off this page.
+
+`NOT_EXCHANGE_PAGE = /exchange/i` now guards all eleven, from `pageTag()` -
+the same signal `surname`, `givenNames`, `homeAddress` and `email` have used
+here since this page was wired.
+
+**Two things it could not be.** `RELATIVE_OR_THIRD_PARTY` contains `POC`,
+which every one of these rules carries in its own id, so reusing it would
+switch them off in their own block - the sibling-guard trap this file records
+three times. And `point of contact` is the U.S. Contact page's **own heading**
+("U.S. Point of Contact Information"), so that phrase would do the same.
+
+**The fixture could not reproduce it, and that is a finding of its own.** Its
+placeholder ids were `tbxSurname_PLACEHOLDER` - no `POC_` fragment - so the
+leak was impossible there while being live on the real page: protective by
+accident in test, absent in production, the worst way round and the second
+time in two days. They carry `APOC_SURNAME`, `APOC_EMAIL_ADDR` and the rest
+now. The fragment is **not** a guess: the leak is the evidence, because it
+could not have happened unless the live ids contain it. The `PLACEHOLDER`
+suffix stays, because the exact spelling still has not been read off the page.
+
+**Proved both ways.** With `matcher.js` reverted, the fixture fills
+`usPocSurname`, `usPocGiven`, `usPocPhone` and `usPocEmail` into **`ctl00` and
+`ctl01` alike** - the live failure on the bench. With the guard, three fields
+fill on that page and the eighteen contact boxes are honestly unrecognised;
+the U.S. Contact page still fills all ten. Sweep: no unmatched drift anywhere.
+
 #### The list is built and waiting; only the ids are missing (2026-09-05)
 The user confirmed the arrangement in full - *Name (1)* is CTI Indonesia on
 every application, *Add Another* opens *Name (2)* and that takes the sheet's

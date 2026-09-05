@@ -59,6 +59,12 @@
      showed both boxes holding the APPLICANT'S own name, reported as "already
      correct". `homeAddress` has carried this same word since the day its
      "Street Address" label reached this block. */
+  /* The Student / Exchange Visitor page, from `pageTag()`. Kept separate from
+     RELATIVE_OR_THIRD_PARTY because that constant contains `POC`, which every
+     `usPoc*` rule's own id carries - reusing it would switch them off in their
+     own block. */
+  const NOT_EXCHANGE_PAGE = /exchange/i;
+
   const RELATIVE_OR_THIRD_PARTY =
     /FATHER|MOTHER|SPOUSE|POC|CHILD|RELATIVE|SUPERVISOR|AGENCY|agency|paying|point of contact|exchange/i;
   const RULES = [
@@ -439,14 +445,34 @@
     // U.S. point of contact. Surname and given name are separate boxes,
     // so they are separate answers: "XAVIER, MARCOS" must not be split
     // by guessing where the surname ends.
-    { key: 'usPocSurname',      kind: 'text', ids: [/POC_SURNAME/i], labels: [/surnames of contact/i] },
-    { key: 'usPocGiven',        kind: 'text', ids: [/POC_GIVEN_NAME/i], labels: [/given names of contact/i] },
+    /* NOT ON THE STUDENT / EXCHANGE VISITOR PAGE. Every rule below matches a
+       bare `POC_*` id fragment, and the Additional Point of Contact block on
+       that page carries `POC` in its ids too - so `usPocSurname`, `usPocGiven`
+       and `usPocEmail` claimed its boxes and wrote the HOST EMPLOYER's contact
+       (columns BZ-CC) into BOTH contact rows on a live application. Filled,
+       plausible, wrong, and invisible, because a filled field is not a gap.
+
+       `exchange` comes from `pageTag()` - the page heading plus `?node=` - and
+       is the same signal `RELATIVE_OR_THIRD_PARTY` already uses for this page.
+       That constant cannot be reused here: it contains `POC`, so these rules
+       would exclude themselves from their own block - the sibling-guard trap
+       this file records three times.
+
+       And it must be `exchange`, not `point of contact`: the U.S. Contact
+       page's own heading is "U.S. Point of Contact Information", so that
+       phrase would switch every one of these off where they belong. None of
+       these fields exists on the Student / Exchange Visitor page, so excluding
+       the whole page costs nothing. */
+    { key: 'usPocSurname',      kind: 'text', ids: [/POC_SURNAME/i],
+      labels: [/surnames of contact/i], not: NOT_EXCHANGE_PAGE },
+    { key: 'usPocGiven',        kind: 'text', ids: [/POC_GIVEN_NAME/i],
+      labels: [/given names of contact/i], not: NOT_EXCHANGE_PAGE },
     /* The text box is left EMPTY and the box beside it ticked - see
        usPocOrgNA in constants.js. `not: /_NA\b/` keeps the text rule off the
        checkbox's id, and the checkbox rule is pinned to this row because
        "Do Not Know" also appears beside the previous visa number. */
     { key: 'usPocOrg',          kind: 'text', ids: [/POC_ORGANIZATION/i],
-      labels: [/organization name/i], not: /_NA\b/ },
+      labels: [/organization name/i], not: /_NA\b|exchange/i },
     /* Id ONLY. There are two "Do Not Know" boxes in this block - one for the
        contact person's name, one for the organisation - and the block is
        titled "Contact Person or Organization in the United States", so the
@@ -457,20 +483,25 @@
        If CEAC renames this control the box goes unticked and the report says
        so, which is the right way round: a wrongly ticked box is a wrong sworn
        answer, a missed one is a visible gap. */
-    { key: 'usPocOrgNA',        kind: 'checkbox', ids: [/POC_ORG.*_NA/i] },
-    { key: 'usPocRelationship', kind: 'text', ids: [/POC_REL_TO_APP/i] },
+    { key: 'usPocOrgNA',        kind: 'checkbox', ids: [/POC_ORG.*_NA/i],
+      not: NOT_EXCHANGE_PAGE },
+    { key: 'usPocRelationship', kind: 'text', ids: [/POC_REL_TO_APP/i],
+      not: NOT_EXCHANGE_PAGE },
     { key: 'usPocAddr1',        kind: 'text', ids: [/POC_ADDR_LN1/i],
-      labels: [/street address \(line ?1\)|u\.?s\.? contact.*address/i], must: /contact/i },
+      labels: [/street address \(line ?1\)|u\.?s\.? contact.*address/i],
+      must: /contact/i, not: NOT_EXCHANGE_PAGE },
     { key: 'usPocAddr2',        kind: 'text', ids: [/POC_ADDR_LN2/i],
-      labels: [/street address \(line ?2\)/i], must: /contact/i },
+      labels: [/street address \(line ?2\)/i], must: /contact/i, not: NOT_EXCHANGE_PAGE },
     { key: 'usPocCity',         kind: 'text', ids: [/POC_ADDR_CITY/i],
-      labels: [/^city$/i], must: /contact/i },
+      labels: [/^city$/i], must: /contact/i, not: NOT_EXCHANGE_PAGE },
     { key: 'usPocState',        kind: 'text', ids: [/POC_ADDR_STATE/i],
-      labels: [/^state$/i], must: /contact/i },
+      labels: [/^state$/i], must: /contact/i, not: NOT_EXCHANGE_PAGE },
     { key: 'usPocZip',          kind: 'text', ids: [/POC_ADDR_POSTAL/i],
-      labels: [/zip code|postal/i], must: /contact/i },
-    { key: 'usPocPhone',        kind: 'text', ids: [/POC_HOME_TEL/i], labels: [/phone number.*contact/i] },
-    { key: 'usPocEmail',        kind: 'text', ids: [/POC_EMAIL_ADDR/i], labels: [/e-?mail address.*contact/i] },
+      labels: [/zip code|postal/i], must: /contact/i, not: NOT_EXCHANGE_PAGE },
+    { key: 'usPocPhone',        kind: 'text', ids: [/POC_HOME_TEL/i],
+      labels: [/phone number.*contact/i], not: NOT_EXCHANGE_PAGE },
+    { key: 'usPocEmail',        kind: 'text', ids: [/POC_EMAIL_ADDR/i],
+      labels: [/e-?mail address.*contact/i], not: NOT_EXCHANGE_PAGE },
 
     /* CEAC writes the parents' controls in the PascalCase plural here -
        ddlFathersDOBDay, not FATHER_DOBDay - so the DOB boxes came back
