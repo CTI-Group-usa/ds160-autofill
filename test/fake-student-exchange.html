@@ -10,15 +10,26 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
 <!-- J1 ONLY. CEAC shows this page for a J visa class and never for C1/D, so
      nothing here can collide with the seafarer side.
 
-     EVERY ID ON THIS PAGE IS A PLACEHOLDER, and that is the point of the
-     fixture. No live J1 Fill report exists yet, so the real ids are unknown and
-     none has been guessed in matcher.js - the three rules there match on the
-     LABEL alone, and the labels below are taken verbatim from the filed sample
-     (I KETUT JULIANA, printed 30 Jun 2026):
+     EVERY ID HERE IS REAL NOW, read off live Fill reports rather than guessed.
+     Values from the filed sample (I KETUT JULIANA, printed 30 Jun 2026):
 
-       SEVIS ID: N0037491619
-       Program Number: P-3-05133
-       Do you intend to study in the U.S.? NO
+       SEVIS ID: N0037491619        - `tbxSevisID`
+       Program Number: P-3-05133    - `tbxProgram`
+       Do you intend to study? NO   - `rblStudyQuestion`
+
+     CEAC SPLITS THIS ACROSS TWO PAGES and this fixture does not: the three
+     boxes above are on a page headed "SEVIS Information", and the contact
+     block below is on its own page, the one that page's Back button calls
+     "Additional Contact". They are together here because no rule for the three
+     depends on the page tag - their ids appear nowhere else on the form - while
+     the contact block's rules do, and the heading on this fixture carries the
+     `exchange` that guard needs.
+
+     THE PROGRAM NUMBER BOX SHIPS SHOWING `_-_-_____`, the shape CEAC wants. It
+     is a VALUE here on purpose: if the live box holds the mask rather than a
+     placeholder attribute, "already has a value" is what the report would say
+     for ever on a box nobody has touched. `hasRealValue()` reads a mask as
+     empty, and this is where that is proved.
 
      THE CONTACT BLOCK'S IDS ARE REAL, and they are the only real ones here.
      They come from a live Fill report - twenty controls under
@@ -50,19 +61,19 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
 
 <table>
   <tr><td>SEVIS ID</td>
-      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSEVIS_ID_PLACEHOLDER"></td></tr>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxSevisID"></td></tr>
   <tr><td>Program Number</td>
-      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxPROGRAM_NUMBER_PLACEHOLDER"></td></tr>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_tbxProgram" value="_-_-_____"></td></tr>
   <tr><td>Q:</td><td>Do you intend to study in the U.S.?</td></tr>
   <tr><td>A:</td><td>
-    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_0"
-           name="ctl00$SiteContentPlaceHolder$FormView1$rblSTUDY_PLACEHOLDER" value="Y"
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblStudyQuestion_0"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblStudyQuestion" value="Y"
            onclick="javascript:setTimeout('__doPostBack(&#39;s&#39;,&#39;&#39;)', 0)">
-    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_0">Yes</label>
-    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_1"
-           name="ctl00$SiteContentPlaceHolder$FormView1$rblSTUDY_PLACEHOLDER" value="N"
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblStudyQuestion_0">Yes</label>
+    <input type="radio" id="ctl00_SiteContentPlaceHolder_FormView1_rblStudyQuestion_1"
+           name="ctl00$SiteContentPlaceHolder$FormView1$rblStudyQuestion" value="N"
            onclick="javascript:setTimeout('__doPostBack(&#39;s&#39;,&#39;&#39;)', 0)">
-    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblSTUDY_PLACEHOLDER_1">No</label>
+    <label for="ctl00_SiteContentPlaceHolder_FormView1_rblStudyQuestion_1">No</label>
   </td></tr>
 </table>
 

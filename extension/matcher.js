@@ -770,21 +770,35 @@
        CEAC shows this page only for a J class; a C1/D application never sees
        it, so nothing here can collide with the seafarer side.
 
-       THREE RULES, AND NO ID GUESSED. These labels appear nowhere else on the
-       form, so the label alone is enough and no `must` guard is wanted - an
-       unnecessary guard is what killed eduCountry and both spousePob rules,
-       because `must` gates the id path too. The ids arrive with the first
-       live J1 Fill report, exactly as every other page here was done.
+       THE LABELS ALONE WERE NOT ENOUGH, and a live Fill said so: all three
+       controls came back unrecognised on a page whose labels read exactly
+       "SEVIS ID", "Program Number" and "Do you intend to study in the U.S.?".
+       `deriveLabel` does not reach them on this layout - the two text boxes sit
+       under their caption rather than beside it, and a radio's derived label on
+       any CEAC page is just "Yes". So the ids carry them now, and the labels
+       stay as the fallback.
 
-       Labels taken verbatim from the filed sample (I KETUT JULIANA):
-         SEVIS ID: N0037491619
-         Program Number: P-3-05133
-         Do you intend to study in the U.S.? NO
+       THE PAGE IS ITS OWN PAGE, headed "SEVIS Information" - not the
+       Student/Exchange Visitor page, which is where the Additional Point of
+       Contact block lives ("Back: Additional Contact" is the button on this
+       one). Nothing here is guarded on the page tag for that reason; the three
+       ids are distinctive and appear nowhere else on the form.
+
+       No `must` guard on any of them either - an unnecessary guard is what
+       killed eduCountry and both spousePob rules, because `must` gates the id
+       path too.
+
+       Values from the filed sample (I KETUT JULIANA):
+         SEVIS ID: N0037491619        - `tbxSevisID`
+         Program Number: P-3-05133    - `tbxProgram`
+         Do you intend to study? NO   - `rblStudyQuestion`
 
        The Additional Point of Contact block follows below. */
-    { key: 'sevisId',       kind: 'text',  ids: [], labels: [/^sevis id/i] },
-    { key: 'programNumber', kind: 'text',  ids: [], labels: [/program number/i] },
-    { key: 'intendToStudy', kind: 'yesno', ids: [],
+    { key: 'sevisId',       kind: 'text',  ids: [/tbxSevisID/i, /SEVIS_ID/i],
+      labels: [/^sevis id/i] },
+    { key: 'programNumber', kind: 'text',  ids: [/tbxProgram/i, /PROGRAM_NUM/i],
+      labels: [/program number/i] },
+    { key: 'intendToStudy', kind: 'yesno', ids: [/StudyQuestion/i, /INTEND.*STUDY/i],
       labels: [/do you intend to study in the u\.?\s?s/i] },
     /* ---- Additional Point of Contact: TEN BOXES, TWICE OVER --------------
        CEAC takes two contacts here and shows both rows at once, so one Fill

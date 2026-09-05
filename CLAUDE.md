@@ -1333,16 +1333,52 @@ actually produce it.
 CEAC shows this page for a J class and never for C1/D, so nothing on it can
 collide with the seafarer side. Labels taken verbatim from the filed sample:
 
-| Question | Key | Source |
-|---|---|---|
-| SEVIS ID | `sevisId` | column **CH** |
-| Program Number | `programNumber` | column **CI** |
-| Do you intend to study in the U.S.? | `intendToStudy` | constant **NO** |
+| Question | Key | Source | Live id |
+|---|---|---|---|
+| SEVIS ID | `sevisId` | column **CH** | `tbxSevisID` |
+| Program Number | `programNumber` | column **CI** | `tbxProgram` |
+| Do you intend to study in the U.S.? | `intendToStudy` | constant **NO** | `rblStudyQuestion` |
 
-**Three rules, matched on the label alone, and no id guessed.** Those labels
-appear nowhere else on the form, so no `must` guard is wanted - an unnecessary
-guard is what killed `eduCountry` and both `spousePob` rules, because `must`
-gates the id path too.
+**IT IS TWO PAGES, NOT ONE.** These three sit on a page headed *SEVIS
+Information*, whose Back button reads *Additional Contact* - so the Additional
+Point of Contact block below is a **separate** page. `test/fake-student-exchange.html`
+carries both in one file, which is fine because no rule for these three depends
+on the page tag while the contact block's rules do.
+
+### The labels alone were never going to fire (2026-09-05)
+All three came back **unrecognised** from a live Fill, on a page whose captions
+read exactly "SEVIS ID", "Program Number" and "Do you intend to study in the
+U.S.?". `deriveLabel` does not reach them on that layout - the two text boxes
+sit *under* their caption rather than beside it, and **a Yes/No radio's derived
+label on any CEAC page is just "Yes"**, which is the same finding as
+`rblPositionThroughAgency` and `rblVesselWorkQuestion` on the Crew Visa page.
+
+The ids carry them now and the labels stay as the fallback. Still no `must`
+guard on any of the three - an unnecessary guard is what killed `eduCountry`
+and both `spousePob` rules, because `must` gates the id path too - and their
+ids appear nowhere else on the form.
+
+*Do you intend to study in the U.S.?* is **consistently NO**, the user's word,
+and it already was the J1 pack's constant. What was missing was only the id.
+
+### AN INPUT MASK IS NOT AN ANSWER
+CEAC ships the Program Number box showing **`_-_-_____`** - the shape it wants,
+`P-n-nnnnn`. If that string is the box's `value` rather than a `placeholder`
+attribute, then `hasRealValue()` reads it as answered and the report says
+*already has a value* for ever, on a box nobody has touched. Which of the two
+it is cannot be told from a screenshot, and the check costs nothing either way.
+
+`MASK_ONLY` in `content.js` reads a value made only of mask punctuation as
+empty. **An underscore is required** for a string to count as a mask, so a lone
+`-` an operator typed is still their answer. This is the `- SELECT ONE -`
+placeholder fix a second time, in a text box.
+
+Verified in a browser, four ways on the same control: a typed `P-9-99999` is
+kept **and the disagreement named** (*the box holds ... the record says ...*), a
+lone `-` is kept, the mask is replaced, and an empty box fills. Note the probe
+that first suggested otherwise was reading a box the filler had already written
+in the same page session - `data-ds160-filled` is what lets a second Fill press
+correct its own work, and it has to be cleared before testing this.
 
 ### The sheet drops the hyphens CEAC requires
 Column CI writes the programme number two ways: **30 rows as `P-3-05133`, 18 as

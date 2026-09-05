@@ -1297,6 +1297,30 @@ eq('and the purpose label cannot claim it',
    uses for `surname`, `givenNames`, `homeAddress` and `email`. */
 const exchPage = 'Student/Exchange Visitor Information Additional Point of Contact ' +
                  'Information Name (1) Surnames Given Names ?node=StudentExchangeVisitor exchange';
+/* -- THE SEVIS PAGE'S THREE BOXES, ON THEIR IDS ----------------------
+   All three came back unrecognised from a live Fill on a page whose labels
+   read exactly "SEVIS ID", "Program Number" and "Do you intend to study in the
+   U.S.?" - so `deriveLabel` does not reach them on that layout, and the label
+   rules alone were never going to fire. The ids are read off that report.
+
+   IT IS A DIFFERENT PAGE from the contact block below - headed "SEVIS
+   Information", with a Back button reading "Additional Contact" - so these are
+   deliberately asserted with NO page tag at all. Their ids appear nowhere else
+   on the form and nothing here is guarded on context. */
+eq('the SEVIS box on its id',   ph('tbxSevisID', ''), 'sevisId');
+eq('and still on its label',    ph('tbxOpaque', 'SEVIS ID'), 'sevisId');
+eq('the programme box',         ph('tbxProgram', ''), 'programNumber');
+eq('and still on its label',    ph('tbxOpaque2', 'Program Number'), 'programNumber');
+eq('the study question',
+   (M.matchKey({ id: P + 'rblStudyQuestion_0', name: P + 'rblStudyQuestion',
+                 label: 'Yes', type: 'radio' }, {}) || {}).key, 'intendToStudy');
+/* A YES/NO RADIO'S DERIVED LABEL IS JUST "Yes" on every CEAC page, which is
+   why a Yes/No question genuinely needs its id - the same finding as
+   rblPositionThroughAgency and rblVesselWorkQuestion on the Crew Visa page. */
+eq('and the id is what carries it, not the word Yes',
+   (M.matchKey({ id: P + 'rblSomethingElse_0', name: P + 'rblSomethingElse',
+                 label: 'Yes', type: 'radio' }, {}) || {}).key, undefined);
+
 const AP = 'dtlStudentAddPOC_ctl00_';
 eq('the contact surname box is not the U.S. contact',
    ph(AP + 'tbxADD_POC_SURNAME', 'Surnames', exchPage), 'addPocSurname');

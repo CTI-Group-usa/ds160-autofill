@@ -246,9 +246,23 @@
      Reading that as an answer skipped the Length of Stay dropdown on the
      live page. A real prior selection still skips, so an agent's own
      choice is never overwritten. */
+  /* AN INPUT MASK IS NOT AN ANSWER EITHER, and it is the same failure in a
+     text box. CEAC's Program Number field ships showing `_-_-_____` - the
+     shape it wants, P-n-nnnnn - and if that string is the box's VALUE rather
+     than its placeholder, `already has a value` is what the report would say
+     for ever, on a page where nobody had typed anything.
+
+     Which of the two it is cannot be told from a screenshot, and the check
+     costs nothing either way: no answer on this form is made only of
+     underscores. An underscore is REQUIRED for a string to count as a mask, so
+     a lone `-` an operator typed is still their answer and is still not
+     overwritten. */
+  const MASK_ONLY = /^[_\s.()/-]*_[_\s.()/-]*$/;
+
   function hasRealValue(c) {
     const v = String(c.el.value || '').trim();
     if (!v) return false;
+    if (MASK_ONLY.test(v)) return false;
     if (String(c.tag || '').toLowerCase() !== 'select') return true;
     const opt = c.el.selectedOptions && c.el.selectedOptions[0];
     const text = String(opt ? opt.text : '').trim().toUpperCase()
