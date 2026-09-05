@@ -1160,6 +1160,63 @@ cannot read something, the next move is to make the tool show what it *did*
 read. Every real CEAC id in this project came from the popup's unrecognised
 list; every real document label should come from the same place.
 
+### THE ANSWER WAS IN THE DOCUMENT THAT WORKED ALL ALONG
+One paste of the extracted text ended it. Two things were immediately visible.
+
+**The DS-7002 cannot be read by labels, and never will be.** Its flattened
+layout prints every label in one block and every value in another, in a
+different order:
+
+> ...`StipendYesNoIf yes, value?per` | `Intern` `Putu Yuda  Pratama` `Diploma`
+> `7000 Kalahari Dr.` `OH` `44870` `Kalahari Resort Sandusky OH` `Alliance
+> Abroad` `Sandusky`...
+
+Nothing can pair those. Six rounds of profile work went at a document whose
+shape forbids it.
+
+**The DS-2019 prints the same fact beside its label:**
+
+```
+Primary Site of Activity:Kalahari Resort Sandusky OH7000 Kalahari Dr.Sandusky, OH 44870
+```
+
+`siteOfActivity` is read there, and `usPocOrg` follows. The DS-2019 has read
+correctly since the day it was wired - **it supplied the arrival and departure
+dates in every one of those failing reports.** The answer was in the document
+that was working, and nobody looked because the question had been framed as
+"why won't the DS-7002 read".
+
+The name arrives glued to the address, because the form prints them on three
+lines and the extracted text has no line breaks. **A US street address begins
+with its number**, so the name is what comes before the first digit - a rule
+about American addresses, not a guess about this one.
+
+### THE SEVIS RECEIPT IS CONFIRMED, AND EVERY GUESSED LABEL WAS WRONG
+The same paste carried a real I-901 receipt, the thing this file has been
+waiting for since the profile was written.
+
+| Guessed | Actually |
+|---|---|
+| `SEVIS ID` | **`SEVIS IDENTIFICATION NUMBER`** |
+| `Name` | **`APPLICANT`** |
+| `Payment Confirmation Number` | **`CONFIRMATION NUMBER`** |
+| `Date of Birth` | `DATE OF BIRTH` - the only one right |
+
+**Not one of the invented labels would ever have matched**, and the profile
+said so: it carried `unconfirmed` and the file forbade a pattern fallback
+behind it. That flag is why nothing wrong was ever filled from this document -
+had a pattern been added "to make it work", it would have been reading a
+receipt through labels that matched nothing. The flag is gone now, on evidence.
+
+The receipt also prints the programme number **without hyphens** - `P444043`,
+the issuer's own format, not a typo - so `SHAPES.programNumber` accepts the
+compressed form and writes it back hyphenated, the same repair `normProgram()`
+already makes on the sheet's copy.
+
+**The rule this whole sequence earns:** when a document will not read, the
+first question is not *how do I parse it better* but **which document actually
+has this, and does that one already read.**
+
 #### A conclusion that was nearly published wrong
 Under the `/V`-only reader the next step was going to be a report line saying
 *"this looks like a blank copy - check the link"*. For any form filled by

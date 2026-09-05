@@ -259,20 +259,74 @@ eq('the host organisation is named for its box', P.answers(a).usPocOrg,
 eq("not under the parser's own key", P.answers(a).hostOrgName, undefined);
 eq('nor the SEVIS id', P.answers(a).sevisId, undefined);
 
-// -- the SEVIS receipt is honest about being unconfirmed -------------
-/* No receipt has been seen: the I-901 email that was available is only the
-   notification and carries a payment confirmation number, not the SEVIS id.
-   The labels are the standard field names, and the profile SAYS SO, so the
-   report can tell the operator. Do not add a pattern fallback here until a
-   real receipt has been read - that is the shortcut that produced the
-   P-3-04510 bug. */
-const receipt = P.parse('I-901 Fee Payment Confirmation SEVIS ID: N0036102391 ' +
-                        'Name: Putra, I Gede Angga Krisna Mahadi Date of Birth: 03/14/2001');
+// -- the SEVIS receipt, CONFIRMED against a real one -----------------
+/* For a day this profile guessed its labels and carried an `unconfirmed` flag
+   saying so. Every guess was wrong: not "SEVIS ID" but "SEVIS IDENTIFICATION
+   NUMBER", not "Name" but "APPLICANT", not "Payment Confirmation Number" but
+   "CONFIRMATION NUMBER". That is exactly why the flag existed and why no
+   pattern fallback was allowed behind it - the fallback would have papered
+   over labels that never matched anything.
+
+   The structure below is a real receipt's extracted text, glued the way
+   pdftext delivers it. THE PERSONAL VALUES ARE REPLACED - this repo is
+   public - but the labels, the spacing and the order are verbatim. */
+const receipt = P.parse(
+  'Department of Homeland Security - Form I-901 Application - Confirmation ' +
+  'Student and Exchange Visitor Program:  SEVIS I-901 Payment Confirmation ' +
+  'CONFIRMATION NUMBER:CCC1112223334CASE TYPE:I-901 Fee Remittance Form for F-1, F-3, M-1, M-3 and J-1 Non-Immigrants.' +
+  'PAYMENT DATE:Sep 3, 2026APPLICANT:AGUNG SURORA' +
+  'NAME AND ADDRESS:AGUNG SURORA2021 E 5TH STREETAUSTINTXUNITED STATES78702' +
+  'NOTICE TYPE:Receipt NoticeEMAIL ADDRESS:agung@example.com' +
+  'APPLICANT STATUS:   J-1DATE OF BIRTH:   Apr 15, 2007' +
+  'PROGRAM NUMBER:   P444043EXCHANGE VISITOR CATEGORY:   INTERN' +
+  'AMOUNT RECEIVED:   $220.00SEVIS IDENTIFICATION NUMBER:   N0011112222' +
+  'THIS ELECTRONIC RECEIPT SHALL BE USED AS EVIDENCE OF PAYMENT');
 eq('the receipt is identified', receipt.doc, 'sevis');
-ok('and flagged as unconfirmed', receipt.unconfirmed);
-eq('its SEVIS id',   receipt.fields.sevisId, 'N0036102391');
-eq('its date of birth reads month-first', receipt.fields.docDob, '14-MAR-2001');
+ok('and is no longer flagged unconfirmed', !receipt.unconfirmed);
+eq('its SEVIS id',   receipt.fields.sevisId, 'N0011112222');
+eq('the applicant', receipt.fields.docName, 'AGUNG SURORA');
+eq('the email',     receipt.fields.docEmail, 'agung@example.com');
+eq('the confirmation number', receipt.fields.paymentRef, 'CCC1112223334');
+eq('its date of birth', receipt.fields.docDob, '15-APR-2007');
+/* THE RECEIPT PRINTS THE PROGRAMME NUMBER WITHOUT HYPHENS - `P444043`, the
+   issuer's own format, not a typo. Refusing it dropped a value the document
+   states plainly; P, one category digit, five digits maps onto the hyphenated
+   form unambiguously, which is what normProgram() already does for the
+   sheet's copy. */
+eq('and the programme number, hyphenated back',
+   receipt.fields.programNumber, 'P-4-44043');
 ok('the other two profiles are not flagged', !a.unconfirmed && !b.unconfirmed);
+
+/* -- THE HOST ORGANISATION IS ON THE DS-2019, LABELLED ---------------
+   Six rounds went into getting this name out of the DS-7002, whose flattened
+   layout prints every label in one block and every value in another, in a
+   different order - nothing can pair those. The DS-2019 prints it beside its
+   label, and the DS-2019 has read correctly the whole time. Structure
+   verbatim from a real form; the values are replaced. */
+const site = P.parse(
+  'CERTIFICATE OF ELIGIBILITY FOR EXCHANGE VISITOR STATUS (J-NONIMMIGRANT)' +
+  '1.  Surname/Primary Name:Given Name:Sex:SuroraAgungMALE' +
+  'Legal Permanent Residence Country Code:Legal Permanent Residence Country:Position Code:Position:IDINDONESIA215UNIVERSITY UNDERGRADUATE STUDENTS' +
+  'Primary Site of Activity:Kalahari Resort Sandusky OH7000 Kalahari Dr.Sandusky, OH 44870J-1' +
+  '2.  Program Sponsor:Alliance Abroad Group Inc.Program Number:P-4-44043' +
+  '3.  Form Covers Period:From(mm-dd-yyyy):11-12-2026To(mm-dd-yyyy):11-11-2027' +
+  '4.  Exchange Visitor Category:INTERN');
+eq('the site of activity is read', site.fields.hostOrgName,
+   'Kalahari Resort Sandusky OH');
+eq('and it reaches the U.S. Contact box',
+   P.answers(site).usPocOrg, 'Kalahari Resort Sandusky OH');
+/* THE NAME IS GLUED TO THE ADDRESS, because the form prints them on three
+   lines and the extracted text has no line breaks. A US street address begins
+   with its number, so the name is what comes before the first digit - a rule
+   about American addresses, not a guess about this one. */
+ok('the address is not left hanging off the name',
+   !/\d/.test(site.fields.hostOrgName));
+/* Normalised on the way out, month-first because the form's own label says
+   `(mm-dd-yyyy)` - parseDate's default is day-first, the Indonesian
+   convention. */
+eq('and the dates still come with it',
+   P.answers(site).arrivalDate + '/' + P.answers(site).departureDate,
+   '12-NOV-2026/11-NOV-2027');
 
 // -- a value that is absurdly long is not that value ----------------
 /* One of the DS-7002s in circulation is an INTERACTIVE pdf whose field values
@@ -347,12 +401,16 @@ eq('so nothing is cross-checked against it',
 eq('a readable one is still checked',
    P.crossCheck(a, { programNumber: 'P-3-99999' }).length, 1);
 
-/* THE HINT'S REASON DEPENDS ON WHICH DOCUMENT IT IS. Blaming the PDF format is
-   right where the labels are known good; for the SEVIS receipt, whose labels
-   have never been checked against a real one, the likely fault is OURS - and
-   "print it flat" would send the operator to do something useless. */
+/* THE HINT'S REASON DEPENDS ON WHICH DOCUMENT IT IS - and the receipt's reason
+   has CHANGED, because its labels are no longer a guess. For a day it said
+   "the labels have never been checked against a real one", which was true and
+   which is why no pattern fallback was allowed behind it. One real receipt
+   later the labels are confirmed, so an empty one is an empty one and the
+   ordinary reason applies. */
 const emptyReceipt = P.parse('I-901 Fee Payment Confirmation for your records');
-ok('the receipt blames the labels', /labels have never been checked/.test(emptyReceipt.hint || ''));
+ok('an empty receipt still says something', !!emptyReceipt.hint);
+ok('but no longer blames labels nobody had checked',
+   !/labels have never been checked/.test(emptyReceipt.hint || ''));
 ok('and not the file format', !/interactive PDF/.test(emptyReceipt.hint || ''));
 /* THE WORDING WAS FACTUALLY WRONG and it matters, because it told the operator
    where to look: it said the values "sit in form fields". They do not - they

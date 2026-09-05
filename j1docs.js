@@ -85,7 +85,25 @@
       { key: 'programTo',   re: /To\s*\(\s*mm-?dd-?yyyy\s*\)\s*:?\s*([0-9]{1,2}[-/][0-9]{1,2}[-/][0-9]{4})/i },
     ],
     labels: [
+      /* THE HOST ORGANISATION IS HERE, AND IT IS LABELLED. Read off a real
+         form's extracted text:
+
+           Primary Site of Activity:Kalahari Resort Sandusky OH7000 Kalahari
+           Dr.Sandusky, OH 44870J-12.  Program Sponsor:
+
+         Six rounds were spent trying to get this name out of the DS-7002,
+         where the flattened layout prints every label in one block and every
+         value in another, in a different order - nothing can pair those. The
+         DS-2019 prints it beside its label, and the DS-2019 already reads.
+         The answer was in the document that worked all along. */
+      { label: 'Primary Site of Activity', key: 'siteOfActivity' },
       { label: 'Exchange Visitor Category', key: 'category' },
+      /* Cut points: the value above runs to whichever of these comes next. */
+      { label: 'Program Sponsor', key: null },
+      { label: 'Position Code', key: null },
+      { label: 'Legal Permanent Residence Country', key: null },
+      { label: 'Form Covers Period', key: null },
+      { label: 'Subject/Field Code', key: null },
     ],
     /* PATTERN, and only here. The DS-2019 prints the SEVIS id with no label
        at all, so there is nothing to anchor to; the programme number is
@@ -278,23 +296,32 @@
     name: 'SEVIS receipt',
     detect: /\bI-901\b|SEVIS\s+Fee|fmjfee/i,
     dates: [],
-    /* UNCONFIRMED. No receipt has been seen - the I-901 email that was
-       available is only the notification and carries a payment confirmation
-       number, not the SEVIS id. These are the standard field names, and if
-       they are wrong the fields come back missing, which is visible. Do not
-       add a pattern fallback here until a real receipt has been read: that is
-       exactly the shortcut that produced the P-3-04510 bug. */
+    /* CONFIRMED 2026-09-05 against a real I-901 receipt. The guesses above
+       were all wrong - it is not "SEVIS ID" but "SEVIS IDENTIFICATION
+       NUMBER", not "Name" but "APPLICANT", not "Payment Confirmation Number"
+       but "CONFIRMATION NUMBER" - which is why every one of them came back
+       missing and the profile carried an `unconfirmed` flag saying so. That
+       flag did its job: it stopped a pattern fallback being added over labels
+       nobody had checked, and the labels turned out to be wrong. */
     labels: [
-      { label: 'SEVIS ID', key: 'sevisId' },
-      { label: 'Name', key: 'docName' },
-      { label: 'Date of Birth', key: 'docDob' },
-      { label: 'Payment Confirmation Number', key: 'paymentRef' },
-      { label: 'School/Program', key: null },
-      { label: 'Amount', key: null },
+      { label: 'SEVIS IDENTIFICATION NUMBER', key: 'sevisId' },
+      { label: 'PROGRAM NUMBER', key: 'programNumber' },
+      { label: 'DATE OF BIRTH', key: 'docDob' },
+      { label: 'EMAIL ADDRESS', key: 'docEmail' },
+      { label: 'CONFIRMATION NUMBER', key: 'paymentRef' },
+      { label: 'APPLICANT STATUS', key: null },
+      { label: 'APPLICANT', key: 'docName' },
+      /* Cut points, in the order the receipt prints them. */
+      { label: 'CASE TYPE', key: null },
+      { label: 'PAYMENT DATE', key: null },
+      { label: 'NAME AND ADDRESS', key: null },
+      { label: 'NOTICE TYPE', key: null },
+      { label: 'EXCHANGE VISITOR CATEGORY', key: null },
+      { label: 'AMOUNT RECEIVED', key: null },
+      { label: 'THIS ELECTRONIC RECEIPT', key: null },
     ],
     patterns: [],
     required: ['sevisId'],
-    unconfirmed: true,
   };
 
   /* A VALUE THAT IS ABSURDLY LONG IS NOT THAT VALUE.
@@ -319,7 +346,13 @@
          for one. */
   const SHAPES = {
     sevisId: /^N[0-9X]{8,11}$/i,
-    programNumber: /^P-[0-9]-[0-9]{5}$/i,
+    /* THE SEVIS RECEIPT PRINTS IT WITHOUT HYPHENS - `P444043`, read off a real
+       one. That is the issuer's own format, not somebody's typo, so refusing
+       it here dropped a value the document states plainly. P, one category
+       digit, five digits: the compressed form maps onto the hyphenated one
+       unambiguously, which is why normProgram() in normalize.js already
+       repairs the sheet's copy the same way. */
+    programNumber: /^P-?[0-9]-?[0-9]{5}$/i,
     /* A DATE RANGE HAS DIGITS IN IT. The blank interactive form prints
        `Training/Internship Dates (mm-dd-yyyy) From To`, and that ran through
        as a value the moment the surrounding cut points changed - a wrong value
@@ -522,6 +555,27 @@
        All three are trip fields, so `applyParsed` stores them as this
        applicant's own entry and they stay editable - the operator can correct
        a document, which is the whole point of storing them per applicant. */
+    /* `Primary Site of Activity` is the NAME with the address run straight on
+       behind it, because the form prints them on three lines and the extracted
+       text has no line breaks:
+
+         Kalahari Resort Sandusky OH7000 Kalahari Dr.Sandusky, OH 44870J-1
+
+       A US street address begins with its number, so the name is what comes
+       before the first digit. That is a rule about American addresses, not a
+       guess about this one - and where it is wrong the whole value is shown in
+       the report rather than silently trimmed, because the name is kept only
+       when something is left after the cut. */
+    if (out.siteOfActivity && !out.hostOrgName) {
+      const name = String(out.siteOfActivity).split(/\s*\d/)[0].trim();
+      if (name) out.hostOrgName = name;
+    }
+    /* Written back in the form CEAC and the sheet both use, so a cross-check
+       against column CI compares like with like. */
+    if (out.programNumber) {
+      const m = String(out.programNumber).replace(/-/g, '').match(/^P(\d)(\d{5})$/i);
+      if (m) out.programNumber = 'P-' + m[1] + '-' + m[2];
+    }
     const org = out.hostOrgName || out.phaseSiteName;
     if (org) out.usPocOrg = org;
     /* SPLIT ONLY THE CLEAN CELL. On the older revision the supervisor arrives
