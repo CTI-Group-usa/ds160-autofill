@@ -206,7 +206,19 @@ ok('lines are punctuated once', /\/\[\.\!\?\]\$\/\.test\(l\)/.test(app));
    This is the comma warning again: a red line that is always there and never
    actionable teaches the operator to stop reading. */
 ok('a missing cross-check is not a failure',
-   /const todo = unique\.length \|\| !nAnswers \|\| list\.some\(f => f && f\.error\)/.test(app));
+   /const todo = unique\.length \|\| !nAnswers \|\| anyAbsent \|\| list\.some\(f => f && f\.error\)/.test(app));
+/* A DOCUMENT THAT DOES NOT EXIST IS A DIFFERENT THING, and it IS actionable.
+   `docLinks` used to drop a row's missing attachment with `.filter(l => l.url)`
+   while its comment claimed it was "skipped with a note" - there was no note,
+   so a row whose DS-7002 column is empty produced a report with no DS-7002
+   line at all. Six rounds went into a parser for a document that was never
+   fetched. It is named now, and it counts as something to go and fix. */
+ok('a document this row has no link to is carried, not dropped',
+   /doc\.links\.map\(l => \(\{ name: l\.name, url: rec\[l\.key\] \}\)\);/.test(app));
+ok('and named in the report',
+   /this row has no link to one - paste it below/.test(app));
+ok('and it stops the report going green',
+   /const anyAbsent = list\.some\(f => f && f\.noLink\)/.test(app));
 ok('and the report says so once, at the end',
    /are cross-checks - nothing is missing from the form/.test(app));
 

@@ -346,18 +346,27 @@
   };
 
   const activeDoc = () => DOCS[DS160Const.activeClass()] || null;
-  /* The links this row actually has. A row missing one is normal - 66 of the
-     69 J1 rows carry all three - and a missing one is skipped with a note
-     rather than treated as a failure. */
+  /* THE NOTE THIS COMMENT PROMISED DID NOT EXIST. It said a missing document
+     is "skipped with a note", and the code was `.filter(l => l.url)` - dropped
+     in silence. So a row whose DS-7002 column is empty produced a report with
+     no DS-7002 line at all, and the operator, looking at the file in Zoho, had
+     every reason to think the tool had read it. Six rounds of "the
+     organisation name is still empty" were spent on a parser for a document
+     that was never fetched, and nothing on screen could have said so.
+
+     A document this row does not have is still a document the class expects,
+     so it is carried through with no url and named in the report. */
   const docLinks = (doc, rec) =>
-    doc.links.map(l => ({ name: l.name, url: rec[l.key] })).filter(l => l.url);
+    doc.links.map(l => ({ name: l.name, url: rec[l.key] }));
 
   /* Fetching is the normal path; pasting is the fallback for when the
      link is a viewer page or the extension is not installed. */
   function letterBox(rec) {
     const doc = activeDoc();
     if (!doc) return '';
-    const links = docLinks(doc, rec);
+    /* `docLinks` now carries the documents this row does NOT have as well, so
+       the report can name them - here only the real ones are rendered. */
+    const links = docLinks(doc, rec).filter(l => l.url);
     /* Each link is offered on its own as well as through the button, because
        "open it" is how the operator checks what the parser was actually given
        when a value looks wrong. With three documents an unlabelled link would
@@ -438,6 +447,11 @@
       for (const f of list) {
         if (!f) continue;
         const name = f.name || (f.parsed && f.parsed.name) || doc.what;
+        if (f.noLink) {
+          lines.push(name + ': this row has no link to one - paste it below, ' +
+                     'or fill its column in the sheet');
+          continue;
+        }
         if (f.error) { lines.push(name + ': ' + f.error); continue; }
         const pr = f.parsed;
         if (!pr || !pr.doc) { lines.push(name + ': not a DS-7002, DS-2019 or SEVIS receipt'); continue; }
@@ -499,6 +513,9 @@
 
       const nAnswers = Object.keys(answers).length;
       if (!nAnswers && !problems.length && !lines.length) { letterMsg('err', doc.notFound); return; }
+      /* A missing document is something to go and fix, so the report must not
+         come back green with that line in it. */
+      const anyAbsent = list.some(f => f && f.noLink);
 
       /* De-duplicated: the same sentence twice tells the operator nothing the
          first one did not, and this report is already long. */
@@ -518,7 +535,7 @@
 
          This is the comma warning again: a red line that is always there and
          never actionable teaches the operator to stop reading. */
-      const todo = unique.length || !nAnswers || list.some(f => f && f.error);
+      const todo = unique.length || !nAnswers || anyAbsent || list.some(f => f && f.error);
       pendingLetter = {
         kind: todo ? 'err' : 'ok',
         text: (nAnswers ? nAnswers + ' field(s) filled. ' : 'Nothing filled. ') +
@@ -597,7 +614,8 @@
     async function fetchDocs() {
       const doc = activeDoc();
       if (!doc) return;
-      const links = docLinks(doc, rec);
+      const all = docLinks(doc, rec);
+      const links = all.filter(l => l.url), absent = all.filter(l => !l.url);
       if (!links.length) { letterMsg('err', doc.none.replace(/&mdash;/g, '-')); return; }
       if (!hasExtension()) {
         letterMsg('err', 'The extension is not loaded on this page, so the ' +
@@ -617,6 +635,10 @@
         out.push({ name: l.name, parsed: doc.parser().parse(got.text),
                    formFields: got.formFields });
       }
+      /* Named, in the same list as the ones that were read, so "nothing came
+         from the DS-7002" and "there is no DS-7002 to come from" can never
+         look alike again. */
+      for (const l of absent) out.push({ name: l.name, noLink: true });
       applyParsed(doc, out);
     }
 

@@ -1065,6 +1065,36 @@ it is the one value on that page that has only ever had the document as a
 source - and the document has not been read successfully once. The two look
 adjacent on paper and come from opposite places.
 
+### A DOCUMENT THIS ROW HAS NO LINK TO WAS DROPPED IN SILENCE
+Six rounds went into the organisation name. The cause was not the parser, the
+matcher, the trip field or the cache token. `docLinks` read:
+
+```js
+/* ...a missing one is skipped with a NOTE rather than treated as a failure. */
+const docLinks = (doc, rec) =>
+  doc.links.map(l => ({ name: l.name, url: rec[l.key] })).filter(l => l.url);
+```
+
+**There was no note.** A row whose DS-7002 column is empty produced a report
+with no DS-7002 line *at all* - not "nothing was read", not "no link", simply
+nothing - while the operator, looking at the document in Zoho Drive, had every
+reason to believe the tool had it. Every fix shipped in those six rounds was for
+a document that was never fetched.
+
+A comment describing behaviour the code does not have is worse than no comment:
+it is the one place anybody looks to check.
+
+The absent documents are carried through with no url and **named in the
+report** - *"DS-7002: this row has no link to one - paste it below, or fill its
+column in the sheet"* - and `anyAbsent` keeps the report from going green over
+it. `letterBox` filters them out again, because a link with no url is not
+something to render.
+
+**Everything before this still stands** and none of it was wasted - the
+AcroForm reader, the Section 4 labels, the `from` chain, the one cache token.
+But the order was wrong: **before improving how a document is read, prove the
+document arrives.**
+
 ## The visa-class banner in the popup (2026-09-04)
 `apply()` stamps `rec._class`, and the popup now shows it as a coloured chip
 above the applicant's name. **That half is decoration.** The half that earns it
