@@ -1141,11 +1141,37 @@ eq('the address too',                 M.REPEATED.eduAddress.field, 'address');
 eq('the course',                      M.REPEATED.eduCourse.field, 'course');
 eq('and both dates',
    M.REPEATED.eduFrom.field + '/' + M.REPEATED.eduTo.field, 'from/to');
+/* THE PLACES-TO-VISIT REPEATER IS A ONE-ENTRY LIST, and that is the point.
+   It is filled with the host organisation's city, and there is only ever one
+   of those - so row 1 gets it and any row the operator opens with Add Another
+   is left alone. A plain key would hand the same city to every row: a
+   duplicate on a sworn form, produced by a button they pressed to add
+   somewhere ELSE. */
+eq('the places repeater reads its row', M.REPEATED.travelLocation.list, '_travelList');
+eq('and knows which field',             M.REPEATED.travelLocation.field, 'location');
+
 /* Every repeated key must name a field the list actually carries, or the row
-   silently fills with undefined. */
-const FIELDS = ['name', 'address', 'course', 'from', 'to'];
-const strayField = Object.keys(M.REPEATED).filter(k => FIELDS.indexOf(M.REPEATED[k].field) < 0);
-eq('no repeated key names a field the list lacks', strayField.join(',') || 'none', 'none');
+   silently fills with undefined.
+
+   THE EXPECTED FIELDS ARE READ OFF normalize.js, not typed here. The first
+   version of this guard hard-coded the education list's five field names, so
+   the day a SECOND list arrived it failed on a correct change and said
+   nothing about why. A guard that has to be edited every time the thing it
+   guards grows is a guard that will be edited to shut it up. */
+const N = require('../normalize.js');
+const listRec = N.toRecord({
+  'Name': 'A, B',
+  'Name of Junior High School': 'SMP NEGERI 2 SERIRIT',
+  'Junior High School Address': 'JL RAYA SERIRIT',
+  'Point of contact address': '7000 KALAHARI DR, SANDUSKY, OHIO, 44870',
+});
+const stray = [];
+for (const k in M.REPEATED) {
+  const r = M.REPEATED[k], row = (listRec[r.list] || [])[0];
+  if (!row) { stray.push(k + ': normalize publishes no ' + r.list); continue; }
+  if (!(r.field in row)) stray.push(k + ': ' + r.list + ' has no ' + r.field);
+}
+eq('no repeated key names a field the list lacks', stray.join('; ') || 'none', 'none');
 /* And it must be a key some rule can produce, or nothing ever reaches it. */
 const ruleKeys2 = new Set(M.RULES.map(r => r.key));
 const strayKey = Object.keys(M.REPEATED).filter(k => !ruleKeys2.has(k));

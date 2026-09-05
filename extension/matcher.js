@@ -282,6 +282,9 @@
        collects an itinerary, so this is named only so the report says "the
        intake form does not collect this" instead of leaving an unexplained box
        in the unrecognised list. Its real id came from a live J1 report. */
+    /* The places to be visited, a repeater on the same page. Its real id came
+       from a live J1 report, and on J1 it is filled with the host
+       organisation's city - see REPEATED below for why that is a list. */
     { key: 'travelLocation', kind: 'text', ids: [/SPECTRAVEL_LOCATION/i] },
     { key: 'stayAddr1', kind: 'text', ids: [/STAY_ADDR_LN1/i],
       labels: [/street address \(line ?1\)|^street address$/i], must: /will stay/i },
@@ -1047,6 +1050,13 @@
      which is the right answer for an "Add Another" pressed one time too
      many. */
   const REPEATED = {
+    /* ONE ENTRY, ON PURPOSE. The places-to-visit repeater is filled with the
+       host organisation's city, and there is only ever one of those - so row 1
+       gets it and any row the operator opens with `Add Another` is left alone.
+       A plain key would hand the same city to every row, which is a duplicate
+       on a sworn form produced by a button they pressed to add somewhere
+       ELSE. */
+    travelLocation: { list: '_travelList', field: 'location' },
     eduName:    { list: '_eduList', field: 'name' },
     eduAddress: { list: '_eduList', field: 'address' },
     eduCourse:  { list: '_eduList', field: 'course' },

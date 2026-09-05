@@ -96,8 +96,17 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
 <fieldset>
   <legend>Provide the location(s) you will be visiting in the U.S.</legend>
   <table>
+    <!-- TWO ROWS, because one is what the page shows and the second is what
+         "Add Another" opens. The location is the host organisation's city and
+         there is only ever one of those, so row 1 takes it and row 2 must be
+         LEFT ALONE - a plain key would hand the same city to both, which is a
+         duplicate on a sworn form produced by a button the operator pressed to
+         add somewhere else. `_travelList` has one entry; the second ordinal
+         finds nothing. -->
     <tr><td>Location</td>
         <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlTravelLoc_ctl00_tbxSPECTRAVEL_LOCATION"></td></tr>
+    <tr><td>Location</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlTravelLoc_ctl01_tbxSPECTRAVEL_LOCATION"></td></tr>
   </table>
 </fieldset>
 

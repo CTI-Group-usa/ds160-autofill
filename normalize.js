@@ -599,7 +599,7 @@
     ['departureCity', 'Departure city (J1: read from the host organisation address)'],
     ['arrivalFlight', 'Arrival flight (no column on either sheet)'],
     ['departureFlight','Departure flight (no column on either sheet)'],
-    ['travelLocation','Places you will visit (no column on either sheet)'],
+    ['travelLocation','Places you will visit (J1: the host organisation city)'],
     ['stayAddr1',     'Address where you will stay - street (J1: the host organisation address)'],
     ['stayAddr2',     'Address where you will stay - second line'],
     ['stayCity',      'Address where you will stay - city (J1: from the host organisation address)'],
@@ -972,6 +972,15 @@
            own entry for that applicant, which is exactly backwards. trip.js
            falls back to `hostCity` instead, after their own answer. */
         rec.hostCity = place.city;
+        /* AND THE PLACES-TO-VISIT REPEATER, at the user's instruction: the one
+           location is the host company's city. It goes in as a ONE-ENTRY LIST
+           rather than a plain key, because CEAC's repeater shows a row at a
+           time and a plain key would hand the same city to every row the
+           operator opens with `Add Another` - a duplicate on a sworn form,
+           from a button they pressed to add somewhere ELSE. `_eduList` on
+           C1/D is the same arrangement for the same reason. */
+        rec._travelList = [{ location: place.city }];
+        rec.travelLocation = place.city;
       }
       rec._hostPlace = !!place;
     }
@@ -1164,9 +1173,10 @@
        for the comma warning and the repeater message. What it buys is that a
        misread address is visible in words instead of only in five boxes. */
     if (rec._hostPlace)
-      N('stayCity', 'The stay address and the arrival and departure cities ' +
-                    'come from the host organisation: ' + rec.stayAddr1 + ', ' +
-                    rec.stayCity + ', ' + rec.stayState + ' ' + rec.stayZip);
+      N('stayCity', 'The stay address, the arrival and departure cities and ' +
+                    'the place you will visit all come from the host ' +
+                    'organisation: ' + rec.stayAddr1 + ', ' + rec.stayCity +
+                    ', ' + rec.stayState + ' ' + rec.stayZip);
     if (rec.usPocAddress && !rec._hostPlace)
       W('stayCity', 'The host organisation address reads "' + rec.usPocAddress +
                     '", which does not end in a US city, state and ZIP ' +

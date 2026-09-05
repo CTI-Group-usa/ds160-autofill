@@ -424,6 +424,18 @@
     return byId;
   }
 
+  /* True when this control belongs to a repeater row the record's list does
+     not reach - see the caller for why that is reported as deliberate rather
+     than as a missing value. */
+  function beyondList(rec, key, ctl, ordinals) {
+    const rep = M.REPEATED && M.REPEATED[key];
+    if (!rep) return false;
+    const list = rec[rep.list] || [];
+    if (!list.length) return false;
+    const i = (ordinals && ordinals[ctl.id] !== undefined) ? ordinals[ctl.id] : 0;
+    return i >= list.length;
+  }
+
   function valueFor(rec, key, ctl, ordinals) {
     let v = rec[key];
     /* A REPEATED KEY READS ITS ROW, not a single record field. The list is
@@ -524,6 +536,23 @@
            Re-sending can never fill it, so the banner would nag forever.
            normalize.js names those keys in `_blankOnPurpose`. */
         if ((rec._blankOnPurpose || []).indexOf(m.key) >= 0) {
+          report.deliberate.push({ id: c.id, key: m.key, label: c.label });
+        } else if (beyondList(rec, m.key, c, ordinals)) {
+          /* A REPEATER ROW PAST THE END OF ITS LIST IS NOT A GAP EITHER.
+             The operator pressed Add Another; there is nothing more to put in
+             it - one host city, one place to visit; a C1/D record names one
+             school and CEAC will happily open a second row. Left alone is the
+             right answer, and this file already records it as such.
+
+             What was NOT right is that it reported "no value in record", the
+             exact string popup.js reads as "stale record, send it again". No
+             re-send can fill a row the sheet has no entry for, so the red
+             banner would nag for ever - the same trap as `prevStayLength`
+             above, arriving from a different direction.
+
+             An EMPTY list is left to the normal path on purpose: no school at
+             all is a genuine gap, and filling the sheet and re-sending is
+             exactly the fix. */
           report.deliberate.push({ id: c.id, key: m.key, label: c.label });
         } else if ((M.MONONYM_NA_KEYS || []).indexOf(m.key) >= 0 &&
                    /GIVEN/i.test(c.id || c.name) &&

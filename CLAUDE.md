@@ -741,8 +741,44 @@ address in the sheet or one the reader refused. Both are fixed in the same
 cell, and the wording says so instead of claiming the intake form does not
 collect it.
 
-**Still no source on the J1 Travel page:** both flight numbers, the
-places-to-visit repeater, and `stayAddr2` when the host street fits one line.
+### The places-to-visit repeater takes the same city
+The user's instruction: *"section ini isi juga dengan city dari host company"*.
+So `travelLocation` is the host organisation's city as well.
+
+**It goes in as a ONE-ENTRY LIST, not a plain key**, and that is the whole
+design. CEAC shows one Location row plus *Add Another*, and a plain key hands
+its value to **every** row the operator opens - so pressing Add Another to add
+somewhere else would produce the same city twice, a duplicate on a sworn form,
+caused by the button they pressed to fix it. `_travelList` has one entry;
+`REPEATED` resolves ordinal 1 to nothing and the row is left alone. `_eduList`
+on C1/D is the same arrangement for the same reason.
+
+#### A repeater row past the end of its list is not a gap
+Proving that in the browser exposed the trap one more time. Row 2 was left
+alone correctly - and reported as **`no value in record`**, which is the exact
+string `popup.js` reads as *"stale record, send it again"*. No re-send can fill
+a row the sheet has no entry for, so the red banner would have nagged for ever;
+the same failure as `prevStayLength`, arriving from a different direction. It
+had been true of the education rows all along and nobody had looked.
+
+`beyondList()` in `content.js` routes those to **Left blank on purpose**. An
+**empty** list still takes the normal path on purpose: no school at all is a
+genuine gap, and filling the sheet and re-sending is exactly the fix.
+
+Verified: row 1 `SANDUSKY`, row 2 empty and reported as deliberate, nothing
+unrecognised; on the education page a single-entry C1/D list now puts twenty
+row-2-and-3 controls in that list instead of the re-send banner.
+
+#### The guard on REPEATED had to stop being a hand-written list
+`matcher.test.js` asserted every repeated key names a field its list carries -
+against a hard-coded `['name','address','course','from','to']`. The day a
+**second** list arrived it failed on a correct change and said nothing about
+why. It reads the fields off `normalize.js` now, by building a record and
+looking at what it publishes. **A guard that must be edited every time the
+thing it guards grows is a guard that will be edited to shut it up.**
+
+**Still no source on the J1 Travel page:** both flight numbers, and `stayAddr2`
+when the host street fits one line.
 
 ### The DS-7002 labels the city itself - Section 2 does
 The user pointed at the form: *"di ds 7002 section host company terlihat jelas
