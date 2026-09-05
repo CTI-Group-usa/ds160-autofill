@@ -559,8 +559,13 @@ eq('words are not an amount',    D.toRecord({ 'Monthly Salary': 'n/a' }).monthly
    '0' through would type a zero income onto a sworn form instead of ticking
    the box CEAC provides for exactly this. */
 eq('zero is no salary',          D.toRecord({ 'Monthly Salary': '0.00 IDR' }).monthlyIncome, '');
-has('a wage too small to be one', D.validate(D.toRecord({
-  'Name': 'A, B', 'Monthly Salary': '2.00 IDR' })).warnings, 'monthlyIncome', 'too small for a monthly wage');
+/* THE "TOO SMALL FOR A WAGE" WARNING IS WITHDRAWN, with the derivation below.
+   It was worth having while the amount was going to be typed onto a sworn
+   form. The box is ticked on both classes now and no amount is filled at all,
+   so it warned about a value that reaches nothing - the comma warning in
+   another costume. Column AY is still read and still shown in the worksheet. */
+none('no warning about an amount that reaches nothing', D.validate(D.toRecord({
+  'Name': 'A, B', 'Monthly Salary': '2.00 IDR' })).warnings, 'monthlyIncome');
 none('a real wage is not flagged', D.validate(D.toRecord({
   'Name': 'A, B', 'Monthly Salary': '3600000.00 IDR' })).warnings, 'monthlyIncome');
 
@@ -573,10 +578,22 @@ none('a real wage is not flagged', D.validate(D.toRecord({
    ONLY THE POSITIVE CASE IS ASSERTED. An empty cell leaves the key alone so
    each pack's constant still ticks it and the panel switch stays live; a value
    sets 'NO', because apply() treats '' as unset and would tick over it. */
+/* THE SALARY IS NO LONGER ONE OF THEM. The user's decision, 2026-09-05:
+   "same like c1d, make salary konstan does not apply". It used to be derived -
+   an amount in column AY set 'NO' and the number was typed - which followed
+   the sheet but not how CTI files these. The filed J1 sample framed the
+   participant as a STUDENT with DOES NOT APPLY against the salary, and that
+   disagreement was recorded as needing the user's word rather than an
+   inference.
+
+   Both packs simply tick now, so the key is left alone here whatever column AY
+   holds - and the pack-leak protection this derivation used to provide is not
+   needed for it any more, because both classes give the same answer. */
 const withPay = D.toRecord({ 'Name': 'A, B', 'Monthly Salary': '3600000.00 IDR' });
-eq('a real salary blocks the tick', withPay.monthlyIncomeNA, 'NO');
+eq('an amount no longer blocks the tick', withPay.monthlyIncomeNA, undefined);
+eq('and the amount is still read',        withPay.monthlyIncome, '3600000');
 const noPay = D.toRecord({ 'Name': 'A, B', 'Monthly Salary': '0.00 IDR' });
-eq('no salary leaves the tick to the pack', noPay.monthlyIncomeNA, undefined);
+eq('nor does an empty one', noPay.monthlyIncomeNA, undefined);
 const withIds = D.toRecord({
   'Name': 'A, B',
   'U.S. Social Security Number (if any)': '123456789',

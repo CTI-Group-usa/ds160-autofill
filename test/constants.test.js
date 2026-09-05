@@ -149,8 +149,13 @@ const wrongPack = C.apply(N.toRecord({
   'Monthly Salary': '3600000.00 IDR',
   'U.S. Social Security Number (if any)': '123456789',
 }));
-eq('the salary survives the wrong pack', wrongPack.monthlyIncome, '3600000');
-eq('and its tick stays clear', wrongPack.monthlyIncomeNA, 'NO');
+/* THE SALARY IS NO LONGER PART OF THIS, and that is a simplification rather
+   than a loss. Both packs tick the box now - the user's decision, 2026-09-05 -
+   so the two classes give the SAME answer to the same question and there is no
+   leak to protect against. Column AY is still read and shown in the worksheet;
+   CEAC greys the amount box out behind the tick, so nothing is typed. */
+eq('the salary is still read from the sheet', wrongPack.monthlyIncome, '3600000');
+eq('and the box is ticked whichever pack is active', wrongPack.monthlyIncomeNA, 'YES');
 eq('the SSN survives too', wrongPack.ssn, '123456789');
 eq('and its tick stays clear', wrongPack.ssnNA, 'NO');
 C.use('j1');

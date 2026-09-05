@@ -52,7 +52,35 @@ not cross. That is what the split is for.
 The SSN, tax ID and monthly salary **used to be the headline reason** and are no
 longer, because the fix moved somewhere better - see below.
 
-#### SSN / tax ID / monthly salary: derived, and the derivation needs no class
+#### THE SALARY IS A TICK ON BOTH CLASSES (2026-09-05, the user's decision)
+> "same like c1d, make salary konstan does not apply"
+
+This settles the **student-vs-workplace** question this file has carried open
+since the filed J1 sample was read. That sample framed the participant as a
+STUDENT with **DOES NOT APPLY** against the salary, while the sheet says
+`Daily Worker` and `3,600,000 IDR` - and the note here said the two readings
+put different answers in the same boxes and needed the user's word rather than
+an inference. The word is given, for the salary box.
+
+`if (rec.monthlyIncome) rec.monthlyIncomeNA = 'NO'` is **gone**. Column AY is
+still read and still shown in the worksheet; nothing types it onto the form,
+because CEAC greys the amount box out behind the tick.
+
+Three consequences worth naming:
+
+- **the amount box joins `BLANK_WHEN_TICKED`.** Greyed out, it matches no fill
+  and would land in *Not recognised* on every J1 Fill, burying the real gaps -
+  exactly what the SSN's three boxes did before they were listed there.
+- **the "too small for a monthly wage" warning is withdrawn.** It earned its
+  place while the amount was going to be typed onto a sworn form. Now it warns
+  about a value that reaches nothing, which is the comma warning in another
+  costume.
+- **the pack-leak protection for this key is no longer needed** - both classes
+  give the same answer to the same question, so there is nothing to leak.
+  `constants.test.js` asserts the tick survives with the wrong pack active
+  instead. The SSN and tax ID derivations are untouched and still do that work.
+
+#### SSN / tax ID: derived, and the derivation needs no class
 | | C1/D | J1 |
 |---|---|---|
 | SSN | no column | **column K**, `(if any)` |

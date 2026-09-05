@@ -67,9 +67,10 @@
                        'has filed U.S. tax returns.' },
     { key: 'monthlyIncomeNA', kind: 'checkbox', page: 'Work / Education',
       label: 'Monthly Income in Local Currency - tick "Does Not Apply"',
-      def: 'YES', why: 'Column AY, and CEAC only asks it "if employed". A real amount is ' +
-                       'filled from the sheet and this box left clear; 0.00 IDR is the ' +
-                       'sheet saying there is no salary, which is this tick.' },
+      def: 'YES', why: 'Ticked on every application, the same as C1/D - the user\'s ' +
+                       'decision. Column AY is still read and shown in the worksheet, ' +
+                       'but CEAC greys this box out behind the tick, so no amount is ' +
+                       'typed. Untick it here if an applicant should declare one.' },
     { key: 'mailingSameAsHome', kind: 'yesno', page: 'Address and Phone',
       label: 'Is your mailing address the same as your home address?',
       def: 'YES', why: 'The intake form collects one address.' },

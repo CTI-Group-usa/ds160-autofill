@@ -1038,7 +1038,25 @@
 
     if (rec.ssn)           rec.ssnNA = 'NO';
     if (rec.taxId)         rec.taxIdNA = 'NO';
-    if (rec.monthlyIncome) rec.monthlyIncomeNA = 'NO';
+    /* THE SALARY BOX IS TICKED ON BOTH CLASSES NOW - the user's decision,
+       2026-09-05: "same like c1d, make salary konstan does not apply".
+
+       This line used to read `if (rec.monthlyIncome) rec.monthlyIncomeNA =
+       'NO'`, so a J1 row with column AY filled typed the amount and left the
+       box clear. That followed the sheet; it did not follow how CTI files
+       these. The filed J1 sample framed the participant as a STUDENT with
+       DOES NOT APPLY against the salary, and this file recorded that the two
+       readings put different answers in the same boxes and needed the user's
+       word rather than an inference. That word has now been given.
+
+       So the derivation is gone and both packs simply tick. Column AY is
+       still read - `monthlyIncome` is in the record, and the worksheet shows
+       it - but nothing types it onto the form, because CEAC greys the box out
+       behind the tick.
+
+       Note what this SIMPLIFIES: the salary no longer needs protecting from a
+       pack leak, because both classes now give the same answer to the same
+       question. The SSN and the tax ID still do, and their derivations stay. */
     /* 'NO', NOT ''. A parent with two names must have that box left CLEAR -
        that is an answer, not an absence - but `''` made the report say
        `fatherGivenNA - no value in record`, the string popup.js reads as
@@ -1218,10 +1236,11 @@
        figure in some other unit is not ours to decide, so it is filled and
        named rather than corrected. (0.00 is different: normMoney treats it as
        no salary at all, which ticks Does Not Apply.) */
-    if (rec.monthlyIncome && Number(rec.monthlyIncome) < 100000)
-      W('monthlyIncome', 'Monthly salary reads ' + rec.monthlyIncome + ' in local currency - ' +
-                         'too small for a monthly wage in IDR. Check the intake cell for a ' +
-                         'missing thousand or a different unit.');
+    /* WITHDRAWN with the derivation above. It warned that an amount looked too
+       small to be a monthly wage - useful when that amount was going to be
+       typed onto a sworn form, and noise now that the box is ticked and no
+       amount is filled at all. A warning about a value that reaches nothing is
+       the comma warning in another costume. */
 
     /* AN ADDRESS THAT IS NOT AMERICAN CANNOT ANSWER FIVE AMERICAN BOXES.
        Only fires when the cell holds something and its tail is not

@@ -989,6 +989,12 @@
   const BLANK_WHEN_TICKED = [
     { na: 'ssnNA',   ids: /APP_SSN/i },
     { na: 'taxIdNA', ids: /APP_TAX_ID/i },
+    /* The salary box joined them on 2026-09-05, when the user made the tick a
+       constant on J1 as well as C1/D. CEAC greys the amount box out behind the
+       tick, so it can never be filled - and without this it would land in
+       "Not recognised" on every J1 Fill and bury the real gaps, exactly as the
+       SSN's three boxes did. */
+    { na: 'monthlyIncomeNA', ids: /MonthlySalary|MONTHLY_SALARY/i },
   ];
 
   function isLeftBlank(ctl, rec) {
