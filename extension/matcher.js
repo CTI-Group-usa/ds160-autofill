@@ -1063,6 +1063,19 @@
        on a sworn form produced by a button they pressed to add somewhere
        ELSE. */
     travelLocation: { list: '_travelList', field: 'location' },
+    /* THE PREVIOUS-EMPLOYER REPEATER TAKES TWO ROWS ON J1 - the current
+       workplace, then the previous one - because the present-employer block
+       above it holds the college. One row on C1/D, where that block is the
+       job itself. Same mechanism as the schools; the list decides how many
+       rows get anything. */
+    prevEmployerName:    { list: '_prevEmplList', field: 'name' },
+    prevEmployerAddress: { list: '_prevEmplList', field: 'address' },
+    prevEmployerPhone:   { list: '_prevEmplList', field: 'phone' },
+    prevJobTitle:        { list: '_prevEmplList', field: 'jobTitle' },
+    prevSupervisor:      { list: '_prevEmplList', field: 'supervisor' },
+    prevStart:           { list: '_prevEmplList', field: 'from' },
+    prevEnd:             { list: '_prevEmplList', field: 'to' },
+    prevCountry:         { list: '_prevEmplList', field: 'country' },
     eduName:    { list: '_eduList', field: 'name' },
     eduAddress: { list: '_eduList', field: 'address' },
     eduCourse:  { list: '_eduList', field: 'course' },

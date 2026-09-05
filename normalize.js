@@ -847,8 +847,74 @@
       }
       chosenBlocks = BLOCKS.filter(b => b.key === pick);
     } else {
-      /* The J1 path: chronological, all of them, first one filled. */
-      chosenBlocks = BLOCKS;
+      /* THE J1 PATH, AND THE COLLEGE IS NOT ON THIS PAGE AT ALL.
+         The user's arrangement, 2026-09-05, and it is the same STUDENT framing
+         they settled the salary box with an hour earlier:
+
+           Present Employer or School  <- college / university
+           Were you previously employed? YES
+             row 1                     <- CURRENT workplace
+             row 2 (Add Another)       <- PREVIOUS workplace
+           Attended an institution?     YES
+             row 1                     <- junior high school
+             row 2 (Add Another)       <- senior high / vocational
+
+         It is what the filed J1 sample did - Present Employer or School held
+         his college and Primary Occupation read STUDENT - which this file
+         recorded as one case rather than a rule, needing the user's word. The
+         word is given, so it is the rule now.
+
+         The college therefore leaves this list: it is the present school. */
+      chosenBlocks = BLOCKS.filter(b => b.key !== 'uni');
+    }
+
+    /* THE PRESENT EMPLOYER BLOCK BECOMES THE COLLEGE, and the workplace the
+       sheet calls "current" moves into the previous-employer repeater above
+       it. Both halves have to happen together and in this order, or the
+       current workplace is overwritten before it has been carried across.
+
+       C1/D is untouched: `_asksEducationLevel` is true there, the present
+       employer stays AU-AY, and `_prevEmplList` holds the one previous
+       workplace it always did. */
+    const WORK = [
+      { label: 'current workplace', name: rec.employerName, address: rec.employerAddress,
+        phone: rec.employerPhone, jobTitle: rec.jobTitle, supervisor: '',
+        from: rec.employerStart, to: '', country: '' },
+      { label: 'previous workplace', name: rec.prevEmployerName,
+        address: rec.prevEmployerAddress, phone: rec.prevEmployerPhone,
+        jobTitle: rec.prevJobTitle, supervisor: rec.prevSupervisor,
+        from: rec.prevStart, to: rec.prevEnd, country: rec.prevCountry },
+    ];
+    if (rec._asksEducationLevel) {
+      rec._prevEmplList = WORK.slice(1).filter(w => w.name);
+    } else {
+      rec._prevEmplList = WORK.filter(w => w.name);
+      /* Both rows are real employment, so the gate is YES whenever either is
+         named - and the sheet's own `Were you previously employed?` answer no
+         longer decides it, because row 1 is the job they hold today. */
+      if (rec._prevEmplList.length) rec.prevEmployed = 'YES';
+      if (rec.uniName) {
+        rec.employerName    = rec.uniName;
+        rec.employerAddress = rec.uniAddress;
+        rec.employerStart   = rec.uniFrom;
+        /* No phone column for a college, and the sheet's one belongs to the
+           workplace that has just moved. Leaving the old value here would put
+           an employer's number against a school. */
+        rec.employerPhone   = '';
+      }
+    }
+    /* Row 1 is what the un-repeated keys still name, so a page that shows one
+       row without a repeater id fills correctly too. */
+    const w0 = rec._prevEmplList[0];
+    if (w0 && !rec._asksEducationLevel) {
+      rec.prevEmployerName    = w0.name;
+      rec.prevEmployerAddress = w0.address;
+      rec.prevEmployerPhone   = w0.phone;
+      rec.prevJobTitle        = w0.jobTitle;
+      rec.prevSupervisor      = w0.supervisor;
+      rec.prevStart           = w0.from;
+      rec.prevEnd             = w0.to;
+      rec.prevCountry         = w0.country;
     }
 
     const first = chosenBlocks[0] || null;

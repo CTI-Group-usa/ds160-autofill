@@ -185,7 +185,14 @@ has('bad: mrz chars',        bv.warnings, 'fullName', 'MRZ');
    there is nothing to branch on. CTI Indonesia appearing in this box for one
    applicant was that row's own AU value, not a mapping error - the agency
    block on the Crew Visa page is separate. */
+/* THE EDUCATION-LEVEL COLUMN MAKES THIS A C1/D ROW, and it has to be here or
+   the record takes the J1 path - where the present-employer block is the
+   COLLEGE and the workplace moves into the repeater above it. That branch is
+   the user's arrangement of 2026-09-05; this block is the C1/D one, and the
+   discriminator is the header's presence, exactly as `_asksEducationLevel`
+   reads it. */
 const present = D.toRecord({ 'Name': 'X',
+  'Please select your highest level of education': 'High School / Vocational School',
   "Current Workplace's Name": 'INSTITUTE TOURISM OF SAHID',
   "Current Workplace's Address": 'JL KEMIRI RAYA NO 22 PD CABE UDIK',
   "Current Workplace's Phone Number": '0217402329',
@@ -752,7 +759,7 @@ eq('the junior-high course comes from the filed convention',
 /* THE REST ARE HANDED BACK, NOT FILLED. Each "Add Another" is a postback and
    the WAF has blocked this agent three times over bursts of them - the same
    arrangement languageSpoken and firstCountryVisited already use. */
-eq('the other two are listed', j1edu._eduMore.length, 2);
+eq('the one other is listed', j1edu._eduMore.length, 1);
 /* THE MESSAGE IS AN INSTRUCTION WITH A PROMISE, not a chore. It used to say
    "add these by hand", which stopped being true when the filler learned to
    fill repeater rows: press Add Another, press Fill, done. Still a warning
@@ -766,14 +773,23 @@ none('it no longer says to type them by hand',
    it is true on every J1 row, and there is nothing to decide. */
 none('nor is it a warning any more', D.validate(j1edu).warnings, 'eduName');
 
-/* THE STRUCTURED LIST IS WHAT THE REPEATER READS, in order, one row each. */
-eq('the list carries all three', j1edu._eduList.length, 3);
+/* THE STRUCTURED LIST IS WHAT THE REPEATER READS, in order, one row each -
+   and on J1 it is TWO schools, not three. The college is not on this page at
+   all: it is the Present Employer or School, with the workplaces moved into
+   the previous-employer repeater above it. The user's arrangement of
+   2026-09-05, and the same STUDENT framing that ticked the salary box. */
+eq('the list carries the two schools', j1edu._eduList.length, 2);
 eq('in chronological order',
    j1edu._eduList.map(b => b.name).join(' | '),
-   'SMP NEGERI 2 SERIRIT | SMK NEGERI 1 SERIRIT | OVERSEAS TRAINING CENTER');
+   'SMP NEGERI 2 SERIRIT | SMK NEGERI 1 SERIRIT');
 eq('each with its own course',
    j1edu._eduList.map(b => b.course).join(' | '),
-   'JUNIOR HIGH SCHOOL | PERHOTELAN | ');
+   'JUNIOR HIGH SCHOOL | PERHOTELAN');
+/* AND THE COLLEGE IS THE PRESENT SCHOOL. Both halves are asserted together
+   because they are one move: taking the college out of the education list
+   without putting it in the employer block would simply lose it. */
+eq('the college fills Present Employer or School',
+   j1edu.employerName, 'OVERSEAS TRAINING CENTER');
 has('quoting the schools', D.validate(j1edu).notes, 'eduName', 'SMK NEGERI 1 SERIRIT');
 
 /* THE C1/D PATH IS UNCHANGED: BI names one block, the others are not filled,
@@ -1182,6 +1198,66 @@ eq('a mononym still ticks it', oneName.fatherGivenNA, 'YES');
 /* ONLY ASSERTED WHEN THERE IS A NAME. With no parent named nobody has decided
    anything, so the key is left alone. */
 eq('no father named, no answer invented', D.toRecord({ 'Name': 'A, B' }).fatherGivenNA, undefined);
+
+
+/* -- J1 PUTS THE COLLEGE ON THE PRESENT-EMPLOYER BLOCK ---------------
+   The user's arrangement, 2026-09-05, and the same STUDENT framing that ticked
+   the salary box an hour earlier:
+
+     Present Employer or School   <- college / university
+     Were you previously employed? YES
+       row 1                      <- CURRENT workplace
+       row 2 (Add Another)        <- PREVIOUS workplace
+     Attended an institution?      YES
+       row 1                      <- junior high school
+       row 2 (Add Another)        <- senior high / vocational
+
+   It is what the filed J1 sample did, which this repo recorded as one case
+   rather than a rule because the two readings put different answers in the
+   same boxes. The word is given, so it is the rule. */
+const j1work = D.toRecord({ 'Name': 'A, B',
+  "Current Workplace's Name": 'GRAND HYATT BALI',
+  "Current Workplace's Address": 'JL RAYA NUSA DUA',
+  "Current Workplace's Phone Number": '0361771234',
+  'Current Employment Position': 'DAILY WORKER',
+  'Start Date at Current Workplace': '01 Feb 2024',
+  'Previous Work Place Name': 'HOTEL SANUR',
+  'Previous Workplace Working Position': 'WAITER',
+  'Previous Workplace Country': 'INDONESIA',
+  'Name of College/University': 'OTC BALI SINGARAJA',
+  'Address of College/University': 'JL OTC',
+  'Year of College/University Entry': '28 Aug 2023' });
+eq('the college is the present school',   j1work.employerName, 'OTC BALI SINGARAJA');
+eq('with its own address',                j1work.employerAddress, 'JL OTC');
+eq('and its entry year as the start',     j1work.employerStart, '28-AUG-2023');
+/* THE WORKPLACE PHONE MUST NOT FOLLOW. Leaving it would put an employer's
+   number against a school, which is a filled field and therefore invisible. */
+eq('and no phone carried over from the job', j1work.employerPhone, '');
+eq('two employer rows, current first',
+   j1work._prevEmplList.map(w => w.name).join(' | '), 'GRAND HYATT BALI | HOTEL SANUR');
+eq('each with its own position',
+   j1work._prevEmplList.map(w => w.jobTitle).join(' | '), 'DAILY WORKER | WAITER');
+/* Row 1 is also what the un-repeated keys name, so a page showing one row
+   without a repeater id still fills correctly. */
+eq('the flat keys follow row 1', j1work.prevEmployerName, 'GRAND HYATT BALI');
+/* THE GATE IS YES BECAUSE ROW 1 IS A REAL JOB - the sheet's own "were you
+   previously employed?" no longer decides it, since row 1 is the job held
+   today. */
+eq('and the gate is answered', j1work.prevEmployed, 'YES');
+
+/* C1/D IS UNTOUCHED, and that is the half worth guarding: the present employer
+   stays the job, and the repeater holds the one previous workplace it always
+   did. The discriminator is the education-level header's presence. */
+const c1dwork = D.toRecord({ 'Name': 'A, B',
+  'Please select your highest level of education': 'SMK',
+  "Current Workplace's Name": 'CARNIVAL UK',
+  "Current Workplace's Phone Number": '02380655000',
+  'Previous Work Place Name': 'PT SAMUDERA BAHARI',
+  'Name of College/University': 'UDAYANA UNIVERSITY' });
+eq('C1/D keeps the job in the present block', c1dwork.employerName, 'CARNIVAL UK');
+eq('and its phone',                          c1dwork.employerPhone, '02380655000');
+eq('and one previous row only',
+   c1dwork._prevEmplList.map(w => w.name).join(' | '), 'PT SAMUDERA BAHARI');
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

@@ -2360,6 +2360,47 @@ one per pass.
 A Yes on the first fills the employer block from **BA–BH** — note BH, the
 previous workplace country, which had no rule before.
 
+### J1 FILES THE PARTICIPANT AS A STUDENT (2026-09-05, the user's arrangement)
+Stated in full, and it resolves the last open question on this page:
+
+| CEAC block | J1 fills it with |
+|---|---|
+| **Present Employer or School** | the **college / university** |
+| Were you previously employed? | **YES** |
+| &nbsp;&nbsp;previous-employer row 1 | the **CURRENT** workplace |
+| &nbsp;&nbsp;row 2 (*Add Another*) | the **previous** workplace |
+| Attended an institution? | YES |
+| &nbsp;&nbsp;education row 1 | **junior high school** |
+| &nbsp;&nbsp;row 2 (*Add Another*) | **senior high / vocational** |
+
+It is exactly what the filed J1 sample did - Present Employer or School held
+his college and Primary Occupation read STUDENT - which this file recorded as
+**one case, not a rule**, needing the user's word rather than an inference.
+The word is given, and it is the same framing that made the salary box a tick
+an hour earlier.
+
+**C1/D is untouched**, and the discriminator is the one already in use: the
+presence of the *"Please select your highest level of education"* header.
+There the present employer stays the job (AU-AY) and the repeater holds the
+one previous workplace it always did.
+
+Three details that matter:
+
+- **`_prevEmplList` is a list for the same reason `_eduList` is.** Two rows on
+  J1, one on C1/D, and `beyondList()` leaves an *Add Another* pressed once too
+  often alone. Eight `prev*` keys joined `REPEATED`.
+- **the workplace phone must not follow the college.** Reassigning the present
+  block without clearing `employerPhone` would put an employer's number against
+  a school - filled, plausible, and invisible.
+- **order is load-bearing.** The current workplace is copied into the list
+  *before* `employerName` is overwritten, or it is lost.
+
+`test/fake-prev-work-education.html` gained a second employer row, `ctl01`.
+Verified in a browser both ways: J1 fills GRAND HYATT BALI / DAILY WORKER then
+HOTEL SANUR / WAITER, and junior then senior high, nothing unrecognised; C1/D
+fills one employer row and one school and leaves the second of each alone. The
+sweep shows no unmatched drift on any page.
+
 ### THE TWO TEMPLATES FEED THE EDUCATION BLOCK DIFFERENTLY (corrected 2026-09-04)
 CEAC's education block is a **repeater** - Name of Institution, Address, Course
 of Study, Attendance From/To, then *Add Another* - and C1/D and J1 fill it in

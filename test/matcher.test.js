@@ -1163,6 +1163,11 @@ const listRec = N.toRecord({
   'Name': 'A, B',
   'Name of Junior High School': 'SMP NEGERI 2 SERIRIT',
   'Junior High School Address': 'JL RAYA SERIRIT',
+  /* The employer repeater takes two rows on J1 - the current workplace, then
+     the previous one - so both have to be present or its list is empty and
+     this guard cannot see the fields it is checking. */
+  "Current Workplace's Name": 'GRAND HYATT BALI',
+  'Previous Work Place Name': 'HOTEL SANUR',
   'Point of contact address': '7000 KALAHARI DR, SANDUSKY, OHIO, 44870',
 });
 const stray = [];

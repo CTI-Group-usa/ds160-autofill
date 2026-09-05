@@ -96,6 +96,59 @@ h2{font-family:Georgia,serif} fieldset{margin:10px 0;padding:10px} legend{font-w
   </table>
 </fieldset>
 
+<!-- A SECOND EMPLOYER ROW, because on J1 this repeater takes TWO: the
+     current workplace, then the previous one, with the Present Employer or
+     School block above it holding the college. One row on C1/D, where that
+     block is the job itself. `ctl01` is what "Add Another" opens, and this
+     row is what proves the second entry lands - and that a C1/D record,
+     whose list holds one, leaves it alone. -->
+<fieldset>
+  <legend>Previous Employer</legend>
+  <table>
+    <tr><td>Employer Name</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbEmployerName" size="40"></td></tr>
+    <tr><td>Employer Street Address (Line 1)</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbEmployerStreetAddress1" size="40"></td></tr>
+    <tr><td>City</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbEmployerCity"></td></tr>
+    <tr><td>Country/Region</td>
+        <td><select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_ddlEmployerCountry">
+              <option>- SELECT ONE -</option><option>INDIA</option><option>INDONESIA</option></select></td></tr>
+    <tr><td>Telephone Number</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbEmployerPhone"></td></tr>
+    <tr><td>Job Title</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbJobTitle"></td></tr>
+    <tr><td>Supervisor Surnames</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbxSupervisorSurname"></td></tr>
+    <tr><td>Supervisor Given Names</td>
+        <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbxSupervisorGivenName"></td></tr>
+    <tr><td>State/Province</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbxPREV_EMPL_ADDR_STATE">
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_cbxPREV_EMPL_ADDR_STATE_NA">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_cbxPREV_EMPL_ADDR_STATE_NA">Does Not Apply</label></td></tr>
+  <tr><td>Postal Zone/ZIP Code</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbxPREV_EMPL_ADDR_POSTAL_CD">
+          <input type="checkbox" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_cbxPREV_EMPL_ADDR_POSTAL_CD_NA">
+          <label for="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_cbxPREV_EMPL_ADDR_POSTAL_CD_NA">Does Not Apply</label></td></tr>
+  <tr><td>Briefly describe your duties:</td>
+      <td><input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbDescribeDuties" size="40"></td></tr>
+  <tr><td>Employment Date From</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_ddlEmpDateFromDay">
+        <option value="">-</option><option>01</option><option>15</option><option>28</option><option>30</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_ddlEmpDateFromMonth">
+        <option value="">-</option><option value="FEB">FEB</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbxEmpDateFromYear" size="4">
+    </td></tr>
+    <tr><td>Employment Date To</td><td>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_ddlEmpDateToDay">
+        <option value="">-</option><option>01</option><option>15</option><option>28</option><option>30</option></select>
+      <select id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_ddlEmpDateToMonth">
+        <option value="">-</option><option value="JUN">JUN</option></select>
+      <input type="text" id="ctl00_SiteContentPlaceHolder_FormView1_dtlPrevEmpl_ctl01_tbxEmpDateToYear" size="4">
+    </td></tr>
+  </table>
+</fieldset>
+
 <fieldset>
   <legend>Educational Institution: Date of Attendance</legend>
   <table>
