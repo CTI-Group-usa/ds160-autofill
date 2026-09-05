@@ -37,6 +37,7 @@
   let people = [];    // { rec, val }
   let selected = -1;
   let pendingLetter = null;   // survives the rebuild() that follows a parse
+  let lastText = '';          // what the documents actually contained, verbatim
   let letterSeq = 0;
 
   // -- CSV / TSV -------------------------------------------------------
@@ -384,9 +385,21 @@
         ? ' <span class="note">not in this row: ' + esc(missing.join(', ')) + '</span>'
         : '') +
       ' <span id="letterMsg"></span>' +
+      (lastText ? ' <button id="letterCopy" class="tiny">Copy what the documents said</button>' : '') +
       '<details><summary>paste it instead</summary>' +
       '<textarea id="letterText" placeholder="' + esc(doc.paste) + '"></textarea>' +
       '<button id="letterParse" class="tiny">Read pasted text</button></details></div>';
+  }
+
+  /* Wired wherever the box is drawn - see wireDetail. */
+  function wireLetterCopy() {
+    const b = document.getElementById('letterCopy');
+    if (!b) return;
+    b.addEventListener('click', () => {
+      navigator.clipboard.writeText(lastText).then(
+        () => { b.textContent = 'Copied - paste it to Claude'; },
+        () => { b.textContent = 'Could not copy - select the text below'; });
+    });
   }
 
   function letterMsg(kind, text) {
@@ -497,7 +510,12 @@
              can live are read. */
           const fc = f.formFields, nf = f.namedFields;
           let why = '';
-          if (nf && !fc) {
+          /* A REAL DS-7002 ACROFORM CARRIES DOZENS OF WIDGETS - the blank
+             template measured here has 79. A file with one or two stray `/T`
+             entries is not a form at all, it is a flattened document, and
+             calling it "a blank copy" sent the operator to check a link that
+             was never wrong. Said on a live row with `its 1 form fields`. */
+          if (nf >= 10 && !fc) {
             /* Only sayable because BOTH places a value can live were looked
                at - `/V` and the drawn appearance. On `/V` alone this sentence
                would be wrong for any form whose writer filled it by drawing,
@@ -507,11 +525,14 @@
                   'of the form rather than this applicant\'s filled one)';
           } else if (fc) {
             why = ' (' + fc + ' form field(s) in it do carry a value - tell Claude)';
-          } else if (nf === 0) {
-            why = ' (it has no form fields at all)';
+          } else {
+            why = ' (it is a flattened document - ' +
+                  (nf ? nf + ' stray form field(s), no real form in it' : 'no form fields at all') +
+                  '. Press "Copy what the documents said" and send it, and the ' +
+                  'labels can be matched to what is actually in there.)';
           }
           lines.push(pr.name + ': nothing - ' +
-                     (nf && !fc ? 'nothing was found, and here is why.' : pr.hint) + why);
+                     (nf >= 10 && !fc ? 'nothing was found, and here is why.' : pr.hint) + why);
         } else if (pr.missing.length) {
           lines.push(pr.name + ': read, but no ' + pr.missing.join(', '));
         } else {
@@ -563,6 +584,20 @@
          This is the comma warning again: a red line that is always there and
          never actionable teaches the operator to stop reading. */
       const todo = unique.length || !nAnswers || anyAbsent || list.some(f => f && f.error);
+
+      /* THE REPORT TOLD THE OPERATOR TO "SEND THE EXTRACTED TEXT" AND GAVE
+         THEM NO WAY TO DO IT. Same fault as `docLinks`' phantom note, one
+         section up: an instruction the code does not implement.
+
+         It is the fastest way out of every remaining dead end. A document that
+         gives nothing is either laid out in a way these labels do not match -
+         fixable in one round, from the text - or genuinely empty. Nobody can
+         tell which by looking at the PDF, and six rounds went by without the
+         one thing that would have said so. */
+      lastText = list.filter(f => f && f.text)
+                     .map(f => '===== ' + f.name + ' (' + f.text.length +
+                               ' characters) =====\n' + f.text)
+                     .join('\n\n');
       pendingLetter = {
         kind: todo ? 'err' : 'ok',
         text: (nAnswers ? nAnswers + ' field(s) filled. ' : 'Nothing filled. ') +
@@ -662,7 +697,8 @@
            that gave nothing has readable form values in it - the one fact that
            separates "print it flat" from "this reader needs a label". */
         out.push({ name: l.name, parsed: doc.parser().parse(got.text),
-                   formFields: got.formFields, namedFields: got.namedFields });
+                   formFields: got.formFields, namedFields: got.namedFields,
+                   text: got.text });
       }
       /* Named, in the same list as the ones that were read, so "nothing came
          from the DS-7002" and "there is no DS-7002 to come from" can never
@@ -701,6 +737,8 @@
       if (url) { pasteOneLink(url[0]); return; }
       useLetterText(text);
     });
+
+    wireLetterCopy();
 
     if (pendingLetter) letterMsg(pendingLetter.kind, pendingLetter.text);
 

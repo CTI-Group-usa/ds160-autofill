@@ -390,5 +390,29 @@ ok('it survives into the per-document list',
 ok('and the report prints it beside the hint',
    /form field\(s\) in it do carry a value/.test(APP));
 
+
+/* -- "SEND THE EXTRACTED TEXT" HAD NO WAY TO DO IT ------------------
+   The SEVIS receipt's own hint says the labels are the likely fault and asks
+   for the extracted text so they can be corrected. There was no control that
+   produced it - the same fault as `docLinks`' phantom note: an instruction the
+   code does not implement.
+
+   It is the fastest way out of every remaining dead end. A document that gives
+   nothing is either laid out in a way these labels do not match - fixable in
+   one round, from the text - or genuinely empty, and nobody can tell which by
+   looking at the PDF. */
+ok('the extracted text is kept', /lastText = list\.filter\(f => f && f\.text\)/.test(app));
+ok('and each document is labelled in it', /'===== ' \+ f\.name/.test(app));
+ok('a control offers it', /id="letterCopy"/.test(app));
+ok('and it goes to the clipboard', /navigator\.clipboard\.writeText\(lastText\)/.test(app));
+
+/* A REAL DS-7002 ACROFORM CARRIES DOZENS OF WIDGETS - the blank template
+   measured here has 79. A file with one or two stray `/T` entries is not a
+   form at all, it is a flattened document. Calling that "a blank copy" sent
+   the operator to check a link that was never wrong - it was said on a live
+   row reading `its 1 form fields`. */
+ok('a blank-copy claim needs a real form behind it', /if \(nf >= 10 && !fc\)/.test(app));
+ok('and a flattened one is named as such', /it is a flattened document/.test(app));
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

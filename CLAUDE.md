@@ -1129,6 +1129,37 @@ estimate was for that one, and it does not apply here.
 neither stays empty; both real DS-7002s on this machine are unchanged, one
 having no fields at all and the other being a genuinely blank template.
 
+### `its 1 form fields` - AND THE REPORT STILL TOLD THEM THE WRONG THING
+The next report read:
+
+> DS-7002: nothing - ... **(its 1 form fields are all empty** - no typed value
+> and nothing drawn in them - so this looks like a blank copy of the form...)
+
+**One.** The blank template measured here has **79**. A file with one stray
+`/T` is not an AcroForm at all - it is a **flattened** document, and "a blank
+copy, check the link" sent the operator to check a link that was never wrong.
+The threshold is `nf >= 10` now, and anything below it is named as flattened.
+
+Two wrong conclusions in two rounds, both from the same habit: **reading a
+count as if it answered a question it was not measuring.**
+
+### THE REPORT ASKED FOR THE EXTRACTED TEXT AND GAVE NO WAY TO SEND IT
+The SEVIS receipt's own hint has said, all along, *"Send the extracted text and
+they can be corrected."* Nothing in the app produced it. That is `docLinks`'
+phantom note a second time - **an instruction the code does not implement** -
+and it is the single thing that would have ended six rounds in one.
+
+**Copy what the documents said** puts every document's extracted text on the
+clipboard, each headed with its name and character count. A document that gives
+nothing is either laid out in a way these labels do not match - fixable in one
+round, from the text - or genuinely empty. Nobody can tell which by looking at
+the PDF, and until now nobody could look at anything else.
+
+**The lesson, and it is the same one three times now:** when the tool says it
+cannot read something, the next move is to make the tool show what it *did*
+read. Every real CEAC id in this project came from the popup's unrecognised
+list; every real document label should come from the same place.
+
 #### A conclusion that was nearly published wrong
 Under the `/V`-only reader the next step was going to be a report line saying
 *"this looks like a blank copy - check the link"*. For any form filled by
