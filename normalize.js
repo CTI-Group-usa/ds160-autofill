@@ -1039,8 +1039,18 @@
     if (rec.ssn)           rec.ssnNA = 'NO';
     if (rec.taxId)         rec.taxIdNA = 'NO';
     if (rec.monthlyIncome) rec.monthlyIncomeNA = 'NO';
-    rec.fatherGivenNA = splitName(rec.fatherName).mononym ? 'YES' : '';
-    rec.motherGivenNA = splitName(rec.motherName).mononym ? 'YES' : '';
+    /* 'NO', NOT ''. A parent with two names must have that box left CLEAR -
+       that is an answer, not an absence - but `''` made the report say
+       `fatherGivenNA - no value in record`, the string popup.js reads as
+       "stale record, send it again". No re-send can change a name that has
+       two words in it, so the banner would nag for ever.
+
+       Same device as `ssnNA`: 'NO' blocks any default and setCheckbox leaves
+       the box unticked. It is only asserted when there IS a name - a row with
+       no father named leaves the key alone, because then nobody has decided
+       anything. */
+    if (rec.fatherName) rec.fatherGivenNA = splitName(rec.fatherName).mononym ? 'YES' : 'NO';
+    if (rec.motherName) rec.motherGivenNA = splitName(rec.motherName).mononym ? 'YES' : 'NO';
     /* CEAC greys the number box out for this option, so writing a count
        there would either fail silently or contradict the dropdown. */
     if (rec.prevStayUnit === 'LESS THAN 24 HOURS') rec.prevStayLength = '';

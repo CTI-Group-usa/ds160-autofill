@@ -119,6 +119,13 @@ eq('J1 ticks the SSN box by default', j1rec.ssnNA, 'YES');
 eq('and the tax ID box', j1rec.taxIdNA, 'YES');
 eq('and the monthly income box', j1rec.monthlyIncomeNA, 'YES');
 eq('no ENGLISH language constant leaks in', j1rec.languageSpoken, undefined);
+/* THE J1 PACK WAS MISSING BOTH RELATIVE QUESTIONS while C1/D has carried them
+   since the Family page was wired. A key a pack does not name is not an
+   unanswered question on the page - the report calls it "no value in record",
+   which popup.js reads as "stale record, send it again", and no re-send can
+   supply a constant. `immediateRelativesUS` is NO at the user's word. */
+eq('J1 answers the immediate-relatives question', j1rec.immediateRelativesUS, 'NO');
+eq('and the one below it',                       j1rec.otherRelativesUS, 'NO');
 /* THE ORGANISATION BOX STAYS CLEAR ON J1 - but 'NO' says so, where omitting
    the key used to. The page behaves the same either way; the report does not.
    Omitted, it came back as `usPocOrgNA - no value in record` on every J1 row,

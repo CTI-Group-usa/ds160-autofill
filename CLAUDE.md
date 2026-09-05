@@ -1217,6 +1217,33 @@ already makes on the sheet's copy.
 first question is not *how do I parse it better* but **which document actually
 has this, and does that one already read.**
 
+### Family: two more of the same shape (2026-09-05)
+The Family page reported four fields with no value, and none of them was a gap.
+
+**`immediateRelativesUS` was missing from the J1 pack entirely** - C1/D has
+carried it since that page was wired, along with `otherRelativesUS`. **A key a
+pack does not name is not an unanswered question on the page:** the report
+calls it *"no value in record"*, which `popup.js` reads as *"stale record, send
+it again"*, and no re-send can ever supply a constant. Both are in the J1 pack
+now, NO, at the user's word - *"konsisten No"* - and visible in the panel like
+every other sworn answer.
+
+**`fatherGivenNA` / `motherGivenNA` were `''` for a two-word parent.** A
+relative with one name gets Surnames plus a ticked *Do Not Know*; a relative
+with two must have that box left **clear** - which is an answer, not an
+absence. `''` reported it as a missing value, and no re-send can change a name
+that has two words in it.
+
+`'NO'` now, the `ssnNA` device: it blocks any default and `setCheckbox` leaves
+the box unticked. **Asserted only when there IS a name** - with no parent
+named nobody has decided anything, so the key is left alone.
+
+That is the eighth and ninth instance of one bug: **a value the record settles
+deliberately, reported as a value the record lacks.** The rule is written above
+and it is worth applying to every new key on sight - *could re-sending the
+applicant possibly change this?* If not, it is `'NO'`, `MISSING_FROM_INTAKE`,
+or `_blankOnPurpose`; never the banner.
+
 #### A conclusion that was nearly published wrong
 Under the `/V`-only reader the next step was going to be a report line saying
 *"this looks like a blank copy - check the link"*. For any form filled by

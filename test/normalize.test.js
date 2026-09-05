@@ -1146,5 +1146,25 @@ eq('no address at all, nothing deliberate either',
 eq('the organisation name is named as not collected',
    D.MISSING_FROM_INTAKE.map(x => x[0]).indexOf('usPocOrg') >= 0, true);
 
+
+/* -- a box that must stay CLEAR is an answer, not an absence ---------
+   A relative with one name gets Surnames plus a ticked "Do Not Know" beside
+   Given Names. A relative with two names must have that box left clear - and
+   `''` made the report say `fatherGivenNA - no value in record`, the string
+   popup.js reads as "stale record, send it again". No re-send can change a
+   name that has two words in it, so the banner would have nagged for ever.
+
+   'NO' is the `ssnNA` device: it blocks any default and setCheckbox leaves the
+   box unticked. */
+const twoNames = D.toRecord({ 'Name': 'A, B',
+  "Father's Name": 'Suroso Hadi', "Mother's Name": 'Ni Ketut Rangi' });
+eq('a two-word father leaves the box clear', twoNames.fatherGivenNA, 'NO');
+eq('and the mother the same',                twoNames.motherGivenNA, 'NO');
+const oneName = D.toRecord({ 'Name': 'A, B', "Father's Name": 'Suroso' });
+eq('a mononym still ticks it', oneName.fatherGivenNA, 'YES');
+/* ONLY ASSERTED WHEN THERE IS A NAME. With no parent named nobody has decided
+   anything, so the key is left alone. */
+eq('no father named, no answer invented', D.toRecord({ 'Name': 'A, B' }).fatherGivenNA, undefined);
+
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
 process.exit(fail ? 1 : 0);

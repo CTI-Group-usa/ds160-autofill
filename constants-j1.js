@@ -118,6 +118,24 @@
     { key: 'fatherInUs', kind: 'yesno', page: 'Family - Relatives',
       label: 'Is your father in the U.S.?',
       def: 'NO', why: 'A Yes makes CEAC ask for that parent\'s status. Check it per applicant.' },
+    /* THE J1 PACK WAS MISSING BOTH OF THESE while C1/D has carried them since
+       the Family page was wired. A key a pack does not name is not an
+       unanswered question on the page - it is a question the report calls
+       "no value in record", which is the string popup.js reads as "stale
+       record, send it again", and no re-send could ever supply a constant.
+
+       `immediateRelativesUS` is NO at the user's word: "konsisten No".
+       `otherRelativesUS` is the question directly below it and is given the
+       same default and the same warning as on C1/D - visible in the Constant
+       answers panel, switchable per file, and worth checking on any applicant
+       who mentions family in the States. */
+    { key: 'immediateRelativesUS', kind: 'yesno', page: 'Family - Relatives',
+      label: 'Do you have any immediate relatives in the U.S.?',
+      def: 'NO', why: 'Spouse, child, parent or sibling living in the U.S. ' +
+                      'Consistently No for these participants; check it per applicant.' },
+    { key: 'otherRelativesUS', kind: 'yesno', page: 'Family - Relatives',
+      label: 'Do you have any other relatives in the U.S.?',
+      def: 'NO', why: 'The question directly below the one above. Check it per applicant.' },
     { key: 'motherInUs', kind: 'yesno', page: 'Family - Relatives',
       label: 'Is your mother in the U.S.?',
       def: 'NO', why: 'Same as the father above.' },
