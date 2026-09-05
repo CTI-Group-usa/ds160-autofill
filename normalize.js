@@ -876,22 +876,32 @@
        C1/D is untouched: `_asksEducationLevel` is true there, the present
        employer stays AU-AY, and `_prevEmplList` holds the one previous
        workplace it always did. */
-    const WORK = [
-      { label: 'current workplace', name: rec.employerName, address: rec.employerAddress,
-        phone: rec.employerPhone, jobTitle: rec.jobTitle, supervisor: '',
-        from: rec.employerStart, to: '', country: '' },
-      { label: 'previous workplace', name: rec.prevEmployerName,
-        address: rec.prevEmployerAddress, phone: rec.prevEmployerPhone,
-        jobTitle: rec.prevJobTitle, supervisor: rec.prevSupervisor,
-        from: rec.prevStart, to: rec.prevEnd, country: rec.prevCountry },
-    ];
+    /* THE PREVIOUS WORKPLACE COMES FIRST - the user's correction, 2026-09-05.
+       CEAC's repeater is filled oldest-first, the same order the education
+       block already uses, so `Add Another` walks forwards in time.
+
+       Named rather than indexed, because the order is the thing being stated
+       here and `slice(1)` said it in a way that quietly changes meaning the
+       moment the list is reordered - which is exactly what just happened. */
+    const prevWork = {
+      label: 'previous workplace', name: rec.prevEmployerName,
+      address: rec.prevEmployerAddress, phone: rec.prevEmployerPhone,
+      jobTitle: rec.prevJobTitle, supervisor: rec.prevSupervisor,
+      from: rec.prevStart, to: rec.prevEnd, country: rec.prevCountry };
+    const currentWork = {
+      label: 'current workplace', name: rec.employerName, address: rec.employerAddress,
+      phone: rec.employerPhone, jobTitle: rec.jobTitle, supervisor: '',
+      from: rec.employerStart, to: '', country: '' };
+
     if (rec._asksEducationLevel) {
-      rec._prevEmplList = WORK.slice(1).filter(w => w.name);
+      /* C1/D: the present-employer block above holds the job itself, so this
+         repeater has only ever carried the one that came before it. */
+      rec._prevEmplList = [prevWork].filter(w => w.name);
     } else {
-      rec._prevEmplList = WORK.filter(w => w.name);
+      rec._prevEmplList = [prevWork, currentWork].filter(w => w.name);
       /* Both rows are real employment, so the gate is YES whenever either is
-         named - and the sheet's own `Were you previously employed?` answer no
-         longer decides it, because row 1 is the job they hold today. */
+         named - the sheet's own `Were you previously employed?` answer no
+         longer decides it, because one of these rows is the job held today. */
       if (rec._prevEmplList.length) rec.prevEmployed = 'YES';
       if (rec.uniName) {
         rec.employerName    = rec.uniName;
@@ -903,19 +913,12 @@
         rec.employerPhone   = '';
       }
     }
-    /* Row 1 is what the un-repeated keys still name, so a page that shows one
-       row without a repeater id fills correctly too. */
-    const w0 = rec._prevEmplList[0];
-    if (w0 && !rec._asksEducationLevel) {
-      rec.prevEmployerName    = w0.name;
-      rec.prevEmployerAddress = w0.address;
-      rec.prevEmployerPhone   = w0.phone;
-      rec.prevJobTitle        = w0.jobTitle;
-      rec.prevSupervisor      = w0.supervisor;
-      rec.prevStart           = w0.from;
-      rec.prevEnd             = w0.to;
-      rec.prevCountry         = w0.country;
-    }
+    /* NO WRITE-BACK ANY MORE. While the current workplace led the list, row 1
+       had to be copied onto the un-repeated `prev*` keys so a page showing one
+       row without a repeater id still filled correctly. With the previous
+       workplace first, those keys ALREADY hold row 1 on both classes - they
+       are the columns it is read from - so the copy became a no-op and is
+       gone. Reversing the order deleted code rather than adding any. */
 
     const first = chosenBlocks[0] || null;
     rec.eduName = first ? first.name : '';
@@ -1439,8 +1442,15 @@
     if (/DIVORC|WIDOW|CERAI|JANDA|DUDA/.test(rec.maritalStatus) && !rec.marriageEnded)
       W('marriageEnded', 'Previously married - DS-160 asks when and how the marriage ended');
 
-    if (rec.prevEmployed === 'YES' && !rec.prevEmployerName)
-      E('prevEmployerName', 'Marked as previously employed but no previous employer given');
+    /* THE LIST, NOT THE COLUMN. On J1 that repeater carries the previous
+       workplace AND the current one, so a participant with only a current job
+       fills row 1 legitimately - and this fired an error on him, because it
+       was asking whether the PREVIOUS-workplace column was filled. Reversing
+       the row order surfaced it: `prevEmployed` is set from the list now, so
+       the check has to read the same list or the two disagree by
+       construction. */
+    if (rec.prevEmployed === 'YES' && !(rec._prevEmplList || []).length)
+      E('prevEmployerName', 'Marked as previously employed but no employer given');
     /* NAMES THE HEADER, NOT A COLUMN LETTER. This said "column BI" and fired
        on J1 rows, where BI is *Previous Workplace Country* - the two templates
        put different things in the same letter, which is exactly why this file

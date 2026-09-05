@@ -2367,8 +2367,8 @@ Stated in full, and it resolves the last open question on this page:
 |---|---|
 | **Present Employer or School** | the **college / university** |
 | Were you previously employed? | **YES** |
-| &nbsp;&nbsp;previous-employer row 1 | the **CURRENT** workplace |
-| &nbsp;&nbsp;row 2 (*Add Another*) | the **previous** workplace |
+| &nbsp;&nbsp;previous-employer row 1 | the **previous** workplace |
+| &nbsp;&nbsp;row 2 (*Add Another*) | the **CURRENT** workplace |
 | Attended an institution? | YES |
 | &nbsp;&nbsp;education row 1 | **junior high school** |
 | &nbsp;&nbsp;row 2 (*Add Another*) | **senior high / vocational** |
@@ -2395,9 +2395,29 @@ Three details that matter:
 - **order is load-bearing.** The current workplace is copied into the list
   *before* `employerName` is overwritten, or it is lost.
 
+**Oldest first, corrected 2026-09-05** - the same direction the education block
+already walks, so *Add Another* moves forwards in time. Reversing it **deleted**
+code rather than adding any:
+
+- the write-back that forced row 1 onto the un-repeated `prev*` keys is gone.
+  Those columns already hold the previous workplace, so with it leading the list
+  the copy was a no-op - and while the current workplace led, it had been
+  overwriting `prevSupervisor` with that row's empty one. **A real manager's
+  name, quietly lost.**
+- the two entries are **named** rather than indexed. `slice(1)` stated the order
+  in a way that changes meaning silently the moment the list is reordered, which
+  is exactly what happened.
+
+**And the reversal surfaced a false error.** `validate()` asked whether the
+previous-workplace COLUMN was filled, so a J1 participant with only a current
+job - row 1 legitimately filled, gate legitimately YES - was told *"marked as
+previously employed but no previous employer given"*. It reads the same list
+`prevEmployed` is set from now, or the two disagree by construction.
+
 `test/fake-prev-work-education.html` gained a second employer row, `ctl01`.
-Verified in a browser both ways: J1 fills GRAND HYATT BALI / DAILY WORKER then
-HOTEL SANUR / WAITER, and junior then senior high, nothing unrecognised; C1/D
+Verified in a browser both ways: J1 fills HOTEL SANUR / WAITER then
+LOVINALIFE ROOM & CAFE / WAITER & CASHIER, and junior then senior high, nothing
+unrecognised; C1/D
 fills one employer row and one school and leaves the second of each alone. The
 sweep shows no unmatched drift on any page.
 

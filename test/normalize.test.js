@@ -1233,13 +1233,18 @@ eq('and its entry year as the start',     j1work.employerStart, '28-AUG-2023');
 /* THE WORKPLACE PHONE MUST NOT FOLLOW. Leaving it would put an employer's
    number against a school, which is a filled field and therefore invisible. */
 eq('and no phone carried over from the job', j1work.employerPhone, '');
-eq('two employer rows, current first',
-   j1work._prevEmplList.map(w => w.name).join(' | '), 'GRAND HYATT BALI | HOTEL SANUR');
+/* OLDEST FIRST, the same direction the education block walks: the operator
+   presses Add Another and moves forwards in time. */
+eq('two employer rows, previous first',
+   j1work._prevEmplList.map(w => w.name).join(' | '), 'HOTEL SANUR | GRAND HYATT BALI');
 eq('each with its own position',
-   j1work._prevEmplList.map(w => w.jobTitle).join(' | '), 'DAILY WORKER | WAITER');
-/* Row 1 is also what the un-repeated keys name, so a page showing one row
-   without a repeater id still fills correctly. */
-eq('the flat keys follow row 1', j1work.prevEmployerName, 'GRAND HYATT BALI');
+   j1work._prevEmplList.map(w => w.jobTitle).join(' | '), 'WAITER | DAILY WORKER');
+/* THE FLAT KEYS NEED NO WRITE-BACK NOW. Row 1 is the previous workplace on
+   both classes, which is what those columns already hold - so the copy that
+   used to force them became a no-op and was deleted. It had been overwriting
+   `prevSupervisor` with the current row's empty one, which is a real name
+   quietly lost. */
+eq('the flat keys are row 1 already', j1work.prevEmployerName, 'HOTEL SANUR');
 /* THE GATE IS YES BECAUSE ROW 1 IS A REAL JOB - the sheet's own "were you
    previously employed?" no longer decides it, since row 1 is the job held
    today. */
