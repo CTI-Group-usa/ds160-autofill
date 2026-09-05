@@ -22,7 +22,12 @@
  *     answer to the same question and a leak between them can no longer
  *     hide a number the sheet holds - which was the whole reason for
  *     keeping them separate.
- *   - `languageSpoken`. Column BX collects it.
+ *   - `languageSpoken` WAS omitted on the grounds that "column BX collects
+ *     it". It does not reach the form: the sheet's column maps to `languages`
+ *     and the matcher wants `languageSpoken`, so the value landed nowhere -
+ *     the FIFTH time that shape has turned up, after payerPersonPhone,
+ *     payerPersonName, usPocAddress and usPocName. The constant is in this
+ *     pack now, at the user's word ("konsisten English"); see below.
  *   - the stay address and the U.S. contact. Both are the host employer,
  *     so they are per-applicant, not per-programme.
  *   - `lengthOfStay`. With specific travel plans = YES, CEAC asks for
@@ -130,6 +135,17 @@
        same default and the same warning as on C1/D - visible in the Constant
        answers panel, switchable per file, and worth checking on any applicant
        who mentions family in the States. */
+    /* CONSISTENTLY ENGLISH, the user's word, and the same answer C1/D has
+       given since that page was wired. It was left out of this pack because
+       the sheet was believed to supply it - and the sheet's own column has
+       never reached the form, so the box simply came back "no value in
+       record" on every J1 row. */
+    { key: 'languageSpoken', kind: 'text', page: 'Additional Work/Education',
+      label: 'Languages You Speak - first entry', def: 'ENGLISH',
+      why: 'Consistently English for these participants. Only the first row of ' +
+           'the repeater is filled - extra languages need "Add Another", which ' +
+           'is a postback each time, and a burst of those got the agent blocked ' +
+           'out of CEAC once.' },
     { key: 'immediateRelativesUS', kind: 'yesno', page: 'Family - Relatives',
       label: 'Do you have any immediate relatives in the U.S.?',
       def: 'NO', why: 'Spouse, child, parent or sibling living in the U.S. ' +

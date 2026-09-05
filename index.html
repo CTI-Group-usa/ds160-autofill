@@ -12,9 +12,9 @@
      Note Chrome shows NO favicon at all for a file:// page, whatever is
      declared here - open the worksheet over http to see it. -->
 <link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png?v=20260905rev">
-<link rel="icon" type="image/png" sizes="256x256" href="assets/logo-256.png?v=20260905rev">
-<link rel="apple-touch-icon" href="assets/logo-256.png?v=20260905rev">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png?v=20260905lang">
+<link rel="icon" type="image/png" sizes="256x256" href="assets/logo-256.png?v=20260905lang">
+<link rel="apple-touch-icon" href="assets/logo-256.png?v=20260905lang">
 <!-- A PINNED TASKBAR ICON COMES FROM HERE, NOT FROM THE FAVICON. Chrome's
      "Install page as app" reads this manifest and uses its largest `any` icon
      for the desktop and taskbar shortcut. Without one it generates a letter
@@ -35,7 +35,7 @@
      A token that is only sometimes bumped is worse than none: it makes the
      cache look managed. One string, one edit, and a test that no file is left
      behind. -->
-<link rel="stylesheet" href="style.css?v=20260905rev">
+<link rel="stylesheet" href="style.css?v=20260905lang">
 <!-- Hidden until the session validates, so no applicant data is ever painted
      to someone who is about to be redirected. Inline and before the body on
      purpose: a stylesheet that loads a moment late would flash the whole
@@ -116,10 +116,10 @@
   <section id="detail"></section>
 </main>
 
-<script src="auth.js?v=20260905rev"></script>
-<script src="constants.js?v=20260905rev"></script>
-<script src="constants-c1d.js?v=20260905rev"></script>
-<script src="constants-j1.js?v=20260905rev"></script>
+<script src="auth.js?v=20260905lang"></script>
+<script src="constants.js?v=20260905lang"></script>
+<script src="constants-c1d.js?v=20260905lang"></script>
+<script src="constants-j1.js?v=20260905lang"></script>
 <script>
   /* ONE PACK, CHOSEN EXPLICITLY. The engine throws rather than defaulting,
      because a silent fallback to C1/D is the exact failure the split exists
@@ -132,13 +132,13 @@
      rather than a thrown error with no page at all. */
   DS160Const.use('c1d');
 </script>
-<script src="trip.js?v=20260905rev"></script>
-<script src="pdftext.js?v=20260905rev"></script>
-<script src="letter.js?v=20260905rev"></script>
-<script src="j1docs.js?v=20260905rev"></script>
-<script src="xlsx.js?v=20260905rev"></script>
-<script src="normalize.js?v=20260905rev"></script>
-<script src="app.js?v=20260905rev"></script>
+<script src="trip.js?v=20260905lang"></script>
+<script src="pdftext.js?v=20260905lang"></script>
+<script src="letter.js?v=20260905lang"></script>
+<script src="j1docs.js?v=20260905lang"></script>
+<script src="xlsx.js?v=20260905lang"></script>
+<script src="normalize.js?v=20260905lang"></script>
+<script src="app.js?v=20260905lang"></script>
 <script>
 (async () => {
   /* The sign-in gate. app.js has already run by now - it is an IIFE - but it

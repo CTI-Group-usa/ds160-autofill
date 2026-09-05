@@ -1266,8 +1266,20 @@ that has two words in it.
 the box unticked. **Asserted only when there IS a name** - with no parent
 named nobody has decided anything, so the key is left alone.
 
-That is the eighth and ninth instance of one bug: **a value the record settles
-deliberately, reported as a value the record lacks.** The rule is written above
+**`languageSpoken` was omitted from the J1 pack on a false premise.** The
+header comment said *"column BX collects it"* - and that column maps to
+`languages` while the matcher wants `languageSpoken`, so **the value has never
+reached the form**. Fifth instance of that shape, after `payerPersonPhone`,
+`payerPersonName`, `usPocAddress` and `usPocName`; and here it combined with
+the omission to make a permanent gap that a *test* was guarding. Both packs
+answer **ENGLISH** now, at the user's word.
+
+The sheet's own column is still orphaned - if a row should swear to something
+other than English, say so and it can be wired; filling it silently would
+change a sworn answer on the strength of a guess.
+
+That is the eighth, ninth and tenth instance of one bug: **a value the record
+settles deliberately, reported as a value the record lacks.** The rule is written above
 and it is worth applying to every new key on sight - *could re-sending the
 applicant possibly change this?* If not, it is `'NO'`, `MISSING_FROM_INTAKE`,
 or `_blankOnPurpose`; never the banner.

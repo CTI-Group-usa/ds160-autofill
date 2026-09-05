@@ -118,7 +118,12 @@ eq("no cruise line's U.S. contact leaks in", j1rec.usPocSurname, undefined);
 eq('J1 ticks the SSN box by default', j1rec.ssnNA, 'YES');
 eq('and the tax ID box', j1rec.taxIdNA, 'YES');
 eq('and the monthly income box', j1rec.monthlyIncomeNA, 'YES');
-eq('no ENGLISH language constant leaks in', j1rec.languageSpoken, undefined);
+/* THIS USED TO ASSERT THE OMISSION, on the grounds that the J1 sheet collected
+   the languages itself. It does not reach the form - the column maps to
+   `languages` and the matcher wants `languageSpoken` - so the box came back
+   "no value in record" on every J1 row while a test guarded the hole. Both
+   packs answer ENGLISH now, at the user's word. */
+eq('J1 answers the language question too', j1rec.languageSpoken, 'ENGLISH');
 /* THE J1 PACK WAS MISSING BOTH RELATIVE QUESTIONS while C1/D has carried them
    since the Family page was wired. A key a pack does not name is not an
    unanswered question on the page - the report calls it "no value in record",
